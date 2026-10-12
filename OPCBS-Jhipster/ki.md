@@ -853,3 +853,17 @@ The following code has been modified to include a line number before every line,
 
 
 
+
+---
+
+### Phân Tầng 20: Quản Lý Source Control & Đẩy Dự Án Lên GitHub Repository Mới
+- **DÙNG GÌ**: 
+  - Khởi tạo Git repository chuyên biệt cho project tại C:\SEP_G32\SEP_G32\OPCBS-Jhipster.
+  - Thiết lập .gitignore cấp root loại trừ triệt để các tệp sinh tự động: 	arget/, 
+ode_modules/, .angular/, *.log, .idea/.
+  - Khử các secret giả định của Google OAuth (pps.googleusercontent.com, GOCSPX-*) để vượt qua **GitHub Push Protection (Secret Scanning Rule GH013)**.
+- **TẠI SAO**:
+  - Bảo vệ an toàn mã nguồn, ngăn rò rỉ credential và tránh đẩy file binary rác (dung lượng lớn vượt hạn mức 100MB của GitHub).
+  - Đồng bộ mã nguồn hoàn chỉnh của toàn bộ 8 Microservices, Eureka Server và Angular SPA lên remote repo: https://github.com/hviequang0411-dev/OPCBS-JhipsterOPCBS-Ver.git.
+- **HỌC ĐƯỢC GÌ**:
+  - Khi GitHub bật Secret Scanning Push Protection, bất kỳ commit nào chứa regex trùng khớp với pattern secret của Google, AWS, Stripe... sẽ bị từ chối ở tầng remote hook. Cần đưa về biến môi trường placeholder ${GOOGLE_CLIENT_ID:your-google-client-id} trước khi commit.
