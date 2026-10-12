@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+target/
+**/target/
+dist/
+**/dist/
+.angular/
+**/.angular/
+
+# Logs
+*.log
+**/*.log
+
+# IDE & Editor files
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.iml
+**/*.iml
+
+# OS files
+.DS_Store
+Thumbs.db

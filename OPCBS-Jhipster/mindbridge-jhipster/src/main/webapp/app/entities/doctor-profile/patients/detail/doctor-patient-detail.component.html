@@ -1,0 +1,600 @@
+<div class="patient-detail-container">
+  <!-- Top Navigation & Action Bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <a [routerLink]="['/doctor/patients']" class="pd-btn-back" title="Quay lại danh sách">
+        <fa-icon icon="arrow-left" class="me-1.5"></fa-icon>
+        Danh sách bệnh nhân
+      </a>
+      <span class="text-muted small">/</span>
+      <span class="fw-bold text-dark small" *ngIf="patientRecord() as rec">
+        {{ rec.patient.fullName }}
+      </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2" *ngIf="patientRecord() as rec">
+      <a
+        [routerLink]="['/messages']"
+        [queryParams]="{ patientId: rec.patient.id, patientName: rec.patient.fullName }"
+        class="btn btn-outline-teal btn-sm d-flex align-items-center gap-2 px-3 py-1.5 rounded-3 fw-semibold shadow-sm"
+        style="border-color: #0f766e; color: #0f766e;"
+        title="Nhắn tin trực tiếp với bệnh nhân này"
+      >
+        <i class="bi bi-chat-dots-fill"></i>
+        <span>Nhắn Tin Tư Vấn</span>
+      </a>
+
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2 px-3 py-1.5 rounded-3 fw-semibold shadow-sm"
+        (click)="exportPdf()"
+        [disabled]="isExportingPdf()"
+        title="Tải hồ sơ bệnh án và lịch sử tham vấn dưới dạng file PDF"
+      >
+        <span *ngIf="isExportingPdf()" class="spinner-border spinner-border-sm me-1"></span>
+        <fa-icon *ngIf="!isExportingPdf()" icon="file-pdf" class="text-danger"></fa-icon>
+        <span>{{ isExportingPdf() ? 'Đang xuất PDF...' : 'Xuất Bệnh Án PDF' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Alert Messages -->
+  <div *ngIf="successMessage() as success" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+    <fa-icon icon="check-circle" class="me-2"></fa-icon>
+    {{ success }}
+    <button type="button" class="btn-close" (click)="successMessage.set(null)"></button>
+  </div>
+  <div *ngIf="errorMessage() as error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+    <fa-icon icon="exclamation-circle" class="me-2"></fa-icon>
+    {{ error }}
+    <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="state-container">
+    <div class="spinner-border text-teal" role="status">
+      <span class="visually-hidden">Đang tải hồ sơ...</span>
+    </div>
+    <p class="mt-3 text-muted fw-semibold">Đang tải chi tiết hồ sơ bệnh nhân...</p>
+  </div>
+
+  <!-- Fallback / Not Found State -->
+  <div *ngIf="!isLoading() && !patientRecord()" class="card shadow-sm border-0 p-5 text-center my-4 bg-white rounded-4">
+    <div class="mb-3 text-teal" style="font-size: 3rem;">
+      <fa-icon icon="user-slash"></fa-icon>
+    </div>
+    <h4 class="fw-bold text-dark mb-2">Không tìm thấy hồ sơ bệnh nhân hoặc chưa có dữ liệu</h4>
+    <p class="text-muted mb-4">Hồ sơ bệnh nhân này không tồn tại hoặc bạn chưa có ca khám/lịch hẹn nào được phân công với bệnh nhân này.</p>
+    <div>
+      <a routerLink="/doctor/patients" class="btn btn-teal px-4">
+        <fa-icon icon="arrow-left" class="me-2"></fa-icon>
+        Quay lại Danh Sách Bệnh Nhân
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading() && patientRecord() as rec">
+    <!-- ════ 1. HERO CLINICAL BANNER ════ -->
+    <div class="pd-banner d-flex align-items-center gap-3 flex-wrap">
+      <div class="pd-avatar">
+        {{ getInitials(rec.patient.fullName) }}
+      </div>
+      <div class="flex-grow-1 min-width-0">
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <h2 class="pd-name mb-0">{{ rec.patient.fullName }}</h2>
+          <span class="pd-badge" [ngClass]="rec.patient.emergencyContactPhone ? 'active' : 'hold'">
+            <fa-icon icon="shield-alt" class="me-1"></fa-icon>
+            Hồ Sơ Điện Tử
+          </span>
+        </div>
+        <div class="pd-meta">
+          <span *ngIf="rec.patient.phone">
+            <fa-icon icon="phone" class="me-1 text-teal"></fa-icon>
+            {{ rec.patient.phone }}
+          </span>
+          <span *ngIf="rec.patient.dateOfBirth">
+            <fa-icon icon="calendar-alt" class="me-1 text-teal"></fa-icon>
+            Ngày sinh: {{ rec.patient.dateOfBirth | formatMediumDate }} ({{ getAge(rec.patient.dateOfBirth) }} tuổi)
+          </span>
+          <span *ngIf="rec.patient.gender">
+            <fa-icon icon="venus-mars" class="me-1 text-teal"></fa-icon>
+            Giới tính: {{ rec.patient.gender === 'MALE' ? 'Nam' : rec.patient.gender === 'FEMALE' ? 'Nữ' : 'Khác' }}
+          </span>
+          <span *ngIf="rec.patient.bloodGroup" class="text-danger fw-bold">
+            <fa-icon icon="tint" class="me-1"></fa-icon>
+            Nhóm máu: {{ rec.patient.bloodGroup }}
+          </span>
+          <span *ngIf="rec.patient.emergencyContactPhone">
+            <fa-icon icon="phone-volume" class="me-1 text-warning"></fa-icon>
+            Khẩn cấp: {{ rec.patient.emergencyContactPhone }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ 2. NEEDS ATTENTION ALERT BOX ════ -->
+    <div class="pd-attention-box" *ngIf="rec.patient.allergies">
+      <div class="d-flex align-items-center justify-content-between mb-1">
+        <h6 class="attention-title mb-0">
+          <fa-icon icon="exclamation-triangle" class="me-2 text-danger"></fa-icon>
+          Lưu Ý Đặc Biệt &amp; Dị Ứng (Doctor Alert)
+        </h6>
+        <span class="text-muted small">Cảnh báo y tế lâm sàng</span>
+      </div>
+      <p class="attention-text mb-0">
+        {{ rec.patient.allergies }}
+      </p>
+    </div>
+
+    <div class="pd-attention-clean d-flex align-items-center justify-content-between" *ngIf="!rec.patient.allergies">
+      <span class="clean-text">
+        <fa-icon icon="check-circle" class="me-2 text-success"></fa-icon>
+        Không có cảnh báo dị ứng đặc biệt cho bệnh nhân này.
+      </span>
+      <span class="text-muted small">Tình trạng bình thường</span>
+    </div>
+
+    <!-- ════ 3. TAB NAVIGATION ════ -->
+    <div class="pd-tab-nav">
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'CLINICAL'"
+        (click)="setActiveTab('CLINICAL')"
+      >
+        <fa-icon icon="notes-medical" class="me-1.5"></fa-icon>
+        Lịch Sử Khám &amp; Ghi Chú Lâm Sàng ({{ rec.appointments.length }})
+      </button>
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'OVERVIEW'"
+        (click)="setActiveTab('OVERVIEW')"
+      >
+        <fa-icon icon="id-card" class="me-1.5"></fa-icon>
+        Hồ Sơ Cá Nhân &amp; Tiền Sử
+      </button>
+    </div>
+
+    <!-- ════ 4. TAB CONTENTS ════ -->
+
+    <!-- TAB 1: CLINICAL & CONSULTATION TIMELINE -->
+    <div *ngIf="activeTab() === 'CLINICAL'" class="clinical-pane">
+      <div *ngIf="rec.appointments.length === 0" class="empty-timeline-card">
+        <fa-icon icon="calendar-times" class="empty-icon"></fa-icon>
+        <h5>Chưa có lịch hẹn khám nào</h5>
+        <p class="text-muted">Bệnh nhân chưa có ca tham vấn nào trong hồ sơ.</p>
+      </div>
+
+      <div class="timeline-list" *ngIf="rec.appointments.length > 0">
+        <div
+          *ngFor="let app of rec.appointments"
+          class="timeline-item"
+          [class.completed]="app.status === 'COMPLETED'"
+        >
+          <!-- Timeline Marker -->
+          <div
+            class="timeline-marker"
+            [ngClass]="{
+              'marker-completed': app.status === 'COMPLETED',
+              'marker-accepted': app.status === 'ACCEPTED',
+              'marker-pending': app.status === 'PENDING',
+              'marker-cancelled': app.status === 'CANCELLED' || app.status === 'REJECTED'
+            }"
+          >
+            <fa-icon [icon]="app.status === 'COMPLETED' ? 'check' : app.status === 'ACCEPTED' ? 'calendar-check' : 'clock'"></fa-icon>
+          </div>
+
+          <!-- Timeline Card -->
+          <div class="timeline-card">
+            <!-- Header -->
+            <div class="appointment-header">
+              <div class="app-left">
+                <span class="booking-code-pill">{{ app.bookingCode }}</span>
+                <span
+                  class="status-badge"
+                  [ngClass]="{
+                    'badge-pending': app.status === 'PENDING',
+                    'badge-accepted': app.status === 'ACCEPTED',
+                    'badge-completed': app.status === 'COMPLETED',
+                    'badge-cancelled': app.status === 'CANCELLED',
+                    'badge-rejected': app.status === 'REJECTED'
+                  }"
+                >
+                  {{ app.status === 'COMPLETED' ? 'Đã hoàn thành' : app.status === 'ACCEPTED' ? 'Đã xác nhận' : app.status === 'PENDING' ? 'Chờ xác nhận' : 'Đã hủy' }}
+                </span>
+                <span class="mode-pill">
+                  <fa-icon [icon]="app.consultationMode === 'ONLINE' ? 'video' : 'hospital'" class="me-1"></fa-icon>
+                  {{ app.consultationMode === 'ONLINE' ? 'Khám Trực Tuyến' : 'Tại Phòng Khám' }}
+                </span>
+              </div>
+
+              <div class="app-right">
+                <span class="app-datetime">
+                  <fa-icon icon="calendar-alt" class="me-1 text-teal"></fa-icon>
+                  {{ app.scheduledStart | formatMediumDatetime }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Pre-appointment Symptoms/Reason Structured -->
+            <div class="appointment-reason-box" *ngIf="app.reason">
+              <ng-container *ngIf="parseReason(app.reason) as parsed">
+                <ng-container *ngIf="parsed.isStructured; else fallbackReason">
+                  <span class="box-label text-teal">
+                    <fa-icon icon="clipboard-list" class="me-1"></fa-icon>
+                    Đánh Giá Tiền Khám &amp; Triệu Chứng Ban Đầu
+                  </span>
+                  <div class="structured-reasons-grid">
+                    <div class="structured-reason-item" *ngIf="parsed.reason">
+                      <div class="item-badge badge-reason">
+                        <fa-icon icon="bullseye" class="me-1"></fa-icon> Lý Do Khám
+                      </div>
+                      <div class="item-content">{{ parsed.reason }}</div>
+                    </div>
+                    <div class="structured-reason-item" *ngIf="parsed.symptoms">
+                      <div class="item-badge badge-symptom">
+                        <fa-icon icon="heartbeat" class="me-1"></fa-icon> Triệu Chứng Ban Đầu
+                      </div>
+                      <div class="item-content">{{ parsed.symptoms }}</div>
+                    </div>
+                    <div class="structured-reason-item" *ngIf="parsed.medicalHistory">
+                      <div class="item-badge badge-history">
+                        <fa-icon icon="history" class="me-1"></fa-icon> Tiền Sử Liên Quan
+                      </div>
+                      <div class="item-content">{{ parsed.medicalHistory }}</div>
+                    </div>
+                    <div class="structured-reason-item" *ngIf="parsed.expectations">
+                      <div class="item-badge badge-expect">
+                        <fa-icon icon="lightbulb" class="me-1"></fa-icon> Kỳ Vọng Tham Vấn
+                      </div>
+                      <div class="item-content">{{ parsed.expectations }}</div>
+                    </div>
+                  </div>
+                </ng-container>
+                <ng-template #fallbackReason>
+                  <span class="box-label">
+                    <fa-icon icon="comment-medical" class="me-1 text-teal"></fa-icon>
+                    Triệu chứng &amp; Lý do đăng ký khám:
+                  </span>
+                  <p class="box-text">{{ app.reason }}</p>
+                </ng-template>
+              </ng-container>
+            </div>
+
+            <!-- Clinical Consultation Note Box -->
+            <div
+              class="consultation-notes-section"
+              *ngIf="app.diagnosis || app.consultationSummary || app.therapyPlan || app.recommendations || app.followUpNotes"
+            >
+              <div class="notes-header">
+                <fa-icon icon="stethoscope" class="me-1.5 text-teal"></fa-icon>
+                <strong class="text-dark">Hồ Sơ Ghi Chép Lâm Sàng &amp; Phác Đồ Điều Trị</strong>
+                <span *ngIf="app.completedAt" class="text-muted ms-auto small">
+                  (Hoàn thành lúc: {{ app.completedAt | formatMediumDatetime }})
+                </span>
+              </div>
+
+              <div class="notes-body">
+                <!-- Preliminary Diagnosis -->
+                <div class="cn-section-box diagnosis-box" *ngIf="app.diagnosis">
+                  <div class="cn-section-label text-teal">
+                    <fa-icon icon="notes-medical" class="me-1"></fa-icon>
+                    Chẩn Đoán Lâm Sàng (Preliminary Diagnosis)
+                  </div>
+                  <div class="cn-section-text fw-bold text-dark">
+                    {{ app.diagnosis }}
+                  </div>
+                </div>
+
+                <!-- Consultation Summary -->
+                <div class="cn-section-box" *ngIf="app.consultationSummary">
+                  <div class="cn-section-label">
+                    <fa-icon icon="comment-dots" class="me-1 text-secondary"></fa-icon>
+                    Diễn Biến &amp; Tóm Tắt Buổi Tham Vấn
+                  </div>
+                  <div class="cn-section-text">
+                    {{ app.consultationSummary }}
+                  </div>
+                </div>
+
+                <!-- 2-Column Grid: Therapy Plan & Recommendations -->
+                <div class="row g-3" *ngIf="app.therapyPlan || app.recommendations">
+                  <div class="col-md-6" *ngIf="app.therapyPlan">
+                    <div class="therapy-plan-box">
+                      <div class="cn-section-label text-teal">
+                        <fa-icon icon="compass" class="me-1"></fa-icon>
+                        Phác Đồ &amp; Kế Hoạch Trị Liệu
+                      </div>
+                      <div class="cn-section-text">
+                        {{ app.therapyPlan }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6" *ngIf="app.recommendations">
+                    <div class="recommendations-plan-box">
+                      <div class="cn-section-label text-success">
+                        <fa-icon icon="lightbulb" class="me-1"></fa-icon>
+                        Lời Khuyên &amp; Bài Tập Về Nhà
+                      </div>
+                      <div class="cn-section-text">
+                        {{ app.recommendations }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Follow-up Plan & Next Appointment -->
+                <div class="followup-box" *ngIf="app.followUpNotes || app.nextAppointmentRecommendedDate">
+                  <div class="row g-3">
+                    <div class="col-md-7" *ngIf="app.followUpNotes">
+                      <div class="cn-section-label text-amber">
+                        <fa-icon icon="clipboard-check" class="me-1"></fa-icon>
+                        Ghi Chú Theo Dõi (Internal Follow-up)
+                      </div>
+                      <div class="cn-section-text">
+                        {{ app.followUpNotes }}
+                      </div>
+                    </div>
+                    <div class="col-md-5" *ngIf="app.nextAppointmentRecommendedDate">
+                      <div class="cn-section-label text-amber">
+                        <fa-icon icon="calendar-plus" class="me-1"></fa-icon>
+                        Đề Xuất Hẹn Tái Khám
+                      </div>
+                      <div class="revisit-tag">
+                        <fa-icon icon="calendar-check" class="me-1"></fa-icon>
+                        {{ app.nextAppointmentRecommendedDate | formatMediumDatetime }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons: Write/Edit consultation note -->
+            <div class="appointment-actions">
+              <button
+                *ngIf="app.status === 'ACCEPTED' || app.status === 'PENDING'"
+                class="btn btn-teal-primary"
+                (click)="openNoteEditor(app)"
+              >
+                <fa-icon icon="pen" class="me-1"></fa-icon>
+                Ghi Chép Hồ Sơ Lâm Sàng &amp; Hoàn Thành Ca Khám
+              </button>
+
+              <button
+                *ngIf="app.status === 'COMPLETED'"
+                class="btn btn-outline-teal btn-sm"
+                (click)="openNoteEditor(app)"
+              >
+                <fa-icon icon="edit" class="me-1"></fa-icon>
+                Cập Nhật Ghi Chú Khám
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: OVERVIEW PROFILE & DEMOGRAPHICS -->
+    <div *ngIf="activeTab() === 'OVERVIEW'" class="overview-pane">
+      <div class="row g-3">
+        <!-- Demographics Card -->
+        <div class="col-lg-6">
+          <div class="pd-card">
+            <div class="pd-card-head">
+              <h5 class="pd-card-title">
+                <fa-icon icon="user-circle" class="me-2 text-teal"></fa-icon>
+                Thông Tin Cá Nhân &amp; Liên Hệ
+              </h5>
+            </div>
+            <div class="pd-card-body">
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Họ và Tên</div>
+                <div class="pd-info-val fw-bold">{{ rec.patient.fullName }}</div>
+              </div>
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Số Điện Thoại</div>
+                <div class="pd-info-val">{{ rec.patient.phone || 'Chưa cập nhật' }}</div>
+              </div>
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Ngày Sinh &amp; Tuổi</div>
+                <div class="pd-info-val">
+                  {{ rec.patient.dateOfBirth ? (rec.patient.dateOfBirth | formatMediumDate) : 'Chưa cập nhật' }}
+                  <span *ngIf="rec.patient.dateOfBirth">({{ getAge(rec.patient.dateOfBirth) }} tuổi)</span>
+                </div>
+              </div>
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Giới Tính</div>
+                <div class="pd-info-val">
+                  {{ rec.patient.gender === 'MALE' ? 'Nam' : rec.patient.gender === 'FEMALE' ? 'Nữ' : 'Khác' }}
+                </div>
+              </div>
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Nhóm Máu</div>
+                <div class="pd-info-val text-danger fw-bold">
+                  {{ rec.patient.bloodGroup || 'Chưa xác định' }}
+                </div>
+              </div>
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Địa Chỉ Thường Trú</div>
+                <div class="pd-info-val">{{ rec.patient.address || 'Chưa cập nhật' }}</div>
+              </div>
+              <div class="pd-info-row" *ngIf="rec.patient.emergencyContactPhone">
+                <div class="pd-info-lbl">Liên Hệ Khẩn Cấp</div>
+                <div class="pd-info-val text-warning fw-bold">
+                  {{ rec.patient.emergencyContactPhone }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical Background Card -->
+        <div class="col-lg-6">
+          <div class="pd-card">
+            <div class="pd-card-head">
+              <h5 class="pd-card-title">
+                <fa-icon icon="notes-medical" class="me-2 text-teal"></fa-icon>
+                Tiền Sử Bệnh Lý &amp; Sức Khỏe Tâm Thần
+              </h5>
+            </div>
+            <div class="pd-card-body">
+              <div class="pd-info-row">
+                <div class="pd-info-lbl">Tiền Sử Bệnh Lý / Sức Khỏe Tâm Lý</div>
+                <div class="pd-info-val">
+                  {{ rec.patient.medicalHistory || 'Chưa có tiền sử ghi nhận.' }}
+                </div>
+              </div>
+
+              <div class="pd-info-row mt-3" *ngIf="rec.patient.allergies">
+                <div class="pd-info-lbl text-danger">Dị Ứng / Lưu Ý Y Tế Đặc Biệt</div>
+                <div class="pd-info-val text-danger fw-semibold">
+                  {{ rec.patient.allergies }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 5. MODAL / FLOATING EDITOR FOR CONSULTATION NOTES ════ -->
+  <div class="modal-backdrop-custom" *ngIf="isEditingNote()">
+    <div class="modal-dialog-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <div class="modal-title-group">
+            <h3 class="modal-title">
+              <fa-icon icon="file-medical-alt" class="me-2 text-teal"></fa-icon>
+              Ghi Chép Hồ Sơ Lâm Sàng &amp; Phác Đồ Điều Trị
+            </h3>
+            <p class="modal-subtitle" *ngIf="patientRecord() as rec">
+              Mã ca: <strong>{{ selectedAppointment()?.bookingCode }}</strong> • Bệnh nhân: <strong>{{ rec.patient.fullName }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeNoteEditor()">
+            <fa-icon icon="times"></fa-icon>
+          </button>
+        </div>
+
+        <form (ngSubmit)="saveNote()" class="modal-body-custom">
+          <!-- Diagnosis -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Chẩn đoán lâm sàng (Preliminary Diagnosis) <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control form-control-teal"
+              [(ngModel)]="noteForm.diagnosis"
+              name="diagnosis"
+              placeholder="VD: Rối loạn lo âu lan tỏa (GAD), Căng thẳng stress kéo dài, Rối loạn giấc ngủ..."
+              required
+            />
+          </div>
+
+          <!-- Consultation Summary -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Diễn biến &amp; Tóm tắt buổi tham vấn (Consultation Summary)
+            </label>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="noteForm.consultationSummary"
+              name="consultationSummary"
+              placeholder="Ghi nhận các biểu hiện tâm lý, suy nghĩ, cảm xúc và phản ứng của bệnh nhân..."
+            ></textarea>
+          </div>
+
+          <!-- 2-Column Grid: Therapy Plan & Recommendations -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-teal">
+                Phác đồ / Kế hoạch trị liệu (Therapy Plan)
+              </label>
+              <textarea
+                class="form-control"
+                rows="3"
+                [(ngModel)]="noteForm.therapyPlan"
+                name="therapyPlan"
+                placeholder="Liệu pháp nhận thức hành vi (CBT), Thư giãn cơ bắp tiến triển, Điều hòa cảm xúc..."
+              ></textarea>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-success">
+                Lời khuyên &amp; Bài tập về nhà (Recommendations)
+              </label>
+              <textarea
+                class="form-control"
+                rows="3"
+                [(ngModel)]="noteForm.recommendations"
+                name="recommendations"
+                placeholder="Nhật ký cảm xúc mỗi tối, bài tập thở bụng 10 phút, thể dục nhẹ nhàng..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Next Appointment Recommended Date -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">
+                Đề xuất ngày hẹn tái khám
+              </label>
+              <input
+                type="datetime-local"
+                class="form-control"
+                [(ngModel)]="noteForm.nextAppointmentRecommendedDate"
+                name="nextAppointmentRecommendedDate"
+              />
+            </div>
+
+            <!-- Follow-up Notes -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">
+                Ghi chú theo dõi (Follow-up Notes)
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="noteForm.followUpNotes"
+                name="followUpNotes"
+                placeholder="Theo dõi mức độ cải thiện giấc ngủ và cảm xúc..."
+              />
+            </div>
+          </div>
+
+          <!-- Checkbox complete -->
+          <div class="form-check mb-4" *ngIf="selectedAppointment()?.status === 'ACCEPTED' || selectedAppointment()?.status === 'PENDING'">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [(ngModel)]="noteForm.markCompleted"
+              name="markCompleted"
+              id="markCompletedCheck"
+            />
+            <label class="form-check-label fw-bold text-teal" for="markCompletedCheck">
+              Đánh dấu ca khám này là ĐÃ HOÀN THÀNH (Mark as Completed)
+            </label>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="closeNoteEditor()" [disabled]="isSavingNote()">
+              Hủy
+            </button>
+            <button type="submit" class="btn btn-teal-primary" [disabled]="isSavingNote() || !noteForm.diagnosis">
+              <span *ngIf="isSavingNote()" class="spinner-border spinner-border-sm me-1"></span>
+              <fa-icon *ngIf="!isSavingNote()" icon="save" class="me-1"></fa-icon>
+              Lưu Hồ Sơ Ghi Chú Khám
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

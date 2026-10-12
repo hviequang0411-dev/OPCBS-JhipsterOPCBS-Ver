@@ -1,0 +1,322 @@
+// MindBridge Theme Tokens (Matching C# OPCBS.Web)
+$teal-primary: #0d9488;
+$teal-dark: #0f766e;
+$slate-800: #1e293b;
+$slate-700: #334155;
+$slate-600: #475569;
+$slate-500: #64748b;
+$slate-100: #f1f5f9;
+
+.page-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: $slate-800;
+}
+
+.page-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.text-teal {
+  color: $teal-primary !important;
+}
+
+.bg-teal {
+  background-color: $teal-primary !important;
+}
+
+.btn-teal {
+  background-color: $teal-primary;
+  border-color: $teal-primary;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: $teal-dark;
+    border-color: $teal-dark;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
+}
+
+.btn-outline-teal {
+  color: $teal-primary;
+  border: 1px solid $teal-primary;
+  background-color: transparent;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: $teal-primary;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+  }
+}
+
+.btn-amber {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+
+  &:hover {
+    background-color: #d97706;
+    color: #fff;
+  }
+}
+
+// ── Segmented Control (matches C# .pp-seg) ──
+.pp-seg {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+
+  .seg-btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &.active {
+      background: #fff;
+      color: $teal-dark;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    &:hover:not(.active) {
+      color: $teal-dark;
+      background: #e2e8f0;
+    }
+
+    .seg-badge {
+      background: #94a3b8;
+      color: #fff;
+      font-size: 0.65rem;
+      border-radius: 10px;
+      padding: 1px 6px;
+      margin-left: 4px;
+      font-weight: 700;
+
+      &.bg-amber {
+        background: #f59e0b !important;
+      }
+    }
+  }
+}
+
+// ── Search Input (matches C# .pp-search) ──
+.pp-search {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+
+  input {
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    width: 100%;
+    background: #fff;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: $teal-primary;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    }
+  }
+
+  i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+}
+
+// ── Package Card (matches C# .pp-card) ──
+.pp-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+  }
+
+  &.pending {
+    border-left: 4px solid #f59e0b;
+  }
+
+  .pp-card-body {
+    padding: 1.25rem;
+    flex: 1;
+  }
+
+  .pp-card-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #f1f5f9;
+    background: #fafbfc;
+  }
+}
+
+.pp-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: $slate-800;
+  max-width: 65%;
+}
+
+.pp-desc {
+  font-size: 0.8rem;
+  color: $slate-500;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ── Status Badges (matches C# .pp-status) ──
+.pp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+
+  &.active {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  &.pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  &.completed {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  &.expired {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  &.rejected {
+    background: #fce7f3;
+    color: #9d174d;
+  }
+  &.cancelled {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+}
+
+// ── Meta Rows (matches C# .pp-meta) ──
+.pp-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: $slate-500;
+  margin-bottom: 6px;
+
+  i {
+    color: $teal-primary;
+    width: 16px;
+    text-align: center;
+    font-size: 0.82rem;
+  }
+
+  strong {
+    color: $slate-800;
+  }
+}
+
+// ── Doctor Chip (matches C# .pp-doctor) ──
+.pp-doctor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+// ── Empty State (matches C# .pp-empty) ──
+.pp-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #fff;
+  border-radius: 16px;
+  border: 2px dashed #e2e8f0;
+}
+
+// ── Modal Details Sections (matches C# Details.cshtml) ──
+.pd-section {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+
+  .pd-section-head {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: $slate-800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fafbfc;
+  }
+
+  .pd-section-body {
+    padding: 1.25rem;
+  }
+}
+
+.pd-info-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.85rem;
+  color: $slate-700;
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+.pd-pending-banner {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: #92400e;
+}

@@ -1,0 +1,159 @@
+/**
+ * ============================================================================
+ * OPCBS (Online Patient Care & Booking System) - MVP Core JDL
+ * ============================================================================
+ * Scope:
+ * - Authentication & Authorization (Built-in JHipster User & Authorities)
+ * - Specialization & Doctor Directory
+ * - Doctor Availability Scheduling (Slots)
+ * - Patient Appointment Booking
+ * ============================================================================
+ */
+
+application {
+  config {
+    baseName opcbs
+    applicationType monolith
+    packageName com.ocbs
+    authenticationType jwt
+    buildTool maven
+    databaseType sql
+    devDatabaseType mysql
+    prodDatabaseType mysql
+    cacheProvider no
+    enableHibernateCache false
+    serverPort 8081
+    clientFramework angular
+    clientTheme brite
+    clientThemeVariant primary
+    enableTranslation false
+    nativeLanguage en
+    testFrameworks []
+    withAdminUi true
+  }
+  entities Specialization, DoctorProfile, PatientProfile, AvailabilitySlot, Appointment
+}
+
+// ----------------------------------------------------------------------------
+// ENUMS
+// ----------------------------------------------------------------------------
+
+enum Gender {
+  MALE,
+  FEMALE,
+  OTHER
+}
+
+enum ConsultationMode {
+  ONLINE,
+  IN_PERSON,
+  BOTH
+}
+
+enum SlotStatus {
+  AVAILABLE,
+  BOOKED,
+  CANCELLED
+}
+
+enum AppointmentStatus {
+  PENDING,
+  ACCEPTED,
+  REJECTED,
+  COMPLETED,
+  CANCELLED
+}
+
+// ----------------------------------------------------------------------------
+// ENTITIES
+// ----------------------------------------------------------------------------
+
+/**
+ * Danh mục chuyên khoa y tế (ví dụ: Tâm lý, Thần kinh, Nhi khoa, Đa khoa...)
+ */
+entity Specialization {
+  name String required unique maxlength(160)
+  description String maxlength(500)
+}
+
+/**
+ * Hồ sơ bác sĩ (mở rộng từ JHipster User)
+ */
+entity DoctorProfile {
+  fullName String required maxlength(160)
+  title String maxlength(100) // ví dụ: Bác sĩ CK1, ThS.BS, PGS.TS
+  bio TextBlob
+  experienceYears Integer min(0)
+  consultationFee BigDecimal min(0)
+  phone String maxlength(30)
+  gender Gender
+  isActive Boolean required
+}
+
+/**
+ * Hồ sơ bệnh nhân (mở rộng từ JHipster User)
+ */
+entity PatientProfile {
+  fullName String required maxlength(160)
+  phone String required maxlength(30)
+  dateOfBirth LocalDate
+  gender Gender
+  address String maxlength(255)
+  medicalHistory TextBlob
+}
+
+/**
+ * Khung giờ rảnh của bác sĩ để nhận lịch khám
+ */
+entity AvailabilitySlot {
+  startTime Instant required
+  endTime Instant required
+  consultationMode ConsultationMode required
+  status SlotStatus required
+  notes String maxlength(255)
+}
+
+/**
+ * Lịch hẹn khám chữa bệnh giữa Bệnh nhân và Bác sĩ
+ */
+entity Appointment {
+  bookingCode String required unique maxlength(32)
+  scheduledStart Instant required
+  scheduledEnd Instant required
+  consultationMode ConsultationMode required
+  status AppointmentStatus required
+  reason String maxlength(1000)
+  cancellationReason String maxlength(500)
+  createdAt Instant required
+  updatedAt Instant
+}
+
+// ----------------------------------------------------------------------------
+// RELATIONSHIPS
+// ----------------------------------------------------------------------------
+
+relationship OneToOne {
+  DoctorProfile{user(login) required} to User with builtInEntity
+  PatientProfile{user(login) required} to User with builtInEntity
+}
+
+relationship ManyToMany {
+  DoctorProfile{specializations(name)} to Specialization{doctors}
+}
+
+relationship ManyToOne {
+  AvailabilitySlot{doctor(fullName) required} to DoctorProfile
+
+  Appointment{patient(fullName) required} to PatientProfile
+  Appointment{doctor(fullName) required} to DoctorProfile
+  Appointment{slot required} to AvailabilitySlot
+}
+
+// ----------------------------------------------------------------------------
+// OPTIONS & GENERATION BEHAVIOR
+// ----------------------------------------------------------------------------
+
+dto * with mapstruct
+service * with serviceClass
+paginate Specialization, DoctorProfile, AvailabilitySlot, Appointment with pagination
+filter DoctorProfile, AvailabilitySlot, Appointment

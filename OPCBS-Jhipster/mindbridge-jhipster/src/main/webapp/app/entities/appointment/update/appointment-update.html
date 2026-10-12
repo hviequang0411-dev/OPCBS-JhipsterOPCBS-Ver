@@ -1,0 +1,316 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2 id="jhi-appointment-heading" data-cy="AppointmentCreateUpdateHeading">Create or edit a Appointment</h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let bookingCodeRef = editForm.get('bookingCode')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_bookingCode">Booking Code</label>
+          <input
+            type="text"
+            class="form-control"
+            name="bookingCode"
+            id="field_bookingCode"
+            data-cy="bookingCode"
+            formControlName="bookingCode"
+          />
+          @if (bookingCodeRef.invalid && (bookingCodeRef.dirty || bookingCodeRef.touched)) {
+            <div>
+              @if (bookingCodeRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+              @if (bookingCodeRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 32 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let scheduledStartRef = editForm.get('scheduledStart')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_scheduledStart">Scheduled Start</label>
+          <div class="d-flex">
+            <input
+              id="field_scheduledStart"
+              data-cy="scheduledStart"
+              type="datetime-local"
+              class="form-control"
+              name="scheduledStart"
+              formControlName="scheduledStart"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          @if (scheduledStartRef.invalid && (scheduledStartRef.dirty || scheduledStartRef.touched)) {
+            <div>
+              @if (scheduledStartRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+              <small class="form-text text-danger" [hidden]="!scheduledStartRef.errors?.datetimelocal"
+                >This field should be a date and time.</small
+              >
+            </div>
+          }
+        </div>
+
+        @let scheduledEndRef = editForm.get('scheduledEnd')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_scheduledEnd">Scheduled End</label>
+          <div class="d-flex">
+            <input
+              id="field_scheduledEnd"
+              data-cy="scheduledEnd"
+              type="datetime-local"
+              class="form-control"
+              name="scheduledEnd"
+              formControlName="scheduledEnd"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          @if (scheduledEndRef.invalid && (scheduledEndRef.dirty || scheduledEndRef.touched)) {
+            <div>
+              @if (scheduledEndRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+              <small class="form-text text-danger" [hidden]="!scheduledEndRef.errors?.datetimelocal"
+                >This field should be a date and time.</small
+              >
+            </div>
+          }
+        </div>
+
+        @let consultationModeRef = editForm.get('consultationMode')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_consultationMode">Consultation Mode</label>
+          <select
+            class="form-select"
+            name="consultationMode"
+            formControlName="consultationMode"
+            id="field_consultationMode"
+            data-cy="consultationMode"
+          >
+            <option [ngValue]="null"></option>
+            @for (consultationMode of consultationModeValues; track $index) {
+              <option [value]="consultationMode">
+                {{ { null: '', ONLINE: 'ONLINE', IN_PERSON: 'IN_PERSON', OFFLINE: 'OFFLINE', BOTH: 'BOTH' }[consultationMode] }}
+              </option>
+            }
+          </select>
+          @if (consultationModeRef.invalid && (consultationModeRef.dirty || consultationModeRef.touched)) {
+            <div>
+              @if (consultationModeRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let statusRef = editForm.get('status')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_status">Status</label>
+          <select class="form-select" name="status" formControlName="status" id="field_status" data-cy="status">
+            <option [ngValue]="null"></option>
+            @for (appointmentStatus of appointmentStatusValues; track $index) {
+              <option [value]="appointmentStatus">
+                {{
+                  {
+                    null: '',
+                    PENDING: 'PENDING',
+                    ACCEPTED: 'ACCEPTED',
+                    REJECTED: 'REJECTED',
+                    COMPLETED: 'COMPLETED',
+                    CANCELLED: 'CANCELLED',
+                  }[appointmentStatus]
+                }}
+              </option>
+            }
+          </select>
+          @if (statusRef.invalid && (statusRef.dirty || statusRef.touched)) {
+            <div>
+              @if (statusRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let reasonRef = editForm.get('reason')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_reason">Reason</label>
+          <input type="text" class="form-control" name="reason" id="field_reason" data-cy="reason" formControlName="reason" />
+          @if (reasonRef.invalid && (reasonRef.dirty || reasonRef.touched)) {
+            <div>
+              @if (reasonRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 1000 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let cancellationReasonRef = editForm.get('cancellationReason')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_cancellationReason">Cancellation Reason</label>
+          <input
+            type="text"
+            class="form-control"
+            name="cancellationReason"
+            id="field_cancellationReason"
+            data-cy="cancellationReason"
+            formControlName="cancellationReason"
+          />
+          @if (cancellationReasonRef.invalid && (cancellationReasonRef.dirty || cancellationReasonRef.touched)) {
+            <div>
+              @if (cancellationReasonRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 500 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let createdAtRef = editForm.get('createdAt')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          @if (createdAtRef.invalid && (createdAtRef.dirty || createdAtRef.touched)) {
+            <div>
+              @if (createdAtRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+              <small class="form-text text-danger" [hidden]="!createdAtRef.errors?.datetimelocal"
+                >This field should be a date and time.</small
+              >
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_updatedAt">Updated At</label>
+          <div class="d-flex">
+            <input
+              id="field_updatedAt"
+              data-cy="updatedAt"
+              type="datetime-local"
+              class="form-control"
+              name="updatedAt"
+              formControlName="updatedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_patient">Patient</label>
+          <select
+            class="form-select"
+            id="field_patient"
+            data-cy="patient"
+            name="patient"
+            formControlName="patient"
+            [compareWith]="comparePatientProfile"
+          >
+            @if (!editForm.get('patient')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (patientProfileOption of patientProfilesSharedCollection(); track $index) {
+              <option [ngValue]="patientProfileOption">{{ patientProfileOption.fullName }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['patient'])!.invalid && (editForm.get(['patient'])!.dirty || editForm.get(['patient'])!.touched)) {
+          <div>
+            @if (editForm.get(['patient'])?.errors?.required) {
+              <small class="form-text text-danger">This field is required.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="field_doctor">Doctor</label>
+          <select
+            class="form-select"
+            id="field_doctor"
+            data-cy="doctor"
+            name="doctor"
+            formControlName="doctor"
+            [compareWith]="compareDoctorProfile"
+          >
+            @if (!editForm.get('doctor')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (doctorProfileOption of doctorProfilesSharedCollection(); track $index) {
+              <option [ngValue]="doctorProfileOption">{{ doctorProfileOption.fullName }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['doctor'])!.invalid && (editForm.get(['doctor'])!.dirty || editForm.get(['doctor'])!.touched)) {
+          <div>
+            @if (editForm.get(['doctor'])?.errors?.required) {
+              <small class="form-text text-danger">This field is required.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="field_slot">Slot</label>
+          <select
+            class="form-select"
+            id="field_slot"
+            data-cy="slot"
+            name="slot"
+            formControlName="slot"
+            [compareWith]="compareAvailabilitySlot"
+          >
+            @if (!editForm.get('slot')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (availabilitySlotOption of availabilitySlotsSharedCollection(); track $index) {
+              <option [ngValue]="availabilitySlotOption">{{ availabilitySlotOption.id }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['slot'])!.invalid && (editForm.get(['slot'])!.dirty || editForm.get(['slot'])!.touched)) {
+          <div>
+            @if (editForm.get(['slot'])?.errors?.required) {
+              <small class="form-text text-danger">This field is required.</small>
+            }
+          </div>
+        }
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span>Cancel</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span>Save</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,221 @@
+<div class="otp-page-viewport">
+  <div class="otp-card">
+    <!-- Brand Logo Top -->
+    <div class="text-center mb-3">
+      <a routerLink="/" class="text-decoration-none d-inline-flex align-items-center gap-2 mb-1">
+        <img src="content/images/logo-cropped.png" alt="MindBridge" style="height: 36px;" onerror="this.style.display='none'" />
+        <span class="fs-4 fw-bold" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">Mind<span style="color: #0f766e;">Bridge</span></span>
+      </a>
+    </div>
+
+    <!-- Header Icon -->
+    <div class="otp-icon-header">
+      <i class="bi bi-shield-lock-fill"></i>
+    </div>
+
+    <!-- Title & Instructions -->
+    <h1 class="otp-title">Xác Thực Mã OTP</h1>
+    <p class="otp-subtitle">
+      Nhập mã xác thực 6 số được gửi về email của bạn để kích hoạt tài khoản
+    </p>
+
+    <!-- Account Badge & Change Account Mode -->
+    @if (!isEditingAccount) {
+      <div class="account-pill-box">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2 text-truncate">
+            <i class="bi bi-person-check-fill text-teal"></i>
+            <span class="user-email-badge text-truncate">{{ emailOrLogin }}</span>
+          </div>
+          <button type="button" class="btn-change-account" (click)="changeAccount()" title="Đổi email hoặc tài khoản">
+            <i class="bi bi-pencil-square"></i> Đổi
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- Form Input for Account / Email if user navigated directly or changed account -->
+      <div class="account-edit-box">
+        <label class="account-edit-label">
+          <i class="bi bi-envelope-at-fill me-1 text-teal"></i> Email hoặc Tên Đăng Nhập Của Bạn:
+        </label>
+        <div class="input-group mb-2">
+          <input
+            type="text"
+            class="form-control form-control-sm custom-acc-input"
+            placeholder="Nhập email hoặc username..."
+            [(ngModel)]="inputAccount"
+            (keyup.enter)="saveAccountAndSendOtp()"
+          />
+          <button
+            class="btn btn-teal-action btn-sm"
+            type="button"
+            (click)="saveAccountAndSendOtp()"
+            [disabled]="isResending || !inputAccount"
+          >
+            {{ isResending ? 'Đang gửi...' : 'Gửi Mã OTP' }}
+          </button>
+        </div>
+        @if (emailOrLogin) {
+          <div class="text-end">
+            <button type="button" class="btn btn-link btn-sm p-0 text-muted" (click)="isEditingAccount = false">
+              Hủy chỉnh sửa
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Countdown & Expiration Badge -->
+    <div class="otp-timer-box" [class.expired]="isExpired">
+      @if (!isExpired && countdown > 0) {
+        <div class="timer-active">
+          <i class="bi bi-stopwatch-fill me-1"></i>
+          <span>Mã có hiệu lực trong: </span>
+          <strong class="timer-digits">{{ formattedCountdown }}</strong>
+        </div>
+      } @else {
+        <div class="timer-expired">
+          <i class="bi bi-exclamation-circle-fill me-1 text-danger"></i>
+          <span>Mã OTP đã hết hiệu lực (1p30s). Vui lòng gửi lại mã mới.</span>
+        </div>
+      }
+    </div>
+
+    <!-- Error / Success Alerts -->
+    @if (successMessage) {
+      <div class="alert alert-success d-flex align-items-center mb-3 text-start shadow-sm" role="alert" style="border-radius: 12px;">
+        <i class="bi bi-check-circle-fill fs-5 me-2 flex-shrink-0 text-success"></i>
+        <div class="small fw-semibold">
+          {{ successMessage }}
+        </div>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="alert alert-danger d-flex align-items-center mb-3 text-start shadow-sm" role="alert" style="border-radius: 12px;">
+        <i class="bi bi-exclamation-triangle-fill fs-5 me-2 flex-shrink-0 text-danger"></i>
+        <div class="small fw-semibold">
+          {{ errorMessage }}
+        </div>
+      </div>
+    }
+
+    <!-- OTP 6-Digit Inputs Form -->
+    <form (ngSubmit)="submitOtp()">
+      <div class="otp-inputs-row" (paste)="onPaste($event)">
+        <input
+          #digit0
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[0]"
+          [(ngModel)]="otpDigits[0]"
+          name="d0"
+          (keyup)="onDigitInput($event, 0)"
+          (keydown)="onKeyDown($event, 0)"
+          autofocus
+        />
+        <input
+          #digit1
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[1]"
+          [(ngModel)]="otpDigits[1]"
+          name="d1"
+          (keyup)="onDigitInput($event, 1)"
+          (keydown)="onKeyDown($event, 1)"
+        />
+        <input
+          #digit2
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[2]"
+          [(ngModel)]="otpDigits[2]"
+          name="d2"
+          (keyup)="onDigitInput($event, 2)"
+          (keydown)="onKeyDown($event, 2)"
+        />
+        <input
+          #digit3
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[3]"
+          [(ngModel)]="otpDigits[3]"
+          name="d3"
+          (keyup)="onDigitInput($event, 3)"
+          (keydown)="onKeyDown($event, 3)"
+        />
+        <input
+          #digit4
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[4]"
+          [(ngModel)]="otpDigits[4]"
+          name="d4"
+          (keyup)="onDigitInput($event, 4)"
+          (keydown)="onKeyDown($event, 4)"
+        />
+        <input
+          #digit5
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          class="otp-digit-box"
+          [class.filled]="otpDigits[5]"
+          [(ngModel)]="otpDigits[5]"
+          name="d5"
+          (keyup)="onDigitInput($event, 5)"
+          (keydown)="onKeyDown($event, 5)"
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="btn-verify-submit"
+        [disabled]="isSubmitting || !isCompleteOtp() || isExpired || !emailOrLogin"
+      >
+        @if (isSubmitting) {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <span>Đang xác thực mã OTP...</span>
+        } @else {
+          <i class="bi bi-patch-check-fill me-1 fs-5"></i>
+          <span>Xác Thực &amp; Kích Hoạt Tài Khoản</span>
+        }
+      </button>
+    </form>
+
+    <!-- Resend OTP Section -->
+    <div class="resend-section">
+      <span>Chưa nhận được mã xác thực? </span>
+      @if (countdown > 0 && !isExpired) {
+        <span class="countdown-timer">Gửi lại mã sau ({{ formattedCountdown }})</span>
+      } @else {
+        <button type="button" class="btn-resend" (click)="resendOtp()" [disabled]="isResending || !emailOrLogin">
+          <i class="bi bi-arrow-repeat me-1"></i>
+          <span>{{ isResending ? 'Đang gửi mã mới...' : 'Gửi lại mã OTP ngay' }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Back to Login or Register -->
+    <div class="back-to-login">
+      <a routerLink="/login" class="back-link">
+        <i class="bi bi-arrow-left"></i>
+        <span>Quay lại trang Đăng Nhập</span>
+      </a>
+      <span class="mx-2 text-muted">•</span>
+      <a routerLink="/account/register" class="back-link">
+        <span>Đăng ký mới</span>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,235 @@
+<div class="dr-profile-container">
+  @if (doctorProfile(); as doc) {
+    <!-- Breadcrumb Navigation -->
+    <nav class="d-flex justify-content-between align-items-center mb-3">
+      <a (click)="previousState()" class="dr-nav-back" style="cursor: pointer">
+        <i class="bi bi-arrow-left"></i><span>Quay lại Danh sách Chuyên gia</span>
+      </a>
+
+      @if (account()?.authorities?.includes('ROLE_ADMIN') || account()?.login === doc.user?.login) {
+        <a [routerLink]="['/doctor-profile', doc.id, 'edit']" class="btn btn-outline-primary btn-sm" style="border-radius: 9px">
+          <fa-icon icon="pencil-alt" class="me-1" /><span>Chỉnh Sửa Hồ Sơ</span>
+        </a>
+      }
+    </nav>
+
+    <jhi-alert-error />
+    <jhi-alert />
+
+    <!-- 1. FULL-WIDTH PREMIUM DOCTOR HERO PANEL -->
+    <header class="dr-hero-panel">
+      <div class="dr-hero-layout">
+        <!-- Avatar & Verified Badge -->
+        <div class="dr-hero-avatar-wrap">
+          <div class="dr-hero-initials">
+            {{ getInitials(doc.fullName) }}
+          </div>
+          @if (doc.isActive) {
+            <div class="dr-hero-badge-verified" title="Chuyên gia Đã Được Thẩm Định">
+              <i class="bi bi-patch-check-fill"></i>
+            </div>
+          }
+        </div>
+
+        <!-- Profile Main Identity -->
+        <div class="dr-hero-main">
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h1 class="dr-hero-name">{{ doc.fullName }}</h1>
+            @if (doc.isActive) {
+              <span
+                class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2.5 py-1"
+                style="font-size: 0.74rem; border-radius: 8px; font-weight: 650"
+              >
+                <i class="bi bi-patch-check-fill me-1"></i>Chuyên Gia Đã Xác Thực
+              </span>
+            }
+          </div>
+
+          <!-- Title -->
+          <div class="dr-hero-title">
+            <i class="bi bi-award"></i>
+            <span>{{ doc.title || 'Bác Sĩ & Chuyên Gia Tâm Lý Học Lâm Sàng' }}</span>
+          </div>
+
+          <!-- Specialization Chips -->
+          @if (doc.specializationses && doc.specializationses.length > 0) {
+            <div class="d-flex flex-wrap gap-1 mb-2">
+              @for (spec of doc.specializationses; track spec.id) {
+                <span class="dr-spec-pill">{{ spec.name }}</span>
+              }
+            </div>
+          }
+
+          <!-- Horizontal Key Stats Row -->
+          <div class="dr-hero-stats">
+            <div class="dr-hero-stat-pill">
+              <i class="bi bi-star-fill text-warning"></i>
+              <span><strong>4.9</strong> (50+ ca tham vấn hài lòng)</span>
+            </div>
+            <div class="dr-hero-stat-pill">
+              <i class="bi bi-briefcase text-primary"></i>
+              <span
+                ><strong>{{ doc.experienceYears || 5 }}+</strong> Năm Kinh Nghiệm Khám</span
+              >
+            </div>
+            @if (doc.consultationFee) {
+              <div class="dr-hero-stat-pill">
+                <i class="bi bi-tag text-primary"></i>
+                <span
+                  >Chi phí từ <strong style="color: var(--mb-primary)">{{ doc.consultationFee | number }} ₫</strong> / buổi</span
+                >
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. 2-COLUMN MAIN CONTENT LAYOUT (70% / 30%) -->
+    <div class="row g-4">
+      <!-- ═══ LEFT: Unified Clinical Profile Sheet (~70%) ═══ -->
+      <div class="col-lg-8">
+        <main class="dr-sheet">
+          <!-- 1. About the Specialist -->
+          <section class="dr-sheet-section">
+            <h2 class="dr-heading"><i class="bi bi-person-lines-fill"></i> Giới Thiệu Chuyên Môn</h2>
+            <p style="white-space: pre-line; line-height: 1.7; color: #334155; font-size: 0.95rem">
+              {{ doc.bio || 'Chuyên gia tâm lý tận tâm với phương pháp trị liệu nhận thức hành vi và đồng hành cùng thân chủ trên hành trình chữa lành.' }}
+            </p>
+          </section>
+
+          <!-- 2. Credentials & Background -->
+          <section class="dr-sheet-section">
+            <h2 class="dr-heading"><i class="bi bi-mortarboard"></i> Bằng Cấp &amp; Thông Tin Hành Nghề</h2>
+            <div class="dr-cred-grid">
+              <div class="dr-cred-cell">
+                <div class="dr-cred-lbl"><i class="bi bi-briefcase me-1"></i> Kinh Nghiệm Thực Hành</div>
+                <div class="dr-cred-val">{{ doc.experienceYears || 5 }}+ năm lâm sàng</div>
+              </div>
+              <div class="dr-cred-cell">
+                <div class="dr-cred-lbl"><i class="bi bi-gender-ambiguous me-1"></i> Giới Tính</div>
+                <div class="dr-cred-val">{{ doc.gender === 'MALE' ? 'Nam' : (doc.gender === 'FEMALE' ? 'Nữ' : 'Khác / Chưa cập nhật') }}</div>
+              </div>
+              <div class="dr-cred-cell">
+                <div class="dr-cred-lbl"><i class="bi bi-shield-check me-1"></i> Trạng Thái Hoạt Động</div>
+                <div class="dr-cred-val text-success">{{ doc.isActive ? 'Đang Nhận Bệnh Nhân' : 'Tạm Nghỉ' }}</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. Available Slots & Consultation Schedule -->
+          <section class="dr-sheet-section">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="dr-heading mb-0"><i class="bi bi-calendar-check"></i> Lịch Khám Còn Trống</h2>
+              <span class="badge bg-light text-secondary border px-2.5 py-1">
+                {{ availableSlots().length }} ca rảnh
+              </span>
+            </div>
+
+            @if (isLoadingSlots()) {
+              <div class="text-center py-4 text-muted">
+                <fa-icon icon="sync" [animation]="'spin'" class="me-2" />
+                <span>Đang tải lịch rảnh của bác sĩ...</span>
+              </div>
+            } @else if (availableSlots().length === 0) {
+              <div class="p-4 rounded-3 border bg-light text-center">
+                <i class="bi bi-calendar-x text-muted fs-3 d-block mb-2"></i>
+                <div class="fw-bold text-dark mb-1">Hiện chưa có ca rảnh mở sẵn</div>
+                <p class="text-muted small mb-0">Vui lòng nhắn tin trực tiếp với bác sĩ để thỏa thuận khung giờ tham vấn phù hợp.</p>
+              </div>
+            } @else {
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                @for (slot of availableSlots(); track slot.id) {
+                  <button type="button" class="slot-chip" [class.selected]="selectedSlot()?.id === slot.id" (click)="selectSlot(slot)">
+                    <i class="bi bi-clock"></i>
+                    <span>{{ formatSlotDisplay(slot) }}</span>
+                  </button>
+                }
+              </div>
+
+              @if (selectedSlot(); as sel) {
+                <div class="p-3 rounded-3 mb-3" style="background: #f0fdf4; border: 1px solid #bbf7d0">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                      <div class="fw-bold text-success" style="font-size: 0.9rem">
+                        <i class="bi bi-check-circle-fill me-1"></i>Khung Giờ Đã Chọn:
+                      </div>
+                      <div class="small text-dark mt-0.5">
+                        {{ formatSelectedSlotFull(sel) }}
+                      </div>
+                    </div>
+                    @if (!isDoctor()) {
+                      <button type="button" class="btn btn-primary btn-sm px-3" (click)="bookAppointment(sel)" style="border-radius: 9px">
+                        <i class="bi bi-calendar2-check me-1"></i>Đặt Lịch Ca Này
+                      </button>
+                    } @else {
+                      <span class="badge bg-light text-muted border px-2.5 py-1.5" style="font-size: 0.8rem">
+                        <i class="bi bi-info-circle me-1"></i>Đã Chọn Khung Giờ
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        </main>
+      </div>
+
+      <!-- ═══ RIGHT: Sticky Booking & Practice Sidebar (~30%) ═══ -->
+      <aside class="col-lg-4">
+        <div class="dr-booking-sidebar">
+          <!-- Fee Banner -->
+          <div class="dr-fee-banner">
+            <div class="text-uppercase text-muted fw-bold small mb-1" style="font-size: 0.72rem; letter-spacing: 0.05em">
+              Mức Phí Tham Vấn Tiêu Chuẩn
+            </div>
+            <div class="dr-fee-price">
+              {{ doc.consultationFee ? (doc.consultationFee | number) + ' ₫' : 'Liên hệ phòng khám' }}
+            </div>
+            <div class="text-muted small mt-1">cho mỗi phiên trị liệu tâm lý 60 phút</div>
+          </div>
+
+          <!-- Contact Details -->
+          <div class="mb-4">
+            @if (doc.phone) {
+              <a class="dr-contact-row" [href]="'tel:' + doc.phone">
+                <i class="bi bi-telephone text-primary fs-5"></i>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="d-block text-muted" style="font-size: 0.7rem; font-weight: 700">ĐIỆN THOẠI</span>
+                  <span class="d-block text-dark fw-bold text-truncate">{{ doc.phone }}</span>
+                </div>
+              </a>
+            }
+            @if (doc.user?.login) {
+              <div class="dr-contact-row">
+                <i class="bi bi-person-badge text-primary fs-5"></i>
+                <div class="flex-grow-1 min-w-0">
+                  <span class="d-block text-muted" style="font-size: 0.7rem; font-weight: 700">MÃ BÁC SĨ / TÀI KHOẢN</span>
+                  <span class="d-block text-dark fw-bold text-truncate">{{ doc.user?.login }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex flex-column gap-2">
+            @if (!isDoctor()) {
+              <button type="button" class="dr-cta-book-btn" (click)="bookAppointment()">
+                <i class="bi bi-calendar-check me-1"></i>Đặt Lịch Hẹn Ngay
+              </button>
+
+              <a [routerLink]="['/messages']" [queryParams]="{ doctorId: doc.id, doctorName: doc.fullName }" class="btn btn-outline-teal w-100 py-2.5 rounded-pill fw-bold" style="border: 1.5px solid #0f766e; color: #0f766e;">
+                <i class="bi bi-chat-dots-fill me-1"></i>Nhắn Tin Tư Vấn
+              </a>
+            } @else {
+              <div class="p-3 bg-light rounded-3 text-center border text-muted small fw-bold">
+                <i class="bi bi-shield-lock me-1"></i>Chế độ xem dành riêng cho Bác sĩ
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
+    </div>
+  }
+</div>
+

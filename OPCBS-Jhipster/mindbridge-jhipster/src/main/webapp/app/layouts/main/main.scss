@@ -1,0 +1,47 @@
+/* ==========================================================================
+   MindBridge Main Layout Styles
+   ========================================================================== */
+
+.mb-auth-fullscreen {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at 10% 20%, rgba(15, 118, 110, 0.08) 0%, rgba(246, 251, 248, 1) 90%);
+}
+
+.mb-portal-container {
+  display: flex;
+  min-height: 100vh;
+  padding-top: 0;
+  background: #f8fafc;
+}
+
+.mb-portal-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.75rem 2.25rem;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.mb-main-content {
+  min-height: calc(100vh - 120px);
+  padding-top: 68px; /* space for fixed top navbar */
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 991.98px) {
+  .mb-portal-container {
+    flex-direction: column;
+  }
+
+  .mb-portal-main {
+    padding: 1.25rem 1rem;
+  }
+}

@@ -1,0 +1,87 @@
+<div class="take-test-container container py-4">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Đang tải câu hỏi trắc nghiệm...</p>
+  </div>
+
+  <div *ngIf="!isLoading && test">
+    <!-- Header -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/patient/psychometrics']">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại danh mục
+          </a>
+          <span class="badge bg-primary fs-6">{{ test.category || 'Trắc nghiệm tâm lý' }}</span>
+        </div>
+        <h2 class="h3 fw-bold text-dark mb-2">{{ test.title }}</h2>
+        <p class="text-muted mb-3">{{ test.description }}</p>
+
+        <!-- Progress bar -->
+        <div class="d-flex justify-content-between text-muted small mb-1">
+          <span>Tiến độ hoàn thành: <strong>{{ answeredCount }}/{{ questions.length }}</strong> câu</span>
+          <span><strong>{{ progressPercentage }}%</strong></span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-success" role="progressbar" [style.width.%]="progressPercentage"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert / Error message -->
+    <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+    </div>
+
+    <!-- Questionnaire List -->
+    <div class="questionnaire-list mb-4">
+      <div
+        *ngFor="let q of questions; let i = index"
+        class="card border-0 shadow-sm mb-3 question-card"
+        [class.border-success]="answers[q.id!] !== undefined"
+      >
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="question-number-badge">{{ q.questionNumber || (i + 1) }}</div>
+            <div class="flex-grow-1">
+              <h5 class="fw-semibold text-dark mb-1">{{ q.questionText }}</h5>
+              <span *ngIf="q.category" class="badge bg-light text-muted border small">{{ q.category }}</span>
+            </div>
+          </div>
+
+          <!-- Options Grid -->
+          <div class="row g-2 pt-2">
+            <div *ngFor="let opt of scaleOptions" class="col-12 col-md-6 col-lg-3">
+              <button
+                type="button"
+                class="btn option-btn w-100 text-start p-3 h-100 rounded-3 border"
+                [class.active-option]="answers[q.id!] === opt.value"
+                (click)="selectScore(q.id!, opt.value)"
+              >
+                <div class="d-flex align-items-center">
+                  <div class="option-indicator me-2" [class.checked]="answers[q.id!] === opt.value">
+                    <i *ngIf="answers[q.id!] === opt.value" class="bi bi-check-lg"></i>
+                  </div>
+                  <span class="small fw-medium">{{ opt.label }}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="card border-0 shadow-sm bg-white p-4 text-center">
+      <h5 class="fw-bold mb-2">Đã trả lời: {{ answeredCount }} / {{ questions.length }} câu hỏi</h5>
+      <p class="text-muted small mb-3">Sau khi nộp bài, hệ thống sẽ tự động tính điểm theo thang đo chuẩn y tế và xuất báo cáo phân loại mức độ.</p>
+      <div>
+        <button class="btn btn-success btn-lg px-5 fw-bold rounded-pill" [disabled]="isSubmitting" (click)="submit()">
+          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isSubmitting" class="bi bi-send-check me-2"></i>Nộp Bài & Xem Kết Quả
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

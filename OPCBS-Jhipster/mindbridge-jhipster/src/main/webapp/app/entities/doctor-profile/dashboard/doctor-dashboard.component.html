@@ -1,0 +1,329 @@
+<div class="doctor-dashboard-container">
+  <!-- 1. Top Sub-Navigation (Matching C# Razor layout) -->
+  <nav class="doc-nav-bar">
+    <div class="doc-nav-links">
+      <a routerLink="/doctor/dashboard" class="doc-nav-link active">
+        <i class="fa-solid fa-chart-pie"></i> Tổng Quan
+      </a>
+      <a routerLink="/appointment" class="doc-nav-link">
+        <i class="fa-solid fa-calendar-check"></i> Lịch Hẹn
+      </a>
+      <a routerLink="/doctor/patients" class="doc-nav-link">
+        <i class="fa-solid fa-user-injured"></i> Hồ Sơ Bệnh Nhân
+      </a>
+      <a routerLink="/doctor/treatment-packages" class="doc-nav-link">
+        <i class="fa-solid fa-box-open"></i> Gói Trị Liệu
+      </a>
+      <a routerLink="/doctor/psychometrics" class="doc-nav-link">
+        <i class="fa-solid fa-brain"></i> Trắc Nghiệm Tâm Lý
+      </a>
+      <a routerLink="/doctor/subscriptions" class="doc-nav-link">
+        <i class="fa-solid fa-credit-card"></i> Gói Nền Tảng
+      </a>
+      <a routerLink="/doctor/verification" class="doc-nav-link">
+        <i class="fa-solid fa-file-signature"></i> Chứng Chỉ & Thẩm Định
+      </a>
+    </div>
+
+    <!-- Filter Buttons (Hôm nay / Tuần / Tháng) -->
+    <div class="period-toggle-group">
+      <button 
+        class="period-btn" 
+        [class.active]="selectedPeriod() === 'today'" 
+        (click)="loadDashboard('today')">
+        Hôm nay
+      </button>
+      <button 
+        class="period-btn" 
+        [class.active]="selectedPeriod() === 'week'" 
+        (click)="loadDashboard('week')">
+        Tuần này
+      </button>
+      <button 
+        class="period-btn" 
+        [class.active]="selectedPeriod() === 'month'" 
+        (click)="loadDashboard('month')">
+        Tháng này
+      </button>
+    </div>
+  </nav>
+
+  <!-- Notification Toast Alert -->
+  <div *ngIf="alertMessage()" class="cache-alert-toast">
+    <i class="fa-solid fa-bolt text-warning"></i> {{ alertMessage() }}
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner-border text-teal" role="status"></div>
+    <p>Đang tải dữ liệu Tổng quan & Redis Cache...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && dashboard() as d" class="dashboard-content">
+    <!-- 2. Refined Doctor Welcome Header -->
+    <header class="doc-header-card">
+      <div class="doc-info-left">
+        <div class="doc-avatar-beacon">
+          <i class="fa-solid fa-user-doctor"></i>
+          <span class="doc-status-dot"></span>
+        </div>
+        <div class="doc-title-group">
+          <div class="doc-badge-pill">
+            <i class="fa-solid fa-shield-halved"></i> {{ d.professionalTitle || 'CHUYÊN GIA TÂM LÝ LÂM SÀNG' }}
+          </div>
+          <h2 class="doc-name">{{ d.greeting }}</h2>
+          <p class="doc-subtext">
+            <i class="fa-solid fa-hospital me-1"></i> Trung tâm Tham vấn & Trị liệu Tâm lý MindBridge OPCBS
+          </p>
+        </div>
+      </div>
+
+      <!-- Redis Cache Performance Badge -->
+      <div class="cache-performance-card">
+        <div class="cache-status" [class.hit]="d.cacheHit" [class.miss]="!d.cacheHit">
+          <span *ngIf="d.cacheHit" class="badge-tag hit">
+            <i class="fa-solid fa-bolt"></i> REDIS CACHE HIT ({{ d.executionTimeMs }} ms)
+          </span>
+          <span *ngIf="!d.cacheHit" class="badge-tag miss">
+            <i class="fa-solid fa-database"></i> MYSQL FRESH QUERY ({{ d.executionTimeMs }} ms)
+          </span>
+        </div>
+        <div class="cache-meta">
+          <small class="text-muted">Key: <code>{{ d.cacheKey }}</code></small>
+        </div>
+        <button class="btn-evict-cache" (click)="evictCache()" [disabled]="isEvicting()">
+          <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isEvicting()"></i> Làm Mới Cache
+        </button>
+      </div>
+    </header>
+
+    <!-- 3. KPI Metrics Grid (4 Main Cards) -->
+    <section class="kpi-grid">
+      <!-- Card 1: Ca khám hôm nay -->
+      <div class="kpi-card teal-glow">
+        <div class="kpi-icon-wrap teal">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Ca Khám Hôm Nay</span>
+          <h3 class="kpi-value">{{ d.todaySessionsCount }} <span class="unit">lịch hẹn</span></h3>
+          <div class="kpi-sub-stats">
+            <span class="sub-stat success"><i class="fa-solid fa-check"></i> {{ d.todayCompletedCount }} Đã xong</span>
+            <span class="sub-stat pending"><i class="fa-solid fa-clock"></i> {{ d.todayUpcomingCount }} Sắp tới</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Tổng ca khám tháng này -->
+      <div class="kpi-card blue-glow">
+        <div class="kpi-icon-wrap blue">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Lịch Hẹn Trong Tháng</span>
+          <h3 class="kpi-value">{{ d.appointmentsThisMonth }}</h3>
+          <div class="kpi-trend positive">
+            <i class="fa-solid fa-arrow-trend-up"></i> +{{ d.appointmentsGrowthPercent }}% so với tháng trước
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Bệnh nhân & Tỉ lệ quay lại -->
+      <div class="kpi-card purple-glow">
+        <div class="kpi-icon-wrap purple">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Thân Chủ Đang Điều Trị</span>
+          <h3 class="kpi-value">{{ d.activePatientsCount }} <span class="unit">người</span></h3>
+          <div class="kpi-trend positive">
+            <i class="fa-solid fa-repeat"></i> {{ d.returningPatientRate }}% thân chủ quay lại
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Doanh thu ước tính -->
+      <div class="kpi-card amber-glow">
+        <div class="kpi-icon-wrap amber">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Doanh Thu Ước Tính</span>
+          <h3 class="kpi-value revenue">{{ formatCurrency(d.revenueThisMonth) }}</h3>
+          <div class="kpi-trend positive">
+            <i class="fa-solid fa-arrow-trend-up"></i> +{{ d.revenueGrowthPercent }}% tăng trưởng
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Action Center (Cần xử lý ngay) -->
+    <section class="action-center-banner">
+      <div class="action-left">
+        <div class="pulse-indicator"></div>
+        <div>
+          <h4 class="action-title">Cần Xử Lý Ngay (Action Center)</h4>
+          <p class="action-sub">Các tác vụ lâm sàng và duyệt lịch hẹn đang chờ bác sĩ hoàn tất</p>
+        </div>
+      </div>
+      <div class="action-pills">
+        <a routerLink="/appointment" class="action-pill warning">
+          <i class="fa-solid fa-inbox"></i> <strong>{{ d.pendingApprovalsCount }}</strong> Lịch hẹn chờ duyệt
+        </a>
+        <a routerLink="/doctor/patients" class="action-pill info">
+          <i class="fa-solid fa-file-medical"></i> <strong>{{ d.pendingNotesCount }}</strong> Bệnh án cần ghi chú
+        </a>
+        <a routerLink="/appointment" class="action-pill active-call">
+          <i class="fa-solid fa-video"></i> <strong>{{ d.inProgressAppointmentsCount }}</strong> Ca khám đang diễn ra
+        </a>
+      </div>
+    </section>
+
+    <!-- 5. Main Dashboard Split Layout -->
+    <div class="dashboard-split-grid">
+      <!-- Cột Trái: Lịch khám hôm nay (Today's Schedule Table) -->
+      <div class="dashboard-main-col">
+        <div class="content-card">
+          <div class="card-header-bar">
+            <h4 class="card-title">
+              <i class="fa-solid fa-clock-rotate-left text-teal me-2"></i> Lịch Khám Trong Ngày
+            </h4>
+            <span class="badge-count">{{ d.todaySessions.length }} ca khám</span>
+          </div>
+
+          <div *ngIf="d.todaySessions.length === 0" class="empty-state-mini">
+            <i class="fa-solid fa-calendar-check text-muted fa-2x mb-2"></i>
+            <p>Hôm nay bác sĩ không có ca khám nào còn lại.</p>
+          </div>
+
+          <div *ngIf="d.todaySessions.length > 0" class="table-responsive">
+            <table class="table modern-table">
+              <thead>
+                <tr>
+                  <th>Thời Gian</th>
+                  <th>Thân Chủ / Bệnh Nhân</th>
+                  <th>Hình Thức</th>
+                  <th>Lý Do Khám</th>
+                  <th>Trạng Thái</th>
+                  <th class="text-end">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of d.todaySessions">
+                  <td>
+                    <div class="time-slot-pill">
+                      <i class="fa-regular fa-clock me-1"></i> {{ s.timeRange }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="patient-cell">
+                      <strong class="patient-name">{{ s.patientName }}</strong>
+                      <small class="text-muted d-block">{{ s.patientPhone || 'Chưa cập nhật SĐT' }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="mode-badge" [class.online]="s.consultationMode === 'ONLINE'" [class.offline]="s.consultationMode === 'OFFLINE'">
+                      <i [class]="s.consultationMode === 'ONLINE' ? 'fa-solid fa-video' : 'fa-solid fa-building'"></i>
+                      {{ s.consultationMode === 'ONLINE' ? 'Trực Tuyến' : 'Tại Phòng Khám' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="reason-preview" [title]="s.reason || 'Khám tham vấn tâm lý'">
+                      {{ s.reason || 'Khám tham vấn tâm lý' | slice:0:30 }}...
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [class]="s.status.toLowerCase()">
+                      {{ s.status }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <a [routerLink]="['/appointment', s.id, 'view']" class="btn btn-sm btn-outline-teal me-1">
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Biểu đồ Xu hướng số ca khám trong tuần -->
+        <div class="content-card mt-3">
+          <div class="card-header-bar">
+            <h4 class="card-title">
+              <i class="fa-solid fa-chart-simple text-blue me-2"></i> Tần Suất Ca Khám Trong Tuần
+            </h4>
+          </div>
+          <div class="weekly-chart-bars">
+            <div *ngFor="let point of d.weeklyChartData" class="chart-bar-col">
+              <div class="bar-track">
+                <div class="bar-fill" [style.height.%]="(point.sessionsCount / 8) * 100"></div>
+              </div>
+              <span class="bar-count">{{ point.sessionsCount }}</span>
+              <span class="bar-day">{{ point.dayOfWeek }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cột Phải: Lịch hẹn sắp tới & Phân bổ Thân chủ -->
+      <div class="dashboard-side-col">
+        <!-- Upcoming Sessions -->
+        <div class="content-card">
+          <div class="card-header-bar">
+            <h4 class="card-title">
+              <i class="fa-solid fa-calendar-days text-purple me-2"></i> Lịch Hẹn Sắp Tới
+            </h4>
+            <a routerLink="/appointment" class="view-all-link">Xem tất cả</a>
+          </div>
+
+          <div class="upcoming-list">
+            <div *ngFor="let item of d.upcomingAppointments" class="upcoming-item">
+              <div class="item-date-badge">
+                <i class="fa-regular fa-calendar me-1"></i> {{ item.timeRange }}
+              </div>
+              <div class="item-details">
+                <strong class="item-patient">{{ item.patientName }}</strong>
+                <span class="item-mode">{{ item.consultationMode === 'ONLINE' ? 'Khám Online' : 'Tại Clinic' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Retention Distribution -->
+        <div class="content-card mt-3">
+          <div class="card-header-bar">
+            <h4 class="card-title">
+              <i class="fa-solid fa-chart-pie text-amber me-2"></i> Phân Loại Thân Chủ
+            </h4>
+          </div>
+          <div class="retention-breakdown">
+            <div class="retention-row">
+              <span>Thân chủ mới (1 buổi):</span>
+              <strong>{{ d.singleVisitPercent }}%</strong>
+            </div>
+            <div class="progress mb-3" style="height: 6px;">
+              <div class="progress-bar bg-info" [style.width.%]="d.singleVisitPercent"></div>
+            </div>
+
+            <div class="retention-row">
+              <span>Trị liệu trung hạn (2-3 buổi):</span>
+              <strong>{{ d.repeat2To3Percent }}%</strong>
+            </div>
+            <div class="progress mb-3" style="height: 6px;">
+              <div class="progress-bar bg-teal" [style.width.%]="d.repeat2To3Percent"></div>
+            </div>
+
+            <div class="retention-row">
+              <span>Đồng hành dài hạn (4+ buổi):</span>
+              <strong>{{ d.loyal4PlusPercent }}%</strong>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar bg-purple" [style.width.%]="d.loyal4PlusPercent"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

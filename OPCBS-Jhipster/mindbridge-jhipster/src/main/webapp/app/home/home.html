@@ -1,0 +1,251 @@
+<!-- Hero Section with Cloud Video Background -->
+<section class="mb-hero">
+  <!-- Video Background streamed from Cloud CDN -->
+  <video class="hero-video-bg" autoplay loop muted playsinline>
+    <source src="https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Soft Translucent Overlay for High Readability -->
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content container">
+    <h1 class="hero-title">
+      Kết Nối Với Chuyên Gia<br />
+      Tâm Lý & Trị Liệu Hàng Đầu
+    </h1>
+    <p class="hero-subtitle">
+      MindBridge giúp bạn tiếp cận dịch vụ chăm sóc sức khỏe tinh thần đáng tin cậy thông qua đội ngũ bác sĩ chuyên nghiệp, phác đồ cá nhân hóa và bảo mật tuyệt đối.
+    </p>
+
+    <!-- Search Box in Hero -->
+    <div class="hero-search-box mb-4">
+      <form (ngSubmit)="onSearch()" class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
+        <div class="d-flex align-items-center flex-grow-1 px-2">
+          <i class="bi bi-search text-muted me-2"></i>
+          <input
+            type="text"
+            class="form-control hero-search-input"
+            placeholder="Tìm theo tên bác sĩ, học vị, chuyên khoa..."
+            [(ngModel)]="searchKeyword"
+            name="searchKeyword"
+          />
+        </div>
+        <div style="min-width: 220px" class="px-2">
+          <select class="form-select border-0 bg-transparent text-secondary" [(ngModel)]="selectedSpecializationId" name="specializationId">
+            <option [ngValue]="null">Tất Cả Chuyên Khoa</option>
+            @for (spec of specializations(); track spec.id) {
+              <option [ngValue]="spec.id">{{ spec.name }}</option>
+            }
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary px-4" style="border-radius: 12px; font-weight: 600">
+          <i class="bi bi-search me-1"></i>Tìm Bác Sĩ
+        </button>
+      </form>
+    </div>
+
+    <!-- Hero CTA Buttons -->
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a routerLink="/doctor-profile" class="btn btn-primary btn-lg px-4 pulse-glow" style="border-radius: 9999px; font-weight: 600">
+        <i class="bi bi-search-heart me-2"></i>Danh Sách Bác Sĩ
+      </a>
+      @if (!account()) {
+        <a
+          routerLink="/account/register"
+          class="btn btn-outline-dark btn-lg px-4"
+          style="border-radius: 9999px; font-weight: 600; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(8px)"
+        >
+          Đăng Ký Khám Bệnh
+        </a>
+        <a
+          routerLink="/account/register-doctor"
+          class="btn btn-outline-dark btn-lg px-4"
+          style="border-radius: 9999px; font-weight: 600; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(8px)"
+        >
+          <i class="bi bi-heart-pulse me-1"></i>Hợp Tác Bác Sĩ
+        </a>
+      }
+    </div>
+  </div>
+</section>
+
+<div class="landing-container">
+  <!-- 1. Trust Stats Strip -->
+  <div class="stats-strip-card mb-5">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-3 col-6 stat-divider">
+        <div class="stat-item-box">
+          <div class="stat-icon-wrapper">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div>
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Bác Sĩ Xác Thực</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6 stat-divider">
+        <div class="stat-item-box">
+          <div class="stat-icon-wrapper">
+            <i class="bi bi-emoji-smile"></i>
+          </div>
+          <div>
+            <div class="stat-number">10.000+</div>
+            <div class="stat-label">Bệnh Nhân Hài Lòng</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6 stat-divider">
+        <div class="stat-item-box">
+          <div class="stat-icon-wrapper">
+            <i class="bi bi-star-fill text-warning"></i>
+          </div>
+          <div>
+            <div class="stat-number">4.9/5</div>
+            <div class="stat-label">Đánh Giá Xuất Sắc</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-6">
+        <div class="stat-item-box">
+          <div class="stat-icon-wrapper">
+            <i class="bi bi-lock-fill"></i>
+          </div>
+          <div>
+            <div class="stat-number">100%</div>
+            <div class="stat-label">Bảo Mật Y Khoa</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Browse by Specialization -->
+  <section class="landing-section">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="landing-section-title">Khám Phá Theo Chuyên Khoa</h2>
+        <p class="landing-section-subtitle">Tìm kiếm sự hỗ trợ chuyên sâu phù hợp nhất với hành trình sức khỏe tâm lý của bạn.</p>
+      </div>
+      <a routerLink="/doctor-profile" class="landing-section-link"> Xem tất cả bác sĩ <i class="bi bi-arrow-right"></i> </a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-3">
+      @for (spec of specializations(); track spec.id) {
+        <button type="button" class="spec-pill-chip" (click)="filterBySpecialization(spec.id)">
+          <i class="bi bi-heart-pulse-fill"></i>
+          <span>{{ spec.name }}</span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <!-- 3. Featured Therapists Section -->
+  <section class="landing-section">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+      <div>
+        <h2 class="landing-section-title">Đội Ngũ Bác Sĩ Tiêu Biểu</h2>
+        <p class="landing-section-subtitle">Những chuyên gia tâm lý đầu ngành, giàu kinh nghiệm sẵn sàng đồng hành cùng bạn.</p>
+      </div>
+      <a routerLink="/doctor-profile" class="landing-section-link"> Xem toàn bộ danh bạ <i class="bi bi-arrow-right"></i> </a>
+    </div>
+
+    <div class="row g-4">
+      @for (doc of featuredDoctors(); track doc.id) {
+        <div class="col-sm-6 col-lg-3">
+          <a [routerLink]="['/doctor-profile', doc.id, 'view']" class="doctor-landing-card landing-glass-card">
+            <div class="doctor-avatar-box">
+              <div class="doctor-avatar-placeholder">
+                {{ getInitials(doc.fullName) }}
+              </div>
+              <span class="doctor-verified-badge" title="Bác Sĩ Đã Xác Thực">
+                <i class="bi bi-check-circle-fill"></i>
+              </span>
+            </div>
+            <h3 class="doctor-landing-name">{{ doc.fullName }}</h3>
+            <div class="doctor-landing-specialty">{{ doc.title || 'Bác Sĩ Trị Liệu Tâm Lý' }}</div>
+            <p class="doctor-landing-bio">{{ doc.bio || 'Chăm sóc tận tâm, lắng nghe và đồng hành cùng người bệnh trong mọi giai đoạn.' }}</p>
+
+            <div class="d-flex justify-content-between align-items-center w-100 border-top pt-2 mt-auto text-muted small">
+              <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ doc.experienceYears || 5 }}+ năm kinh nghiệm</span>
+              @if (doc.consultationFee) {
+                <span class="fw-bold text-primary">{{ doc.consultationFee | number }} đ</span>
+              }
+            </div>
+
+            <div class="doctor-card-btn mt-3">
+              <i class="bi bi-calendar-event"></i>
+              <span>Xem Hồ Sơ & Đặt Hẹn</span>
+            </div>
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- 4. How MindBridge Works -->
+  <section class="landing-section">
+    <div class="text-center mb-5">
+      <h2 class="landing-section-title">Quy Trình Khám Tư Vấn Tại MindBridge</h2>
+      <p class="landing-section-subtitle">3 bước đơn giản, bảo mật và tiện lợi để bắt đầu hành trình cải thiện sức khỏe tinh thần.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="how-step-card landing-glass-card">
+          <div class="how-step-badge">01</div>
+          <div class="how-step-icon">
+            <i class="bi bi-search-heart"></i>
+          </div>
+          <h3 class="fw-bold fs-5 mb-2">Tìm Bác Sĩ Phù Hợp</h3>
+          <p class="text-muted small mb-0">Tra cứu danh sách bác sĩ theo chuyên môn, chứng chỉ y khoa, số năm kinh nghiệm và nhận xét từ người bệnh.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="how-step-card landing-glass-card">
+          <div class="how-step-badge">02</div>
+          <div class="how-step-icon">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <h3 class="fw-bold fs-5 mb-2">Chọn Khung Giờ Khám</h3>
+          <p class="text-muted small mb-0">Lựa chọn ngày giờ khám trực tuyến (Video Call) hoặc trực tiếp tại phòng khám theo lịch trống của bác sĩ.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="how-step-card landing-glass-card">
+          <div class="how-step-badge">03</div>
+          <div class="how-step-icon">
+            <i class="bi bi-chat-heart"></i>
+          </div>
+          <h3 class="fw-bold fs-5 mb-2">Bắt Đầu Trị Liệu</h3>
+          <p class="text-muted small mb-0">Nhận tư vấn chuyên sâu, hướng dẫn phác đồ điều trị và đồng hành riêng tư cùng chuyên gia.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Final CTA Banner -->
+  <section class="landing-section mb-0">
+    <div class="cta-banner-landing">
+      <div class="cta-banner-content">
+        <h2 class="cta-banner-title">Bắt Đầu Hành Trình Chăm Sóc Sức Khỏe Tinh Thần Ngay Hôm Nay</h2>
+        <p class="cta-banner-desc">
+          Đừng ngần ngại chia sẻ. Đội ngũ bác sĩ và chuyên gia tâm lý MindBridge luôn ở đây để lắng nghe và đồng hành cùng bạn.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a routerLink="/doctor-profile" class="btn-cta-primary">
+            <i class="bi bi-search me-2"></i>Tìm Bác Sĩ Ngay
+          </a>
+          @if (!account()) {
+            <a
+              routerLink="/account/register"
+              class="btn-cta-secondary"
+            >
+              Đăng Ký Tài Khoản Miễn Phí
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

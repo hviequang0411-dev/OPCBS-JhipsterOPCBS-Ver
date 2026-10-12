@@ -1,0 +1,90 @@
+/**
+ * MindBridge / OPCBS foundation module.
+ *
+ * JHipster owns User and Authority. PatientProfile and DoctorProfile extend
+ * the built-in User instead of introducing a second identity implementation.
+ */
+enum AccountStatus {
+  ACTIVE,
+  INACTIVE,
+  LOCKED
+}
+enum Gender {
+  MALE,
+  FEMALE,
+  OTHER
+}
+enum VerificationStatus {
+  DRAFT,
+  SUBMITTED,
+  APPROVED,
+  REJECTED,
+  REQUIRES_ADDITIONAL_INFO
+}
+enum CertificateType {
+  DEGREE,
+  LICENSE,
+  SPECIALIZATION,
+  OTHER
+}
+enum ConsultationMode {
+  ONLINE,
+  IN_PERSON,
+  BOTH
+}
+enum SlotStatus {
+  AVAILABLE,
+  BOOKED,
+  BLOCKED,
+  EXPIRED,
+  CANCELLED,
+  COMPLETED
+}
+enum AppointmentStatus {
+  PENDING,
+  ACCEPTED,
+  REJECTED,
+  IN_PROGRESS,
+  COMPLETED,
+  CANCELLED,
+  RESCHEDULE_REQUESTED,
+  ABSENT,
+  EXPIRED
+}
+entity PatientProfile {
+   fullName String required maxlength(160)
+  email String required unique maxlength(254)
+  phone String maxlength(30)  
+  dateOfBirth LocalDate
+  gender Gender
+  address String maxlength(500)
+  emergencyContactName String maxlength(120)
+  emergencyContactPhone String maxlength(30)
+  medicalHistory TextBlob
+  accountStatus AccountStatus required
+}
+entity DoctorProfile {
+  professionalTitle String maxlength(200)
+  biography TextBlob
+  experienceYears Integer min(0)
+  verificationStatus VerificationStatus required
+  visible Boolean required
+  averageRating BigDecimal min(0) max(5)
+  reviewCount Integer min(0)
+  gender Gender
+  dateOfBirth LocalDate
+  address String maxlength(500)
+  education TextBlob
+  careerBackground TextBlob
+  consultationFee BigDecimal min(0)
+  consultationFeePublic Boolean required
+  careApproach TextBlob
+  spokenLanguages String maxlength(500)
+  consultationTypes String maxlength(200)
+  licenseNumber String maxlength(100)
+  licenseExpiryDate LocalDate
+}
+
+entity Specialization {
+  name String required unique maxlength(160)
+}

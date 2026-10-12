@@ -1,0 +1,35 @@
+{
+  "annotations": {
+    "changelogDate": "20260928102425"
+  },
+  "applications": ["opcbs"],
+  "documentation": "Danh mục chuyên khoa y tế (ví dụ: Tâm lý, Thần kinh, Nhi khoa, Đa khoa...)",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "name",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique", "maxlength"],
+      "fieldValidateRulesMaxlength": "160"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    }
+  ],
+  "name": "Specialization",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityName": "doctorProfile",
+      "otherEntityRelationshipName": "specializations",
+      "relationshipName": "doctors",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

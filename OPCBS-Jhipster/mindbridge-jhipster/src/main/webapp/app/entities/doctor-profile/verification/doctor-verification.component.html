@@ -1,0 +1,506 @@
+<div class="verification-page-container">
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a routerLink="/doctor-profile" class="btn btn-sm btn-icon btn-light rounded-circle text-muted" title="Quay lại">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="page-title h3 fw-bold text-dark mb-0">
+          <i class="bi bi-shield-check text-primary me-2"></i>Thẩm Định Hồ Sơ & Chứng Chỉ Hành Nghề
+        </h1>
+      </div>
+      <p class="page-subtitle text-muted mb-0">
+        Xác thực giấy phép chuyên môn y khoa & chứng chỉ hành nghề để kích hoạt lịch tư vấn trên MindBridge.
+      </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" (click)="loadVerification()" [disabled]="isLoading()">
+        <i class="bi bi-arrow-clockwise me-1" [class.spin]="isLoading()"></i>Làm mới dữ liệu
+      </button>
+      <a routerLink="/doctor-profile" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        <i class="bi bi-person-badge me-1"></i>Hồ sơ chuyên gia
+      </a>
+    </div>
+  </div>
+
+  <!-- Dynamic Alert Banner -->
+  @if (alertMessage()) {
+    <div class="alert alert-{{ alertType() }} alert-dismissible fade show border-0 shadow-sm mb-4 rounded-3 d-flex align-items-center gap-2" role="alert">
+      @if (alertType() === 'success') {
+        <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+      } @else if (alertType() === 'danger') {
+        <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+      } @else if (alertType() === 'warning') {
+        <i class="bi bi-exclamation-circle-fill fs-5 text-warning"></i>
+      } @else {
+        <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+      }
+      <div class="flex-grow-1 fw-medium">{{ alertMessage() }}</div>
+      <button type="button" class="btn-close" (click)="alertMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="card border-0 shadow-sm p-5 text-center my-4 rounded-4">
+      <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+      <h6 class="fw-semibold text-dark">Đang tải thông tin thẩm định hồ sơ...</h6>
+      <p class="text-muted small mb-0">Vui lòng chờ trong giây lát</p>
+    </div>
+  } @else {
+    @if (verification() && verification()?.status !== 'DRAFT') {
+      <!-- VERIFICATION TIMELINE / PROGRESS STEPPER -->
+      <div class="card border-0 shadow-sm mb-4 rounded-4 stepper-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-activity text-primary"></i>Tiến Trình Thẩm Định Hồ Sơ
+            </h5>
+            <span class="badge px-3 py-2 rounded-pill fw-semibold"
+                  [style.background-color]="getStatusClass(verification()?.status).bg"
+                  [style.color]="getStatusClass(verification()?.status).text"
+                  [style.border]="'1px solid ' + getStatusClass(verification()?.status).border">
+              {{ getStatusClass(verification()?.status).label }}
+            </span>
+          </div>
+
+          <div class="stepper-wrapper">
+            <!-- Step 1: Profile Submitted -->
+            <div class="step-item completed">
+              <div class="step-icon-box bg-success text-white shadow-sm">
+                <i class="bi bi-send-check fs-5"></i>
+              </div>
+              <div class="step-content">
+                <div class="step-title fw-bold text-dark">Hồ Sơ Đã Gửi</div>
+                <div class="step-subtitle text-muted small">
+                  {{ verification()?.submittedAt ? (verification()?.submittedAt | date:'dd/MM/yyyy HH:mm') : 'Đã tiếp nhận' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="step-connector completed"></div>
+
+            <!-- Step 2: Support Team Review -->
+            <div class="step-item" [class.active]="verification()?.status === 'PENDING' || verification()?.status === 'SUBMITTED'"
+                                   [class.completed]="verification()?.status === 'APPROVED' || verification()?.status === 'REJECTED'">
+              <div class="step-icon-box shadow-sm"
+                   [ngClass]="{
+                     'bg-warning text-dark': verification()?.status === 'PENDING' || verification()?.status === 'SUBMITTED',
+                     'bg-success text-white': verification()?.status === 'APPROVED',
+                     'bg-danger text-white': verification()?.status === 'REJECTED',
+                     'bg-light text-muted': verification()?.status === 'DRAFT'
+                   }">
+                @if (verification()?.status === 'APPROVED' || verification()?.status === 'REJECTED') {
+                  <i class="bi bi-check-lg fs-5"></i>
+                } @else {
+                  <i class="bi bi-hourglass-split fs-5"></i>
+                }
+              </div>
+              <div class="step-content">
+                <div class="step-title fw-bold text-dark">Hội Đồng Y Khoa Thẩm Định</div>
+                <div class="step-subtitle text-muted small">Kiểm tra tính pháp lý & chứng chỉ</div>
+              </div>
+            </div>
+
+            <div class="step-connector" [class.completed]="verification()?.status === 'APPROVED' || verification()?.status === 'REJECTED'"></div>
+
+            <!-- Step 3: Verification Result -->
+            <div class="step-item" [class.completed]="verification()?.status === 'APPROVED'" [class.failed]="verification()?.status === 'REJECTED'">
+              <div class="step-icon-box shadow-sm"
+                   [ngClass]="{
+                     'bg-success text-white': verification()?.status === 'APPROVED',
+                     'bg-danger text-white': verification()?.status === 'REJECTED',
+                     'bg-light text-muted': verification()?.status !== 'APPROVED' && verification()?.status !== 'REJECTED'
+                   }">
+                @if (verification()?.status === 'APPROVED') {
+                  <i class="bi bi-patch-check-fill fs-5"></i>
+                } @else if (verification()?.status === 'REJECTED') {
+                  <i class="bi bi-patch-exclamation-fill fs-5"></i>
+                } @else {
+                  <i class="bi bi-shield fs-5"></i>
+                }
+              </div>
+              <div class="step-content">
+                <div class="step-title fw-bold text-dark">Kết Quả Xác Thực</div>
+                <div class="step-subtitle text-muted small">
+                  {{ verification()?.status === 'APPROVED' ? 'Đã kích hoạt hành nghề' : verification()?.status === 'REJECTED' ? 'Cần bổ sung hồ sơ' : 'Đang xử lý' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CURRENT VERIFICATION PROFILE DETAILS CARD -->
+      <div class="card border-0 shadow-sm mb-4 rounded-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-medical text-primary"></i>Hồ Sơ Năng Lực Chuyên Môn
+          </h5>
+          <span class="badge px-3 py-2 rounded-pill fw-semibold"
+                [style.background-color]="getStatusClass(verification()?.status).bg"
+                [style.color]="getStatusClass(verification()?.status).text"
+                [style.border]="'1px solid ' + getStatusClass(verification()?.status).border">
+            {{ getStatusClass(verification()?.status).label }}
+          </span>
+        </div>
+
+        <div class="card-body p-4">
+          <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-person me-1"></i>Họ và tên Bác sĩ / Chuyên gia</div>
+              <div class="fw-bold text-dark fs-6">{{ verification()?.doctorName || '—' }}</div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-briefcase me-1"></i>Chuyên khoa / Học hàm</div>
+              <div class="fw-bold text-dark fs-6">{{ verification()?.specialization || '—' }}</div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-qr-code me-1"></i>Số Chứng Chỉ Hành Nghề (CCHN)</div>
+              <div>
+                <code class="license-badge px-2 py-1 rounded">{{ verification()?.licenseNumber || '—' }}</code>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-award me-1"></i>Kinh nghiệm lâm sàng</div>
+              <div class="fw-bold text-dark fs-6">{{ verification()?.experienceYears }} năm kinh nghiệm</div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-mortarboard me-1"></i>Học vị / Bằng cấp cao nhất</div>
+              <div class="fw-bold text-dark fs-6">{{ verification()?.education || 'Bác Sĩ Chuyên Khoa - ĐHY' }}</div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+              <div class="text-muted small mb-1"><i class="bi bi-clock-history me-1"></i>Thời gian nộp hồ sơ</div>
+              <div class="fw-bold text-dark fs-6">
+                {{ verification()?.submittedAt ? (verification()?.submittedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
+              </div>
+            </div>
+          </div>
+
+          @if (verification()?.notes) {
+            <hr class="my-4" />
+            <div class="text-muted small mb-1"><i class="bi bi-card-text me-1"></i>Tóm tắt kinh nghiệm & Lĩnh vực điều trị chuyên sâu</div>
+            <p class="mb-0 text-dark small bg-light p-3 rounded-3" style="line-height: 1.6;">
+              {{ verification()?.notes }}
+            </p>
+          }
+
+          <hr class="my-4" />
+
+          <!-- CERTIFICATE DOCUMENT SECTION -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-check-fill text-primary"></i>Tệp Tin Chứng Chỉ Hành Nghề Y Khoa
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" (click)="openModal()">
+              <i class="bi bi-cloud-arrow-up me-1"></i>Thay thế / Tải lên bản mới
+            </button>
+          </div>
+
+          @if (verification()?.certificateUrl) {
+            <div class="certificate-preview-card border bg-light rounded-4 overflow-hidden mb-3">
+              <div class="p-3 bg-white border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  @if (isFileTypePdf(verification()?.certificateUrl)) {
+                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-3"></i>
+                  } @else {
+                    <i class="bi bi-file-earmark-image-fill text-primary fs-3"></i>
+                  }
+                  <div>
+                    <div class="fw-bold text-dark small">{{ verification()?.certificateFileName || 'Chung_Chi_Hanh_Nghe_Bac_Si' }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                      <i class="bi bi-calendar-check me-1"></i>Cập nhật:
+                      {{ verification()?.certificateUploadedAt ? (verification()?.certificateUploadedAt | date:'dd/MM/yyyy HH:mm') : (verification()?.submittedAt | date:'dd/MM/yyyy HH:mm') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                  <a [href]="verification()?.certificateUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary rounded-pill px-3">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Mở trong tab mới
+                  </a>
+                  <a [href]="verification()?.certificateUrl" download class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                    <i class="bi bi-download me-1"></i>Tải về máy
+                  </a>
+                </div>
+              </div>
+
+              <!-- Media Preview Viewport -->
+              <div class="preview-viewport p-3 text-center">
+                @if (isFileTypeImage(verification()?.certificateUrl)) {
+                  <img [src]="verification()?.certificateUrl" alt="Chứng chỉ hành nghề"
+                       class="img-fluid rounded-3 shadow-sm certificate-image"
+                       (click)="openModal()" title="Nhấp để xem chi tiết / thay thế" />
+                } @else if (isFileTypePdf(verification()?.certificateUrl)) {
+                  <div class="ratio ratio-16x9 pdf-container rounded-3 border">
+                    <iframe [src]="verification()?.certificateUrl" title="Chứng chỉ PDF"></iframe>
+                  </div>
+                } @else {
+                  <div class="py-4 text-center">
+                    <i class="bi bi-file-earmark-text text-muted display-4 mb-2"></i>
+                    <p class="text-muted small mb-0">Tệp tài liệu đã được lưu trữ an toàn trên hệ thống MindBridge.</p>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="empty-cert-dropzone card border-dashed text-center p-5 rounded-4 bg-light my-3" (click)="openModal()">
+              <i class="bi bi-file-earmark-arrow-up text-primary display-4 mb-3"></i>
+              <h6 class="fw-bold text-dark">Chưa Đính Kèm Chứng Chỉ Hành Nghề</h6>
+              <p class="text-muted small mb-3">
+                Vui lòng tải lên ảnh chụp hoặc tệp PDF chứng chỉ hành nghề để Hội đồng Y khoa hoàn tất phê duyệt hồ sơ.
+              </p>
+              <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 py-2 mx-auto">
+                <i class="bi bi-upload me-1"></i>Tải Lên Chứng Chỉ Ngay
+              </button>
+            </div>
+          }
+
+          @if (verification()?.reviewedAt) {
+            <hr class="my-4" />
+            <div class="row g-3 bg-light p-3 rounded-3 m-0 border">
+              <div class="col-md-6">
+                <div class="text-muted small mb-1">Thời gian thẩm định</div>
+                <div class="fw-semibold text-dark">{{ verification()?.reviewedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+              <div class="col-md-6">
+                <div class="text-muted small mb-1">Người thẩm định / Ban chuyên môn</div>
+                <div class="fw-semibold text-dark">{{ verification()?.reviewedByName || 'Hội Đồng Cố Vấn Y Khoa MindBridge' }}</div>
+              </div>
+            </div>
+          }
+
+          @if (verification()?.rejectionReason) {
+            <div class="alert alert-danger mt-4 mb-0 d-flex gap-3 border-0 shadow-sm rounded-3" role="alert">
+              <i class="bi bi-x-circle-fill fs-4 text-danger"></i>
+              <div>
+                <strong class="text-danger">Lý do từ chối hồ sơ:</strong>
+                <p class="mb-0 small mt-1 text-dark">{{ verification()?.rejectionReason }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (verification()?.status === 'REJECTED') {
+        <div class="text-center mt-4 mb-4">
+          <p class="text-muted small">Hồ sơ trước đó bị từ chối. Bạn có thể tải lên chứng chỉ hợp lệ mới và nộp lại yêu cầu xét duyệt.</p>
+          <button type="button" class="btn btn-primary px-4 rounded-pill" (click)="openModal()">
+            <i class="bi bi-arrow-repeat me-1"></i>Nộp Lại Chứng Chỉ Hành Nghề
+          </button>
+        </div>
+      }
+    } @else {
+      <!-- INITIAL SUBMISSION FORM (When status is DRAFT / New) -->
+      <div class="card border-0 shadow-sm mb-4 rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <div class="alert alert-info d-flex gap-3 mb-4 border-0 shadow-sm rounded-3">
+            <i class="bi bi-info-circle-fill fs-4 text-info"></i>
+            <div class="small">
+              Hồ sơ Bác sĩ cần được Hội đồng Y khoa & Bộ phận Hỗ trợ MindBridge thẩm định và phê duyệt tính pháp lý trước khi tài khoản có thể mở lịch và tiếp nhận tư vấn thân chủ.
+              Vui lòng cung cấp đầy đủ thông tin chuyên môn và đính kèm bản sao Giấy phép / Chứng chỉ hành nghề y khoa.
+            </div>
+          </div>
+
+          <form (ngSubmit)="submitInitialVerification()">
+            <h5 class="fw-bold mb-4 text-dark border-bottom pb-3 d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-medical text-primary"></i>Thông Tin Chuyên Môn & Giấy Phép Hành Nghề
+            </h5>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Họ và tên Bác sĩ / Chuyên gia <span class="text-danger">*</span></label>
+                <input type="text" [(ngModel)]="formData.doctorName" name="doctorName" class="form-control rounded-3" placeholder="vd: BS.CKII Nguyễn Văn An" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Chuyên khoa / Học hàm <span class="text-danger">*</span></label>
+                <input type="text" [(ngModel)]="formData.specialization" name="specialization" class="form-control rounded-3" placeholder="vd: Bác Sĩ Tâm Lý Lâm Sàng, Trị Liệu Trầm Cảm" required />
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Số Chứng Chỉ Hành Nghề (CCHN) <span class="text-danger">*</span></label>
+                <input type="text" [(ngModel)]="formData.licenseNumber" name="licenseNumber" class="form-control rounded-3" placeholder="vd: 012345/BYT-CCHN" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Số năm kinh nghiệm <span class="text-danger">*</span></label>
+                <input type="number" [(ngModel)]="formData.experienceYears" name="experienceYears" min="0" class="form-control rounded-3" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Học vị / Bằng cấp cao nhất <span class="text-danger">*</span></label>
+                <input type="text" [(ngModel)]="formData.education" name="education" class="form-control rounded-3" placeholder="vd: Tiến sĩ Y khoa, Thạc sĩ Tâm lý" required />
+              </div>
+            </div>
+
+            <!-- Upload File Dropzone inside Initial Form -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold small">Đính kèm Chứng chỉ hành nghề y khoa <span class="text-danger">*</span></label>
+              
+              <div class="dropzone-box border border-dashed rounded-4 p-4 text-center bg-light"
+                   (dragover)="onDragOver($event)" (drop)="onFileDropped($event)" (click)="fileInput.click()">
+                <input #fileInput type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display: none;" />
+                
+                <i class="bi bi-cloud-arrow-up text-primary display-5 mb-2"></i>
+                <div class="fw-bold text-dark small mb-1">Kéo thả tệp tin chứng chỉ vào đây hoặc bấm để chọn tệp</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Hỗ trợ định dạng PDF, JPG, JPEG, PNG, WEBP (Tối đa 10MB)</div>
+              </div>
+
+              @if (fileError()) {
+                <div class="text-danger small mt-2 d-flex align-items-center gap-1">
+                  <i class="bi bi-exclamation-circle-fill"></i> {{ fileError() }}
+                </div>
+              }
+
+              @if (selectedFile) {
+                <div class="card border bg-white rounded-3 p-3 mt-3 d-flex flex-row align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-2">
+                    @if (filePreviewType() === 'pdf') {
+                      <i class="bi bi-file-earmark-pdf-fill text-danger fs-3"></i>
+                    } @else {
+                      <i class="bi bi-file-earmark-image-fill text-primary fs-3"></i>
+                    }
+                    <div>
+                      <div class="fw-bold text-dark small">{{ selectedFileName() }}</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">Dung lượng: {{ filePreviewSize() }}</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" (click)="resetModalFile(); $event.stopPropagation();">
+                    <i class="bi bi-trash me-1"></i>Gỡ bỏ
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Tóm tắt quá trình công tác & Định hướng trị liệu</label>
+              <textarea [(ngModel)]="formData.notes" name="notes" rows="4" class="form-control rounded-3"
+                        placeholder="Mô tả chuyên sâu về phương pháp tiếp cận (CBT, MBSR, Phân tâm học), kinh nghiệm tại các bệnh viện lớn..."></textarea>
+            </div>
+
+            <div class="form-check mb-4 mt-3">
+              <input class="form-check-input" type="checkbox" [(ngModel)]="formData.certifyCheck" name="certifyCheck" id="certifyCheckInitial" required />
+              <label class="form-check-label small text-muted" for="certifyCheckInitial">
+                Tôi cam kết mọi thông tin chuyên môn và tệp tin chứng chỉ hành nghề được cung cấp là hoàn toàn chính xác, trung thực và chịu trách nhiệm trước pháp luật.
+              </label>
+            </div>
+
+            <div class="d-flex justify-content-end border-top pt-3">
+              <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm" [disabled]="isSubmitting()">
+                @if (isSubmitting()) {
+                  <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang nộp hồ sơ...
+                } @else {
+                  <i class="bi bi-send-fill me-1"></i>Nộp Hồ Sơ Thẩm Định
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+<!-- MODAL: UPDATE / REPLACE CERTIFICATE -->
+@if (isModalOpen()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header bg-light border-bottom py-3 px-4">
+          <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-cloud-arrow-up text-primary"></i>Cập Nhật / Thay Thế Chứng Chỉ Hành Nghề
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          @if (verification()?.status === 'PENDING' || verification()?.status === 'SUBMITTED') {
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-4 border-0 shadow-sm rounded-3">
+              <i class="bi bi-exclamation-triangle-fill fs-5 text-warning"></i>
+              <div class="small fw-semibold">
+                Lưu ý: Việc cập nhật tệp chứng chỉ mới sẽ khởi động lại quy trình thẩm định bởi Hội đồng Y khoa.
+              </div>
+            </div>
+          }
+
+          @if (verification()?.certificateUrl) {
+            <div class="card border bg-light rounded-3 mb-4">
+              <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                  <div class="text-muted small fw-semibold mb-1"><i class="bi bi-file-earmark-check me-1"></i>Chứng chỉ hiện tại trên hệ thống</div>
+                  <div class="fw-bold text-dark small text-truncate" style="max-width: 380px;">
+                    {{ verification()?.certificateFileName || 'Chung_Chi_Hanh_Nghe_Hien_Tai' }}
+                  </div>
+                </div>
+                <a [href]="verification()?.certificateUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                  <i class="bi bi-eye me-1"></i>Xem bản hiện tại
+                </a>
+              </div>
+            </div>
+          }
+
+          <!-- Dropzone Selector -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Chọn tệp chứng chỉ mới <span class="text-danger">*</span></label>
+            
+            <div class="dropzone-box border border-dashed rounded-4 p-4 text-center bg-light"
+                 (dragover)="onDragOver($event)" (drop)="onFileDropped($event)" (click)="modalFileInput.click()">
+              <input #modalFileInput type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display: none;" />
+              
+              <i class="bi bi-folder2-open text-primary display-5 mb-2"></i>
+              <div class="fw-bold text-dark small mb-1">Kéo thả tệp tin hoặc bấm để chọn từ máy tính</div>
+              <div class="text-muted" style="font-size: 0.75rem;">Hỗ trợ: PDF, JPG, JPEG, PNG, WEBP (Tối đa 10MB)</div>
+            </div>
+
+            @if (fileError()) {
+              <div class="text-danger small mt-2 d-flex align-items-center gap-1">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ fileError() }}
+              </div>
+            }
+          </div>
+
+          <!-- Instant Client-Side Preview Box -->
+          @if (selectedFile) {
+            <div class="card border rounded-4 p-3 mb-3 bg-light text-center">
+              <div class="text-muted small fw-semibold mb-2">Bản Xem Trước Tệp Mới Chọn</div>
+
+              @if (filePreviewType() === 'image' && filePreviewUrl()) {
+                <div class="text-center">
+                  <img [src]="filePreviewUrl()" alt="Preview" class="img-fluid rounded-3 border shadow-sm" style="max-height: 250px;" />
+                  <div class="fw-bold text-dark small mt-2">{{ selectedFileName() }} ({{ filePreviewSize() }})</div>
+                </div>
+              } @else if (filePreviewType() === 'pdf') {
+                <div class="p-3 bg-white rounded-3 border text-center">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger display-4 mb-2"></i>
+                  <div class="fw-bold small text-dark">{{ selectedFileName() }}</div>
+                  <div class="text-muted small">{{ filePreviewSize() }}</div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer bg-light border-top py-3 px-4">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" (click)="closeModal()" [disabled]="isUploading()">
+            Hủy bỏ
+          </button>
+          <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" (click)="uploadAndSaveCertificate()" [disabled]="!selectedFile || isUploading()">
+            @if (isUploading()) {
+              <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang tải lên...
+            } @else {
+              <i class="bi bi-cloud-arrow-up-fill me-1"></i>Xác Nhận & Cập Nhật
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

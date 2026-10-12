@@ -1,0 +1,73 @@
+/**
+ * Core appointment booking and scheduling workflow.
+ * A slot may receive multiple pending requests, but only one appointment
+ * may be ACCEPTED for the same slot.
+ */
+
+entity AvailabilitySlot {
+  startTime Instant required
+  endTime Instant required
+  consultationMode ConsultationMode required
+  location String maxlength(300)
+  maxPendingRequests Integer required min(1) max(20)
+  status SlotStatus required
+}
+
+entity Appointment {
+  bookingCode String required unique maxlength(32)
+  scheduledStart Instant required
+  scheduledEnd Instant required
+  consultationMode ConsultationMode required
+  status AppointmentStatus required
+
+  reason String maxlength(1000)
+  cancellationReason String maxlength(1000)
+
+  approvedAt Instant
+  startedAt Instant
+  completedAt Instant
+  cancelledAt Instant
+}
+
+entity RescheduleRequest {
+  requestedStart Instant required
+  requestedEnd Instant required
+  reason String maxlength(1000)
+  status String required maxlength(40)
+  requestedAt Instant required
+  reviewedAt Instant
+}
+
+entity ScheduleNote {
+  title String required maxlength(160)
+  content TextBlob required
+  createdAt Instant required
+  updatedAt Instant
+}
+
+relationship OneToOne {
+  DoctorProfile{user(login) required} to User
+  PatientProfile{user(login) required} to User
+}
+
+relationship ManyToMany {
+  DoctorProfile{specializations(name)} to Specialization{doctors}
+}
+
+relationship ManyToOne {
+  AvailabilitySlot{doctor required} to DoctorProfile
+
+  Appointment{patient required} to PatientProfile
+  Appointment{doctor required} to DoctorProfile
+  Appointment{slot required} to AvailabilitySlot
+
+  RescheduleRequest{appointment required} to Appointment
+  RescheduleRequest{requestedSlot required} to AvailabilitySlot
+
+  ScheduleNote{doctor required} to DoctorProfile
+  ScheduleNote{slot} to AvailabilitySlot
+}
+
+dto * with mapstruct
+service * with serviceClass
+paginate Appointment, AvailabilitySlot, RescheduleRequest with pagination

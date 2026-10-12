@@ -1,0 +1,856 @@
+<div class="appointment-detail-container">
+  <!-- Top Navigation & Action Bar -->
+  <div class="dr-nav-header d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" (click)="previousState()" class="dr-back-btn">
+        <i class="bi bi-arrow-left me-1.5"></i>
+        Danh sách lịch hẹn
+      </button>
+      <span class="text-muted small">/</span>
+      <span class="fw-bold text-dark small" *ngIf="appointment()">
+        #{{ appointment()?.bookingCode || appointment()?.id }}
+      </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" (click)="printSummary()" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" title="In phiếu thông tin ca khám" style="border-radius: 8px;">
+        <i class="bi bi-printer-fill me-1.5 text-teal"></i>
+        In Phiếu Ca Khám
+      </button>
+      <a *ngIf="isAdmin" [routerLink]="['/appointment', appointment()?.id, 'edit']" class="btn btn-outline-primary btn-sm px-3 shadow-sm" style="border-radius: 8px;">
+        <i class="bi bi-pencil-square me-1.5"></i>
+        Sửa Lịch (Admin)
+      </a>
+    </div>
+  </div>
+
+  <!-- Alert Notifications -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 10px;">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 10px;">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="state-card text-center p-5">
+    <div class="spinner-border text-teal" role="status">
+      <span class="visually-hidden">Đang xử lý...</span>
+    </div>
+    <p class="mt-3 text-muted fw-semibold">Đang tải thông tin chi tiết ca khám...</p>
+  </div>
+
+  @if (appointment(); as app) {
+    <!-- Main Appointment Content (C# Razor Details Pattern) -->
+    <div class="appointment-main-content">
+      <!-- ═══════════════════════════════════════════════════
+           1. HERO APPOINTMENT BANNER (dr-hero-banner)
+           ═══════════════════════════════════════════════════ -->
+      <div class="dr-hero-banner">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+          <!-- Left: Booking chip, Patient name, Metadata -->
+          <div class="hero-left d-flex align-items-center gap-3">
+            <div class="patient-avatar-hero">
+              {{ getInitials(app.patient?.fullName, app.patient?.user?.login) }}
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="dr-booking-chip">
+                  <i class="bi bi-hash text-teal"></i>{{ app.bookingCode || app.id }}
+                </span>
+                <span class="dr-status-pill" [ngClass]="'dr-pill-' + (app.status?.toLowerCase() || 'pending')" [class.dr-status-live]="app.status === 'IN_PROGRESS'">
+                  <i class="bi" [ngClass]="getBootstrapStatusIcon(app.status)"></i>
+                  <span class="ms-1">{{ getStatusText(app.status) }}</span>
+                </span>
+                <span class="mode-tag-chip" [class.online]="app.consultationMode === 'ONLINE'" [class.inperson]="app.consultationMode === 'IN_PERSON'">
+                  <i class="bi" [class.bi-camera-video-fill]="app.consultationMode === 'ONLINE'" [class.bi-hospital-fill]="app.consultationMode !== 'ONLINE'"></i>
+                  <span class="ms-1">{{ getModeText(app.consultationMode) }}</span>
+                </span>
+              </div>
+
+              <h2 class="dr-hero-title mb-1">
+                <a *ngIf="isDoctor && app.patient" [routerLink]="['/doctor/patients', app.patient.id]" class="text-decoration-none" title="Xem hồ sơ bệnh nhân">
+                  {{ getPatientDisplayName(app) }}
+                  <i class="bi bi-box-arrow-up-right ms-1 fs-6 text-teal"></i>
+                </a>
+                <span *ngIf="!isDoctor || !app.patient">
+                  {{ getPatientDisplayName(app) }}
+                </span>
+              </h2>
+
+              <div class="dr-hero-subtitle d-flex align-items-center flex-wrap gap-2">
+                <span>
+                  <i class="bi bi-calendar-event-fill me-1 text-teal"></i>
+                  {{ app.scheduledStart ? (app.scheduledStart | formatMediumDate) : 'Chưa xếp ngày' }}
+                </span>
+                <span *ngIf="app.scheduledStart">
+                  • <i class="bi bi-clock-fill me-1 text-teal"></i>
+                  {{ formatScheduledTime(app) }}
+                </span>
+                <span>
+                  • <i class="bi bi-telephone-fill me-1 text-teal"></i>
+                  {{ app.patient?.phone || 'Chưa cập nhật SĐT' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Hero Fast Action Buttons -->
+          <div class="hero-actions d-flex align-items-center gap-2 flex-wrap">
+            @if (isDoctor) {
+              <!-- Status: PENDING -> Accept / Reject -->
+              @if (app.status === 'PENDING') {
+                <button type="button" class="btn btn-success fw-bold px-3 py-2 shadow-sm" (click)="acceptAppointment()" style="border-radius: 8px;">
+                  <i class="bi bi-check-lg me-1.5"></i> Phê Duyệt Lịch Hẹn
+                </button>
+                <button type="button" class="btn btn-outline-danger fw-bold px-3 py-2 shadow-sm" (click)="openRejectModal()" style="border-radius: 8px;">
+                  <i class="bi bi-x-lg me-1.5"></i> Từ Chối
+                </button>
+              }
+
+              <!-- Status: ACCEPTED -> Start Consultation (time check) -->
+              @if (app.status === 'ACCEPTED') {
+                @if (canStartConsultation(app)) {
+                  <button type="button" class="btn btn-teal-primary fw-bold px-3.5 py-2 shadow-sm" (click)="startAppointment()" style="border-radius: 8px;">
+                    <i class="bi bi-play-fill me-1.5 fs-5"></i> Bắt Đầu Ca Khám
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-secondary fw-bold px-3 py-2 opacity-75"
+                    style="border-radius: 8px;"
+                    title="Chỉ có thể bắt đầu ca khám khi đến ngày và giờ hẹn (trước tối đa 15 phút)"
+                    disabled
+                  >
+                    <i class="bi bi-clock-fill me-1.5"></i> Chưa Đến Giờ Khám
+                  </button>
+                }
+              }
+
+              <!-- Status: IN_PROGRESS -> Write Notes & Complete -->
+              @if (app.status === 'IN_PROGRESS') {
+                <button type="button" class="btn btn-teal-primary fw-bold px-3 py-2 shadow-sm" (click)="openNoteEditor()" style="border-radius: 8px;">
+                  <i class="bi bi-journal-medical me-1.5"></i> Ghi Chép Lâm Sàng
+                </button>
+                <button type="button" class="btn btn-success fw-bold px-3 py-2 shadow-sm" (click)="completeAppointment()" style="border-radius: 8px;">
+                  <i class="bi bi-check-circle-fill me-1.5"></i> Hoàn Thành Ca Khám
+                </button>
+              }
+
+              <!-- Status: COMPLETED -> View / Edit Notes -->
+              @if (app.status === 'COMPLETED') {
+                <button type="button" class="btn btn-outline-teal fw-bold px-3 py-2 shadow-sm" (click)="openNoteEditor()" style="border-radius: 8px;">
+                  <i class="bi bi-pencil-square me-1.5"></i> Cập Nhật Bệnh Án
+                </button>
+              }
+            }
+
+            @if (isPatient && (app.status === 'PENDING' || app.status === 'ACCEPTED')) {
+              <button type="button" class="btn btn-outline-danger fw-bold px-3 py-2 shadow-sm" (click)="openCancelModal()" style="border-radius: 8px;">
+                <i class="bi bi-calendar-x-fill me-1.5"></i> Hủy Lịch Hẹn
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           2. DYNAMIC STATUS BANNER BAR (dr-status-banner-bar)
+           ═══════════════════════════════════════════════════ -->
+      <div class="dr-status-banner-bar" [ngClass]="'dr-bar-' + (app.status?.toLowerCase() || 'pending')">
+        <div class="banner-icon-circle">
+          <i class="bi" [ngClass]="getBootstrapStatusIcon(app.status)"></i>
+        </div>
+        <div class="banner-text-content">
+          @if (app.status === 'PENDING') {
+            <strong>Lịch hẹn đang chờ Bác sĩ xác nhận:</strong> Bác sĩ sẽ xem xét triệu chứng và tiền khám để tiếp nhận ca này trong thời gian sớm nhất.
+          } @else if (app.status === 'ACCEPTED') {
+            <strong>Ca khám đã được xác nhận:</strong>
+            @if (canStartConsultation(app)) {
+              Đã đến giờ tham vấn. Bác sĩ vui lòng nhấn <strong>"Bắt Đầu Ca Khám"</strong> để tiến hành phiên tư vấn với bệnh nhân.
+            } @else {
+              Vui lòng chuẩn bị và có mặt đúng khung giờ đã đăng ký (Bác sĩ chỉ có thể bắt đầu trước tối đa 15 phút so với giờ hẹn).
+            }
+          } @else if (app.status === 'IN_PROGRESS') {
+            <strong>Ca khám đang tiến hành (In Progress):</strong> Buổi tham vấn y tế đang diễn ra trực tiếp. Bác sĩ cần ghi chép hồ sơ lâm sàng (chẩn đoán, phác đồ, lời dặn) trước khi hoàn thành ca khám.
+          } @else if (app.status === 'COMPLETED') {
+            <strong>Ca khám đã hoàn thành:</strong> Hồ sơ bệnh án, chẩn đoán và phác đồ điều trị đã được Bác sĩ ghi nhận đầy đủ bên dưới.
+          } @else if (app.status === 'CANCELLED') {
+            <strong>Lịch hẹn đã bị hủy:</strong> {{ app.cancellationReason ? 'Lý do: ' + app.cancellationReason : 'Lịch hẹn đã được hủy bởi người dùng.' }}
+          } @else if (app.status === 'REJECTED') {
+            <strong>Lịch hẹn đã bị từ chối:</strong> {{ app.cancellationReason ? 'Lý do: ' + app.cancellationReason : 'Bác sĩ không thể tiếp nhận ca khám trong khung giờ này.' }}
+          }
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           3. LIVE NOTE NUDGE (When IN_PROGRESS)
+           ═══════════════════════════════════════════════════ -->
+      <div class="dr-live-note-nudge" *ngIf="app.status === 'IN_PROGRESS'">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+          <span class="dr-live-note-dot"></span>
+          <div class="min-w-0">
+            <div class="dr-live-note-title">
+              <i class="bi bi-broadcast me-1 text-success"></i> Không gian ghi chép lâm sàng đang sẵn sàng
+            </div>
+            <div class="dr-live-note-copy">
+              {{ hasClinicalNotes(app) ? 'Đã ghi nhận chẩn đoán sơ bộ. Bạn có thể tiếp tục bổ sung phác đồ điều trị và lời dặn.' : 'Vui lòng nhập chẩn đoán và phác đồ trị liệu để hoàn thành ca khám một cách chuẩn mực.' }}
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-teal-primary btn-sm px-3 py-2 fw-bold shadow-sm" (click)="openNoteEditor()" style="border-radius: 8px;">
+          <i class="bi bi-journal-medical me-1"></i> Ghi Chép Lâm Sàng Ngay
+        </button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           4. CONTEXT SUMMARY STRIP (4 METRIC CARDS - C# Razor)
+           ═══════════════════════════════════════════════════ -->
+      <div class="dr-metric-strip">
+        <!-- 1. Date & Time -->
+        <div class="dr-metric-card">
+          <div class="dr-metric-icon dr-micon-teal">
+            <i class="bi bi-calendar3"></i>
+          </div>
+          <div>
+            <div class="dr-metric-lbl">Ngày &amp; Giờ Khám</div>
+            <div class="dr-metric-val">
+              {{ app.scheduledStart ? (app.scheduledStart | formatMediumDate) : 'Chưa xếp ngày' }}
+              <div class="text-muted fw-normal small">
+                {{ formatScheduledTime(app) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Consultation Format -->
+        <div class="dr-metric-card">
+          <div class="dr-metric-icon dr-micon-blue">
+            <i class="bi" [class.bi-camera-video-fill]="app.consultationMode === 'ONLINE'" [class.bi-hospital-fill]="app.consultationMode !== 'ONLINE'"></i>
+          </div>
+          <div>
+            <div class="dr-metric-lbl">Hình Thức Khám</div>
+            <div class="dr-metric-val">
+              {{ getModeText(app.consultationMode) }}
+              <div class="text-muted fw-normal small">
+                {{ app.consultationMode === 'ONLINE' ? 'Tư vấn trực tuyến qua Video Call' : 'MindBridge Clinic (Khám trực tiếp)' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Care Program / Package -->
+        <div class="dr-metric-card">
+          <div class="dr-metric-icon dr-micon-indigo">
+            <i class="bi bi-box-seam-fill"></i>
+          </div>
+          <div>
+            <div class="dr-metric-lbl">Chương Trình Chăm Sóc</div>
+            <div class="dr-metric-val text-truncate" style="max-width: 220px;">
+              Tham Vấn Sức Khỏe Tâm Lý
+              <div class="text-muted fw-normal small">
+                Ca tư vấn y khoa tiêu chuẩn (60 phút)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Patient History -->
+        <div class="dr-metric-card">
+          <div class="dr-metric-icon dr-micon-amber">
+            <i class="bi bi-person-lines-fill"></i>
+          </div>
+          <div>
+            <div class="dr-metric-lbl">Lịch Sử Khám</div>
+            <div class="dr-metric-val">
+              Hồ Sơ Y Tế Bệnh Nhân
+              <div class="text-muted fw-normal small">
+                Theo dõi lâm sàng MindBridge
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           5. MAIN TWO-COLUMN CLINICAL LAYOUT (Col 8 / Col 4)
+           ═══════════════════════════════════════════════════ -->
+      <div class="row g-4">
+        <!-- ══ LEFT COLUMN: CLINICAL CONTEXT & RECORDS (70%) ══ -->
+        <div class="col-lg-8">
+          <!-- 1. Pre-Appointment Clinical Evaluation Card -->
+          <div class="dr-card">
+            <div class="dr-card-header d-flex justify-content-between align-items-center">
+              <h3 class="dr-card-title">
+                <i class="bi bi-clipboard-pulse text-teal me-1.5"></i>
+                Đánh Giá Tiền Khám &amp; Triệu Chứng Ban Đầu
+              </h3>
+              <span class="badge bg-light text-dark border px-2.5 py-1" style="font-size: 0.75rem;">
+                <i class="bi bi-file-earmark-check me-1"></i>Phiếu Khảo Sát
+              </span>
+            </div>
+            <div class="dr-card-body">
+              @if (parsedReason(); as pReason) {
+                @if (pReason.isStructured) {
+                  <!-- Structured Evaluation Grid -->
+                  <div class="d-flex flex-column gap-3">
+                    <!-- Reason -->
+                    <div class="dr-panel dr-panel--neutral" *ngIf="pReason.reason">
+                      <div class="dr-panel-lbl" style="color: #0f766e;">
+                        <i class="bi bi-bullseye me-1"></i> Lý do đăng ký tham vấn:
+                      </div>
+                      <p class="dr-panel-text fw-medium">{{ pReason.reason }}</p>
+                    </div>
+
+                    <!-- Symptoms (Highlighted Red) -->
+                    <div class="dr-panel" style="background: #fff8f8; border: 1px solid #fee2e2; border-left: 4px solid #ef4444;" *ngIf="pReason.symptoms">
+                      <div class="dr-panel-lbl text-danger">
+                        <i class="bi bi-heart-pulse-fill me-1"></i> Triệu chứng &amp; Vấn đề đang gặp phải:
+                      </div>
+                      <p class="dr-panel-text fw-semibold text-danger">{{ pReason.symptoms }}</p>
+                    </div>
+
+                    <!-- Medical History -->
+                    <div class="dr-panel dr-panel--neutral" *ngIf="pReason.medicalHistory">
+                      <div class="dr-panel-lbl" style="color: #1e40af;">
+                        <i class="bi bi-clock-history me-1"></i> Tiền sử bệnh án &amp; tâm lý bổ sung:
+                      </div>
+                      <p class="dr-panel-text">{{ pReason.medicalHistory }}</p>
+                    </div>
+
+                    <!-- Expectations -->
+                    <div class="dr-panel dr-panel--teal" *ngIf="pReason.expectations">
+                      <div class="dr-panel-lbl" style="color: #0f766e;">
+                        <i class="bi bi-lightbulb-fill me-1"></i> Kỳ vọng từ buổi tham vấn y tế:
+                      </div>
+                      <p class="dr-panel-text">{{ pReason.expectations }}</p>
+                    </div>
+                  </div>
+                } @else if (app.reason) {
+                  <!-- Fallback: Raw text -->
+                  <div class="dr-panel dr-panel--neutral">
+                    <p class="dr-panel-text">{{ app.reason }}</p>
+                  </div>
+                } @else {
+                  <div class="text-muted small p-3 bg-light rounded-3 text-center border">
+                    <i class="bi bi-info-circle-fill me-1 text-teal"></i> Bệnh nhân chưa cung cấp thông tin triệu chứng bổ sung khi đặt lịch.
+                  </div>
+                }
+              } @else {
+                <div class="text-muted small p-3 bg-light rounded-3 text-center border">
+                  <i class="bi bi-info-circle-fill me-1 text-teal"></i> Bệnh nhân chưa cung cấp thông tin triệu chứng bổ sung khi đặt lịch.
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- 2. Official Consultation Record (Bệnh Án Lâm Sàng) -->
+          <div class="dr-card" style="border-left: 4px solid #0f766e !important;">
+            <div class="dr-card-header d-flex justify-content-between align-items-center">
+              <h3 class="dr-card-title">
+                <i class="bi bi-journal-medical text-teal me-1.5"></i>
+                Hồ Sơ Ghi Chép Lâm Sàng &amp; Phác Đồ Trị Liệu
+              </h3>
+              <div class="d-flex align-items-center gap-2">
+                @if (app.status === 'COMPLETED') {
+                  <span class="badge rounded-pill px-3 py-1.5" style="background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; font-size:0.75rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i> Đã Lưu Bệnh Án
+                  </span>
+                } @else if (app.status === 'IN_PROGRESS') {
+                  <span class="badge rounded-pill px-3 py-1.5" style="background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; font-size:0.75rem;">
+                    <i class="bi bi-play-circle-fill me-1"></i> Đang Khám
+                  </span>
+                }
+                <button
+                  *ngIf="(isDoctor || isAdmin) && (app.status === 'ACCEPTED' || app.status === 'IN_PROGRESS' || app.status === 'COMPLETED')"
+                  class="btn btn-teal-primary btn-sm px-3 shadow-sm"
+                  (click)="openNoteEditor()"
+                >
+                  <i class="bi bi-pencil-square me-1"></i>
+                  {{ app.status === 'COMPLETED' ? 'Cập Nhật Ghi Chú' : 'Ghi Chép Lâm Sàng' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="dr-card-body">
+              @if (app.diagnosis || app.consultationSummary || app.therapyPlan || app.recommendations || app.followUpNotes) {
+                <div class="d-flex flex-column gap-3">
+                  <!-- Diagnosis -->
+                  <div class="dr-panel dr-panel--teal" *ngIf="app.diagnosis">
+                    <div class="dr-panel-lbl" style="color: #0f766e;">
+                      <i class="bi bi-activity text-teal me-1"></i> Chẩn đoán lâm sàng (Diagnosis)
+                    </div>
+                    <div class="fs-6 fw-bold text-dark mt-1">
+                      {{ app.diagnosis }}
+                    </div>
+                  </div>
+
+                  <!-- Consultation Summary -->
+                  <div class="dr-panel dr-panel--neutral" *ngIf="app.consultationSummary">
+                    <div class="dr-panel-lbl" style="color: #475569;">
+                      <i class="bi bi-file-earmark-medical text-secondary me-1"></i> Diễn biến &amp; Tóm tắt buổi tham vấn (Consultation Notes)
+                    </div>
+                    <p class="dr-panel-text mt-1">{{ app.consultationSummary }}</p>
+                  </div>
+
+                  <!-- Therapy Plan & Recommendations Side-by-Side -->
+                  <div class="row g-3">
+                    <div class="col-md-6" *ngIf="app.therapyPlan">
+                      <div class="dr-panel dr-panel--teal h-100">
+                        <div class="dr-panel-lbl" style="color: #0f766e;">
+                          <i class="bi bi-clipboard-check text-teal me-1"></i> Kế hoạch &amp; Phác đồ can thiệp (Therapy Plan)
+                        </div>
+                        <p class="dr-panel-text mt-1">{{ app.therapyPlan }}</p>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6" *ngIf="app.recommendations">
+                      <div class="dr-panel dr-panel--success h-100">
+                        <div class="dr-panel-lbl" style="color: #166534;">
+                          <i class="bi bi-lightbulb-fill text-success me-1"></i> Lời khuyên &amp; Bài tập về nhà (Homework)
+                        </div>
+                        <p class="dr-panel-text mt-1">{{ app.recommendations }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Follow-up Notes & Revisit Date -->
+                  <div class="dr-panel dr-panel--amber" *ngIf="app.followUpNotes || app.nextAppointmentRecommendedDate">
+                    <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+                      <div class="dr-panel-lbl mb-0" style="color: #854d0e;">
+                        <i class="bi bi-calendar-plus-fill text-warning me-1"></i> Ghi chú theo dõi &amp; Tái khám
+                      </div>
+                      <span class="badge rounded-pill px-2.5 py-1 fw-semibold" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-size:0.75rem;" *ngIf="app.nextAppointmentRecommendedDate">
+                        <i class="bi bi-calendar-check-fill me-1"></i> Tái khám: {{ app.nextAppointmentRecommendedDate | formatMediumDatetime }}
+                      </span>
+                    </div>
+                    <p class="dr-panel-text mt-1" *ngIf="app.followUpNotes">{{ app.followUpNotes }}</p>
+                  </div>
+
+                  <!-- Completed Timestamp -->
+                  <div class="text-muted small mt-1" *ngIf="app.completedAt">
+                    <i class="bi bi-check2-all text-success me-1"></i>
+                    Ca khám đã hoàn tất và lưu hồ sơ lúc: <strong>{{ app.completedAt | formatMediumDatetime }}</strong>
+                  </div>
+                </div>
+              } @else {
+                <!-- Empty State for Notes -->
+                <div class="text-center py-4 bg-light rounded-3 border">
+                  <i class="bi bi-journal-text fs-1 text-muted opacity-50 mb-2 d-block"></i>
+                  <h5 class="fs-6 fw-bold text-secondary mb-1">Chưa có ghi chép lâm sàng cho ca khám này</h5>
+                  <p class="text-muted small mb-3">
+                    {{ isDoctor || isAdmin ? 'Bác sĩ cần ghi chép chẩn đoán lâm sàng và phác đồ điều trị trước khi đánh dấu hoàn thành ca khám.' : 'Bác sĩ chuyên khoa sẽ cập nhật hồ sơ bệnh án và lời dặn sau khi kết thúc buổi tham vấn.' }}
+                  </p>
+                  <button
+                    *ngIf="(isDoctor || isAdmin) && (app.status === 'ACCEPTED' || app.status === 'IN_PROGRESS')"
+                    class="btn btn-teal-primary btn-sm px-3.5 py-2 fw-bold shadow-sm"
+                    (click)="openNoteEditor()"
+                    style="border-radius: 8px;"
+                  >
+                    <i class="bi bi-pen me-1.5"></i>
+                    Nhập Hồ Sơ Chẩn Đoán &amp; Bệnh Án
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ RIGHT COLUMN: SIDEBAR (PATIENT DEMOGRAPHICS & ACTIONS - 30%) ══ -->
+        <div class="col-lg-4">
+          <div class="dr-sticky-sidebar d-flex flex-column gap-3">
+            <!-- 1. Patient Demographics Card -->
+            <div class="dr-patient-profile-card">
+              <div class="dr-card-header d-flex justify-content-between align-items-center">
+                <h3 class="dr-card-title">
+                  <i class="bi bi-person-vcard-fill text-teal me-1.5"></i>
+                  Hồ Sơ Bệnh Nhân
+                </h3>
+                <a *ngIf="isDoctor && app.patient" [routerLink]="['/doctor/patients', app.patient.id]" class="btn-link-patient-full">
+                  Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+              <div class="dr-card-body">
+                <!-- Patient Brief Header Link -->
+                <a *ngIf="isDoctor && app.patient" [routerLink]="['/doctor/patients', app.patient.id]" class="dr-patient-header-link mb-3" title="Mở hồ sơ bệnh nhân">
+                  <div class="dr-patient-avatar-box">
+                    <div class="dr-patient-initials">{{ getInitials(app.patient?.fullName, app.patient?.user?.login) }}</div>
+                  </div>
+                  <div class="overflow-hidden">
+                    <h4 class="dr-patient-name text-truncate mb-0">{{ getPatientDisplayName(app) }}</h4>
+                    <span class="text-muted small">Bệnh nhân tham vấn MindBridge</span>
+                  </div>
+                </a>
+
+                <div *ngIf="!isDoctor || !app.patient" class="d-flex align-items-center gap-3 mb-3">
+                  <div class="dr-patient-avatar-box">
+                    <div class="dr-patient-initials">{{ getInitials(app.patient?.fullName, app.patient?.user?.login) }}</div>
+                  </div>
+                  <div class="overflow-hidden">
+                    <h4 class="dr-patient-name text-truncate mb-0">{{ getPatientDisplayName(app) }}</h4>
+                    <span class="text-muted small">Bệnh nhân tham vấn MindBridge</span>
+                  </div>
+                </div>
+
+                <!-- Contact Rows -->
+                <div class="mb-3 d-flex flex-column gap-1">
+                  <!-- Phone Row -->
+                  <a *ngIf="app.patient?.phone" [href]="'tel:' + app.patient?.phone" class="dr-patient-contact-row" title="Gọi điện cho bệnh nhân">
+                    <div class="dr-contact-icon-chip"><i class="bi bi-telephone-fill"></i></div>
+                    <div class="flex-grow-1 text-truncate">{{ app.patient?.phone }}</div>
+                    <i class="bi bi-chevron-right text-muted small"></i>
+                  </a>
+                  <div *ngIf="!app.patient?.phone" class="dr-patient-contact-row text-muted" style="cursor: default;">
+                    <div class="dr-contact-icon-chip"><i class="bi bi-telephone"></i></div>
+                    <div class="flex-grow-1 text-truncate small">Chưa cập nhật số điện thoại</div>
+                  </div>
+
+                  <!-- Address Row -->
+                  <div class="dr-patient-contact-row" style="cursor: default;">
+                    <div class="dr-contact-icon-chip"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="flex-grow-1 text-truncate" [title]="app.patient?.address || 'Chưa cập nhật địa chỉ'">
+                      {{ app.patient?.address || 'Chưa cập nhật địa chỉ' }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Demographics Specs Grid -->
+                <div class="specs-grid mb-3">
+                  <div class="spec-cell">
+                    <span class="spec-label"><i class="bi bi-gender-ambiguous me-1 text-teal"></i> Giới tính:</span>
+                    <span class="spec-val">{{ app.patient?.gender === 'MALE' ? 'Nam' : (app.patient?.gender === 'FEMALE' ? 'Nữ' : (app.patient?.gender || 'Chưa cập nhật')) }}</span>
+                  </div>
+                  <div class="spec-cell">
+                    <span class="spec-label"><i class="bi bi-cake2-fill me-1 text-teal"></i> Ngày sinh / Tuổi:</span>
+                    <span class="spec-val">{{ app.patient?.dateOfBirth ? ((app.patient?.dateOfBirth | formatMediumDate) + ' (' + getAge(app.patient?.dateOfBirth) + 't)') : 'Chưa cập nhật' }}</span>
+                  </div>
+                  <div class="spec-cell">
+                    <span class="spec-label"><i class="bi bi-droplet-fill me-1 text-danger"></i> Nhóm máu:</span>
+                    <span class="spec-val" [class.text-danger]="app.patient?.bloodGroup" [class.fw-bold]="app.patient?.bloodGroup">{{ app.patient?.bloodGroup || 'Chưa xác định' }}</span>
+                  </div>
+                  <div class="spec-cell">
+                    <span class="spec-label"><i class="bi bi-telephone-plus-fill me-1 text-warning"></i> LH Khẩn cấp:</span>
+                    <span class="spec-val" [class.text-warning]="app.patient?.emergencyContactPhone" [class.fw-bold]="app.patient?.emergencyContactPhone">{{ app.patient?.emergencyContactPhone || 'Chưa cung cấp' }}</span>
+                  </div>
+                </div>
+
+                <!-- Medical Alert / Allergy Box -->
+                <div class="dr-attention-box" *ngIf="app.patient?.allergies">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <strong class="text-danger small">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i> Cảnh Báo Dị Ứng &amp; Y Tế:
+                    </strong>
+                  </div>
+                  <p class="mb-0 text-danger small fw-semibold">{{ app.patient?.allergies }}</p>
+                </div>
+                <div class="dr-clean-box" *ngIf="!app.patient?.allergies">
+                  <i class="bi bi-check-circle-fill me-1.5 text-success"></i>
+                  <span class="text-success small fw-semibold">Không có cảnh báo dị ứng đặc biệt.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Doctor In-Charge Card -->
+            <div class="dr-card">
+              <div class="dr-card-header">
+                <h3 class="dr-card-title">
+                  <i class="bi bi-person-badge-fill text-teal me-1.5"></i>
+                  Bác Sĩ / Chuyên Gia Phụ Trách
+                </h3>
+              </div>
+              <div class="dr-card-body">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="doctor-avatar-circle">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                  </div>
+                  <div>
+                    <h4 class="doc-name mb-0">{{ getDoctorDisplayName(app) }}</h4>
+                    <p class="text-muted small mb-0">{{ app.doctor?.title || 'Chuyên gia Tâm lý MindBridge' }}</p>
+                    <p class="text-muted small mb-0 mt-1">
+                      <i class="bi bi-telephone-fill me-1 text-teal"></i> {{ app.doctor?.phone || 'Hotline: 1900 8888 (MindBridge)' }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Session Actions Card -->
+            <div class="dr-card">
+              <div class="dr-card-header">
+                <h3 class="dr-card-title">
+                  <i class="bi bi-sliders text-teal me-1.5"></i>
+                  Thao Tác Ca Khám (Session Actions)
+                </h3>
+              </div>
+              <div class="dr-card-body d-flex flex-column gap-2">
+                @if (isDoctor) {
+                  @if (app.status === 'PENDING') {
+                    <button type="button" class="btn btn-teal-primary w-100 py-2.5 fw-bold shadow-sm" (click)="acceptAppointment()">
+                      <i class="bi bi-check-circle-fill me-1.5"></i> Phê Duyệt Lịch Hẹn
+                    </button>
+                    <button type="button" class="btn btn-outline-danger w-100 py-2 fw-semibold" (click)="openRejectModal()">
+                      <i class="bi bi-x-circle me-1.5"></i> Từ Chối Lịch Hẹn
+                    </button>
+                  }
+
+                  @if (app.status === 'ACCEPTED') {
+                    @if (canStartConsultation(app)) {
+                      <button type="button" class="btn btn-teal-primary w-100 py-2.5 fw-bold shadow-sm" (click)="startAppointment()">
+                        <i class="bi bi-play-circle-fill me-1.5"></i> Bắt Đầu Ca Khám Ngay
+                      </button>
+                    } @else {
+                      <button type="button" class="btn btn-secondary w-100 py-2.5 opacity-75" disabled title="Chỉ bắt đầu khi đến ngày và giờ hẹn (trước tối đa 15 phút)">
+                        <i class="bi bi-clock me-1.5"></i> Chưa Đến Giờ Khám
+                      </button>
+                      <small class="text-muted text-center d-block">Bác sĩ chỉ có thể bắt đầu trước tối đa 15 phút so với khung giờ hẹn.</small>
+                    }
+                  }
+
+                  @if (app.status === 'IN_PROGRESS') {
+                    <button type="button" class="btn btn-teal-primary w-100 py-2.5 fw-bold shadow-sm" (click)="openNoteEditor()">
+                      <i class="bi bi-journal-medical me-1.5"></i> Ghi Chép Bệnh Án
+                    </button>
+                    <button type="button" class="btn btn-success w-100 py-2.5 fw-bold shadow-sm" (click)="completeAppointment()">
+                      <i class="bi bi-check-circle-fill me-1.5"></i> Hoàn Thành Ca Khám
+                    </button>
+                    <small class="text-muted text-center d-block" *ngIf="!hasClinicalNotes(app)">
+                      <i class="bi bi-exclamation-triangle text-warning me-1"></i> Phải có ghi chú lâm sàng trước khi kết thúc ca khám.
+                    </small>
+                  }
+
+                  @if (app.status === 'COMPLETED') {
+                    <button type="button" class="btn btn-outline-teal w-100 py-2 fw-semibold shadow-sm" (click)="openNoteEditor()">
+                      <i class="bi bi-pencil-square me-1.5"></i> Chỉnh Sửa Ghi Chú Khám
+                    </button>
+                  }
+                }
+
+                @if (isPatient && (app.status === 'PENDING' || app.status === 'ACCEPTED')) {
+                  <button type="button" class="btn btn-outline-danger w-100 py-2 fw-semibold" (click)="openCancelModal()">
+                    <i class="bi bi-calendar-x-fill me-1.5"></i> Hủy Lịch Hẹn
+                  </button>
+                }
+
+                <button type="button" class="btn btn-outline-secondary w-100 py-2" (click)="printSummary()">
+                  <i class="bi bi-printer-fill me-1.5"></i> In Phiếu Ca Khám
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============================== MODALS ============================== -->
+
+  <!-- 1. Consultation Notes Modal (Doctor) -->
+  <div class="modal-backdrop-custom" *ngIf="isEditingNote">
+    <div class="modal-dialog-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <div class="modal-title-group">
+            <h3 class="modal-title">
+              <i class="bi bi-journal-medical me-2 text-teal"></i>
+              Ghi Chép Hồ Sơ Khám Lâm Sàng
+            </h3>
+            <p class="modal-subtitle">
+              Mã ca: <strong>#{{ appointment()?.bookingCode || appointment()?.id }}</strong> | Bệnh nhân: <strong>{{ getPatientDisplayName(appointment()) }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeNoteEditor()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <form (ngSubmit)="saveConsultationNote()" class="modal-body-custom">
+          <!-- Diagnosis -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Chẩn đoán lâm sàng (Diagnosis) <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="noteForm.diagnosis"
+              name="diagnosis"
+              placeholder="VD: Rối loạn lo âu lan tỏa (GAD) F41.1, Căng thẳng công việc giai đoạn 2..."
+              required
+            />
+          </div>
+
+          <!-- Consultation Summary -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Diễn biến &amp; Tóm tắt buổi tham vấn (Consultation Notes)
+            </label>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="noteForm.consultationSummary"
+              name="consultationSummary"
+              placeholder="Ghi nhận phản hồi cảm xúc, hành vi, diễn biến tâm lý trong buổi khám..."
+            ></textarea>
+          </div>
+
+          <!-- Therapy Plan -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Kế hoạch &amp; Phác đồ trị liệu (Therapy Plan)
+            </label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="noteForm.therapyPlan"
+              name="therapyPlan"
+              placeholder="Áp dụng liệu pháp Nhận thức Hành vi (CBT), Thư giãn cơ bắp tiến triển (PMR)..."
+            ></textarea>
+          </div>
+
+          <!-- Recommendations & Homework -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Lời khuyên &amp; Bài tập về nhà (Patient Homework &amp; Advice)
+            </label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="noteForm.recommendations"
+              name="recommendations"
+              placeholder="Nhật ký ghi nhận suy nghĩ tự động (Thought Record), Tập hít thở 4-7-8 trước khi ngủ..."
+            ></textarea>
+          </div>
+
+          <!-- Follow-up Notes -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Ghi chú theo dõi nội bộ (Internal Follow-up)
+            </label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="noteForm.followUpNotes"
+              name="followUpNotes"
+              placeholder="Ghi chú riêng cho bác sĩ trong lần tái khám tiếp theo..."
+            ></textarea>
+          </div>
+
+          <!-- Revisit Date & Mark Completed -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                Đề xuất ngày tái khám (Recommended Follow-up)
+              </label>
+              <input
+                type="datetime-local"
+                class="form-control"
+                [(ngModel)]="noteForm.nextAppointmentRecommendedDate"
+                name="nextAppointmentRecommendedDate"
+              />
+            </div>
+            <div class="col-md-6 d-flex align-items-center pt-md-4">
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="markCompletedSwitchDetail"
+                  [(ngModel)]="noteForm.markCompleted"
+                  name="markCompleted"
+                />
+                <label class="form-check-label fw-semibold text-dark small" for="markCompletedSwitchDetail">
+                  Đánh dấu ca khám là <strong>ĐÃ HOÀN THÀNH (Completed)</strong>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="closeNoteEditor()">Hủy Bỏ</button>
+            <button type="submit" class="btn btn-teal-primary fw-bold px-4" [disabled]="isSavingNote">
+              <span *ngIf="isSavingNote" class="spinner-border spinner-border-sm me-1"></span>
+              Lưu Ghi Chú &amp; Hồ Sơ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Reject Modal (Doctor) -->
+  <div class="modal-backdrop-custom" *ngIf="isRejecting">
+    <div class="modal-dialog-custom modal-sm-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <h4 class="modal-title text-danger">
+            <i class="bi bi-x-circle-fill me-2"></i> Từ Chối Ca Khám
+          </h4>
+          <button type="button" class="btn-close-modal" (click)="closeRejectModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body-custom">
+          <p class="text-secondary small mb-3">
+            Khung giờ này sẽ được giải phóng và mở lại trạng thái <strong>Sẵn sàng (Available)</strong> cho các bệnh nhân khác có thể đặt lịch.
+          </p>
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">Lý do từ chối (gửi thông báo đến bệnh nhân)</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="rejectionReason"
+              name="rejectionReason"
+              placeholder="VD: Trùng lịch hội chẩn khẩn cấp / Bác sĩ có việc đột xuất..."
+            ></textarea>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="closeRejectModal()">Hủy</button>
+            <button type="button" class="btn btn-danger fw-bold" (click)="confirmReject()" [disabled]="isProcessingReject">
+              <span *ngIf="isProcessingReject" class="spinner-border spinner-border-sm me-1"></span>
+              Xác Nhận Từ Chối
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Cancel Modal (Patient) -->
+  <div class="modal-backdrop-custom" *ngIf="isCancelling">
+    <div class="modal-dialog-custom modal-sm-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <h4 class="modal-title text-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Hủy Lịch Hẹn
+          </h4>
+          <button type="button" class="btn-close-modal" (click)="closeCancelModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body-custom">
+          <p class="text-secondary small mb-3">
+            Bạn có chắc chắn muốn hủy lịch hẹn này? Khung giờ sẽ được giải phóng để Bác sĩ có thể tiếp nhận bệnh nhân khác.
+          </p>
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">Lý do hủy lịch</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="cancellationReason"
+              name="cancellationReason"
+              placeholder="VD: Bận việc đột xuất / Muốn dời sang ngày khác..."
+            ></textarea>
+          </div>
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="closeCancelModal()">Không Hủy</button>
+            <button type="button" class="btn btn-danger fw-bold" (click)="confirmCancel()" [disabled]="isProcessingCancel">
+              <span *ngIf="isProcessingCancel" class="spinner-border spinner-border-sm me-1"></span>
+              Xác Nhận Hủy Lịch
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

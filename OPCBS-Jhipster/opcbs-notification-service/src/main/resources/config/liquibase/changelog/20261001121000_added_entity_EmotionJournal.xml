@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20261001121000-1" author="mindbridge">
+        <createTable tableName="emotion_journal">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="content" type="${clobType}"/>
+            <column name="mood_scale" type="int" defaultValueNumeric="3">
+                <constraints nullable="false" />
+            </column>
+            <column name="stress_scale" type="int" defaultValueNumeric="3">
+                <constraints nullable="false" />
+            </column>
+            <column name="sleep_hours" type="decimal(4,1)"/>
+            <column name="depression_scale" type="int"/>
+            <column name="is_shared" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false" />
+            </column>
+            <column name="patient_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="patient_id"
+                                 baseTableName="emotion_journal"
+                                 constraintName="fk_emotion_journal__patient_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="patient_profile"/>
+    </changeSet>
+</databaseChangeLog>

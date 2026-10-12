@@ -1,0 +1,233 @@
+<div class="doctor-patients-container">
+  <!-- Top Header Title & Actions -->
+  <div class="mb-page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <fa-icon icon="user-injured" class="title-icon"></fa-icon>
+        Hồ Sơ Bệnh Nhân (Patient Records)
+      </h1>
+      <p class="page-subtitle">
+        Quản lý danh sách hồ sơ bệnh nhân, tiền sử bệnh lý, hồ sơ tham vấn và ghi chú lâm sàng của bạn.
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Patient Table Container (Styled after C# Index.cshtml) -->
+  <div class="patient-container">
+    <!-- Header Bar with Filter Tabs & Search -->
+    <div class="patient-header-bar">
+      <!-- Tabs -->
+      <div class="tab-pills">
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="filterTab() === 'ALL'"
+          (click)="onTabChange('ALL')"
+        >
+          <fa-icon icon="list" class="tab-icon"></fa-icon>
+          Tất Cả
+          <span class="badge-count">{{ totalPatientsCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="filterTab() === 'REGISTERED'"
+          (click)="onTabChange('REGISTERED')"
+        >
+          <fa-icon icon="user-check" class="tab-icon"></fa-icon>
+          Đã Đăng Ký
+          <span class="badge-count">{{ registeredPatientsCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="filterTab() === 'GUEST'"
+          (click)="onTabChange('GUEST')"
+        >
+          <fa-icon icon="user" class="tab-icon"></fa-icon>
+          Vãng Lai
+          <span class="badge-count" *ngIf="guestPatientsCount() > 0">{{ guestPatientsCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="filterTab() === 'ACTIVE'"
+          (click)="onTabChange('ACTIVE')"
+        >
+          <fa-icon icon="clock" class="tab-icon"></fa-icon>
+          Có Lịch Sắp Tới
+          <span class="badge-count" *ngIf="activeTreatmentsCount() > 0">{{ activeTreatmentsCount() }}</span>
+        </button>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-box">
+        <fa-icon icon="search" class="search-icon"></fa-icon>
+        <input
+          type="text"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChange($event)"
+          placeholder="Tìm theo tên, SĐT, email, chẩn đoán..."
+        />
+        <button *ngIf="searchTerm()" (click)="clearSearch()" class="clear-btn" type="button">
+          <fa-icon icon="times"></fa-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="spinner-border text-teal" role="status">
+        <span class="visually-hidden">Đang tải danh sách...</span>
+      </div>
+      <p class="mt-2 text-muted fw-semibold">Đang tải danh sách hồ sơ bệnh nhân...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoading() && filteredPatients().length === 0" class="empty-state">
+      <fa-icon icon="user-slash" class="empty-icon"></fa-icon>
+      <h5 class="empty-title">
+        {{ searchTerm() ? 'Không tìm thấy bệnh nhân nào' : 'Chưa có hồ sơ bệnh nhân nào' }}
+      </h5>
+      <p class="empty-subtitle">
+        {{ searchTerm() ? 'Hãy kiểm tra lại từ khóa tìm kiếm hoặc xóa bộ lọc.' : 'Bệnh nhân sẽ tự động xuất hiện tại đây khi họ đặt lịch hẹn hoặc thăm khám với bạn.' }}
+      </p>
+      <button *ngIf="searchTerm()" (click)="clearSearch()" class="btn btn-outline-teal btn-sm mt-2">
+        Xóa bộ lọc tìm kiếm
+      </button>
+    </div>
+
+    <!-- Medical Data Table (C# Razor Table Style) -->
+    <div *ngIf="!isLoading() && filteredPatients().length > 0" class="table-responsive">
+      <table class="patient-table">
+        <thead>
+          <tr>
+            <th>Bệnh Nhân</th>
+            <th>Phân Loại</th>
+            <th>Thông Tin Liên Hệ</th>
+            <th>Ca Khám &amp; Chẩn Đoán</th>
+            <th>Khám Gần Nhất</th>
+            <th class="text-end">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredPatients()">
+            <!-- 1. Patient Avatar + Name + Subtext -->
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <div
+                  class="patient-avatar"
+                  [ngClass]="p.isGuest ? 'avatar-guest' : 'avatar-registered'"
+                >
+                  {{ getInitials(p.fullName) }}
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <a [routerLink]="['/doctor/patients', p.patientId]" class="patient-name">
+                      {{ p.fullName }}
+                    </a>
+                  </div>
+                  <div class="patient-subtext">
+                    <span *ngIf="p.gender" class="me-2">
+                      {{ p.gender === 'MALE' ? 'Nam' : p.gender === 'FEMALE' ? 'Nữ' : 'Khác' }}
+                    </span>
+                    <span *ngIf="p.dateOfBirth" class="me-2">
+                      • {{ getAge(p.dateOfBirth) }} tuổi
+                    </span>
+                    <span *ngIf="p.bloodGroup" class="blood-tag me-1">
+                      {{ p.bloodGroup }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- 2. Type Badge -->
+            <td>
+              <span class="badge-patient-type" [ngClass]="p.isGuest ? 'type-guest' : 'type-system'">
+                <fa-icon [icon]="p.isGuest ? 'user' : 'user-check'" class="me-1"></fa-icon>
+                {{ p.isGuest ? 'Vãng lai (Guest)' : 'Đã đăng ký' }}
+              </span>
+            </td>
+
+            <!-- 3. Contact (Email & Phone) -->
+            <td>
+              <div class="contact-info">
+                <div *ngIf="p.phone" class="contact-line">
+                  <fa-icon icon="phone" class="me-1.5 text-teal"></fa-icon>
+                  <span class="contact-phone">{{ p.phone }}</span>
+                </div>
+                <div *ngIf="p.email" class="contact-line text-muted">
+                  <fa-icon icon="envelope" class="me-1.5"></fa-icon>
+                  <span class="contact-email">{{ p.email }}</span>
+                </div>
+                <div *ngIf="!p.phone && !p.email" class="text-muted small">
+                  Chưa có liên hệ
+                </div>
+              </div>
+            </td>
+
+            <!-- 4. Consultations & Diagnosis -->
+            <td>
+              <div class="consultation-info">
+                <span class="badge-notes">
+                  <fa-icon icon="notes-medical" class="me-1"></fa-icon>
+                  {{ p.totalAppointments }} Ca khám
+                </span>
+                <div *ngIf="p.lastDiagnosis" class="last-diag-tag mt-1 text-truncate" title="{{ p.lastDiagnosis }}">
+                  <fa-icon icon="stethoscope" class="me-1"></fa-icon>
+                  {{ p.lastDiagnosis }}
+                </div>
+                <div *ngIf="p.allergies" class="allergies-tag mt-1" title="Dị ứng: {{ p.allergies }}">
+                  <fa-icon icon="exclamation-triangle" class="me-1 text-danger"></fa-icon>
+                  <span class="text-danger fw-bold">{{ p.allergies }}</span>
+                </div>
+              </div>
+            </td>
+
+            <!-- 5. Last Consultation Date -->
+            <td>
+              <div class="last-visit-cell">
+                <span *ngIf="p.lastAppointmentDate" class="text-dark fw-semibold">
+                  <fa-icon icon="calendar-alt" class="me-1 text-teal"></fa-icon>
+                  {{ p.lastAppointmentDate | formatMediumDate }}
+                </span>
+                <span *ngIf="!p.lastAppointmentDate" class="text-muted small">
+                  Chưa có lịch khám
+                </span>
+                <div *ngIf="p.upcomingAppointments > 0" class="upcoming-badge mt-1">
+                  <fa-icon icon="clock" class="me-1"></fa-icon>
+                  {{ p.upcomingAppointments }} lịch sắp tới
+                </div>
+              </div>
+            </td>
+
+            <!-- 6. Actions -->
+            <td class="text-end">
+              <div class="action-btn-group">
+                <button
+                  type="button"
+                  class="btn-action-icon text-danger"
+                  style="border: 1px solid #fee2e2; background: #fff5f5;"
+                  (click)="exportPatientPdf(p, $event)"
+                  [disabled]="exportingPatientId() === p.patientId"
+                  title="Xuất Hồ Sơ Bệnh Án PDF"
+                >
+                  <span *ngIf="exportingPatientId() === p.patientId" class="spinner-border spinner-border-sm"></span>
+                  <fa-icon *ngIf="exportingPatientId() !== p.patientId" icon="file-pdf"></fa-icon>
+                </button>
+                <a
+                  [routerLink]="['/doctor/patients', p.patientId]"
+                  class="btn-action-icon btn-action-view"
+                  title="Xem Hồ Sơ Bệnh Án & Ghi Chú Lâm Sàng"
+                >
+                  <fa-icon icon="eye"></fa-icon>
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

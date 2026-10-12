@@ -1,0 +1,204 @@
+// MindBridge Theme Variables
+$teal-primary: #0d9488;
+$teal-dark: #0f766e;
+$teal-light: #f0fdfa;
+$slate-800: #1e293b;
+$slate-600: #475569;
+$slate-500: #64748b;
+$slate-100: #f1f5f9;
+
+.text-teal {
+  color: $teal-primary !important;
+}
+
+.text-slate-800 {
+  color: $slate-800 !important;
+}
+
+.btn-outline-teal {
+  color: $teal-primary;
+  border-color: $teal-primary;
+  background-color: transparent;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #fff;
+    background-color: $teal-primary;
+    border-color: $teal-primary;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.notification-header-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(14, 165, 233, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Segmented Control (matches C# .pp-seg) ──
+.notif-seg-control {
+  display: inline-flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+
+  .seg-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+
+    &.active {
+      background: #fff;
+      color: $teal-dark;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    &:hover:not(.active) {
+      color: $teal-dark;
+      background: #e2e8f0;
+    }
+
+    .seg-badge {
+      background: #94a3b8;
+      color: #fff;
+      font-size: 0.65rem;
+      border-radius: 10px;
+      padding: 1px 6px;
+      margin-left: 4px;
+      font-weight: 700;
+
+      &.bg-amber {
+        background: #f59e0b !important;
+      }
+    }
+  }
+}
+
+// ── Cards (matches C# .pp-card) ──
+.notification-card {
+  cursor: pointer;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #ffffff;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07) !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  &.unread {
+    background-color: #fafbfc;
+    border-left: 4px solid $teal-primary !important;
+  }
+
+  &.read {
+    opacity: 0.9;
+  }
+}
+
+.notif-type-badge {
+  width: 44px;
+  height: 44px;
+  font-size: 1.25rem;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: $teal-primary;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+.notif-message {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+// ── Status Badges & Subtle Colors ──
+.bg-emerald-subtle {
+  background-color: #dcfce7 !important;
+}
+.text-emerald {
+  color: #15803d !important;
+}
+
+.bg-teal-subtle {
+  background-color: #ccfbf1 !important;
+}
+.text-teal {
+  color: #0f766e !important;
+}
+
+.bg-indigo-subtle {
+  background-color: #e0e7ff !important;
+}
+.text-indigo {
+  color: #3730a3 !important;
+}
+
+.bg-rose-subtle {
+  background-color: #ffe4e6 !important;
+}
+.text-rose {
+  color: #9f1239 !important;
+}
+
+.bg-amber-subtle {
+  background-color: #fef3c7 !important;
+}
+.text-amber {
+  color: #92400e !important;
+}
+
+.bg-purple-subtle {
+  background-color: #f3e8ff !important;
+}
+.text-purple {
+  color: #6b21a8 !important;
+}
+
+.bg-slate-subtle {
+  background-color: #f1f5f9 !important;
+}
+.text-slate {
+  color: #475569 !important;
+}
+
+.notif-empty-state {
+  border: 2px dashed #e2e8f0 !important;
+
+  .empty-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,676 @@
+<div class="appointments-container">
+  <!-- Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 10px;">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage() }}
+      <button type="button" class="btn-close" (click)="successMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 10px;">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+      <button type="button" class="btn-close" (click)="errorMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  <!-- ══ PAGE HEADER BANNER (C# Razor Pages Style) ══ -->
+  <div class="mb-page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+    <div>
+      <h1 class="page-title">
+        <i class="bi bi-calendar2-check-fill title-icon me-2"></i>
+        @if (isDoctor()) {
+          Quản Lý Lịch Hẹn Khám (Appointment Management)
+        } @else {
+          Lịch Hẹn Khám Của Tôi (My Appointments)
+        }
+      </h1>
+      <p class="page-subtitle">
+        @if (isDoctor()) {
+          Xem xét, phê duyệt các yêu cầu đặt lịch hẹn mới từ bệnh nhân và theo dõi tiến trình ca tham vấn y tế.
+        } @else {
+          Theo dõi trạng thái các buổi tư vấn sức khỏe tâm lý và y tế MindBridge của bạn.
+        }
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      @if (isDoctor()) {
+        <a routerLink="/doctor/patients" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+          <i class="bi bi-people-fill me-1.5 text-teal"></i> Hồ Sơ Bệnh Nhân
+        </a>
+        <a routerLink="/availability-slot" class="btn btn-teal-primary btn-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+          <i class="bi bi-calendar-plus me-1.5"></i> Quản Lý Lịch Rảnh
+        </a>
+      } @else {
+        <a routerLink="/patient/clinical-records" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+          <i class="bi bi-journal-medical me-1.5 text-teal"></i> Bệnh Án Của Tôi
+        </a>
+        <a routerLink="/doctor-profile" class="btn btn-teal-primary btn-sm px-3 py-2 fw-semibold" style="border-radius: 8px;">
+          <i class="bi bi-plus-lg me-1.5"></i> Đặt Lịch Khám Mới
+        </a>
+      }
+      <button class="btn btn-outline-secondary btn-sm px-2.5 py-2" (click)="loadAppointments()" title="Làm mới dữ liệu" style="border-radius: 8px;">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ FILTER & SEARCH SECTION (C# Razor Filter Form) ══ -->
+  <div class="filter-section">
+    <!-- Filter Tabs -->
+    <div class="filter-tabs-row">
+      <div class="tab-pills">
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'ALL'"
+          (click)="setStatusFilter('ALL')"
+        >
+          <i class="bi bi-list-task me-1"></i> Tất Cả
+          <span class="badge-count">{{ totalCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'PENDING'"
+          (click)="setStatusFilter('PENDING')"
+        >
+          <i class="bi bi-hourglass-split me-1 text-warning"></i> Chờ Duyệt
+          <span class="badge-count badge-warning-count" *ngIf="pendingCount() > 0">{{ pendingCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'ACCEPTED'"
+          (click)="setStatusFilter('ACCEPTED')"
+        >
+          <i class="bi bi-check-circle-fill me-1 text-primary"></i> Đã Xác Nhận
+          <span class="badge-count" *ngIf="acceptedCount() > 0">{{ acceptedCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'IN_PROGRESS'"
+          (click)="setStatusFilter('IN_PROGRESS')"
+        >
+          <i class="bi bi-play-circle-fill me-1 text-info"></i> Đang Khám
+          <span class="badge-count" *ngIf="inProgressCount() > 0">{{ inProgressCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'COMPLETED'"
+          (click)="setStatusFilter('COMPLETED')"
+        >
+          <i class="bi bi-patch-check-fill me-1 text-success"></i> Đã Hoàn Thành
+          <span class="badge-count" *ngIf="completedCount() > 0">{{ completedCount() }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-pill"
+          [class.active]="currentStatusFilter() === 'CANCELLED_ALL'"
+          (click)="setStatusFilter('CANCELLED_ALL')"
+        >
+          <i class="bi bi-x-circle-fill me-1 text-danger"></i> Đã Hủy / Từ Chối
+          <span class="badge-count" *ngIf="cancelledCount() > 0">{{ cancelledCount() }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Search & Date Range Pickers -->
+    <div class="filter-controls-row d-flex align-items-center gap-2 flex-wrap mt-3">
+      <!-- Search Box -->
+      <div class="search-input-group" style="flex: 1.8; min-width: 220px;">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Tìm theo mã ca, tên bệnh nhân, SĐT, lý do khám..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+        <button *ngIf="searchQuery()" (click)="searchQuery.set('')" class="clear-search-btn" type="button">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Date From -->
+      <div class="date-input-group" style="flex: 1; min-width: 140px;">
+        <label class="date-label">Từ ngày:</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [ngModel]="dateFrom()"
+          (ngModelChange)="dateFrom.set($event)"
+        />
+      </div>
+
+      <!-- Date To -->
+      <div class="date-input-group" style="flex: 1; min-width: 140px;">
+        <label class="date-label">Đến ngày:</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [ngModel]="dateTo()"
+          (ngModelChange)="dateTo.set($event)"
+        />
+      </div>
+
+      <!-- Clear All Filters Button -->
+      @if (searchQuery() || dateFrom() || dateTo() || currentStatusFilter() !== 'ALL') {
+        <button
+          type="button"
+          class="btn-clear-filters"
+          (click)="clearFilters()"
+          title="Xóa toàn bộ bộ lọc"
+        >
+          <i class="bi bi-arrow-counterclockwise me-1"></i> Xóa Lọc
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══ LOADING STATE ══ -->
+  @if (isLoading()) {
+    <div class="loading-state-card text-center p-5">
+      <div class="spinner-border text-teal" role="status">
+        <span class="visually-hidden">Đang tải...</span>
+      </div>
+      <p class="mt-3 text-muted fw-semibold">Đang cập nhật danh sách lịch hẹn khám...</p>
+    </div>
+  }
+
+  <!-- ══ EMPTY STATE ══ -->
+  @if (!isLoading() && filteredAppointments().length === 0) {
+    <div class="empty-state-card text-center">
+      <div class="empty-icon-circle">
+        <i class="bi bi-calendar-x"></i>
+      </div>
+      <h5 class="empty-title">
+        {{ searchQuery() || dateFrom() || dateTo() ? 'Không tìm thấy lịch hẹn nào phù hợp' : 'Hiện chưa có lịch hẹn khám nào' }}
+      </h5>
+      <p class="empty-subtitle">
+        {{ searchQuery() || dateFrom() || dateTo() ? 'Hãy thử điều chỉnh lại từ khóa hoặc xóa bớt tiêu chí lọc thời gian.' : 'Các cuộc hẹn sẽ hiển thị tại đây ngay khi bệnh nhân đặt lịch hoặc khi bác sĩ mở khung giờ rảnh.' }}
+      </p>
+      @if (searchQuery() || dateFrom() || dateTo() || currentStatusFilter() !== 'ALL') {
+        <button type="button" class="btn btn-outline-teal btn-sm mt-2" (click)="clearFilters()">
+          Xóa toàn bộ bộ lọc
+        </button>
+      } @else if (isPatient()) {
+        <a routerLink="/doctor-profile" class="btn btn-teal-primary btn-sm mt-2 px-3 py-2">
+          <i class="bi bi-search me-1.5"></i> Tìm Bác Sĩ & Đặt Lịch Ngay
+        </a>
+      }
+    </div>
+  }
+
+  <!-- ══ GROUPED APPOINTMENTS LIST (C# Razor Pattern) ══ -->
+  @if (!isLoading() && groupedAppointments().length > 0) {
+    <div class="grouped-appointments-container">
+      @for (group of groupedAppointments(); track group.dateKey) {
+        <div class="date-group-section mb-4">
+          <!-- Date Group Header -->
+          <div class="date-group-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-calendar3 header-calendar-icon"></i>
+              <span class="header-date-text">{{ group.displayDate }}</span>
+            </div>
+            <span class="header-count-badge">{{ group.appointments.length }} ca khám</span>
+          </div>
+
+          <!-- Appointment Cards in Date Group -->
+          <div class="appointments-group-list d-flex flex-column gap-2.5 mt-2">
+            @for (appt of group.appointments; track appt.id) {
+              <div class="appt-card" [ngClass]="'status-' + getStatusBadgeClass(appt.status)">
+                <div class="appt-card-body">
+                  <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <!-- 1. Left Date Box -->
+                    <div class="appt-date-box d-none d-sm-flex">
+                      <span class="appt-date-day">{{ getDayNumber(appt.scheduledStart) }}</span>
+                      <span class="appt-date-month">{{ getMonthString(appt.scheduledStart) }}</span>
+                    </div>
+
+                    <!-- 2. Patient / Doctor Info + Status Badge -->
+                    <div class="appt-user-info flex-grow-1" style="min-width: 220px;">
+                      <div class="d-flex align-items-center gap-2.5">
+                        <div
+                          class="patient-avatar"
+                          [class.avatar-patient]="isDoctor()"
+                          [class.avatar-doctor]="isPatient()"
+                        >
+                          @if (isDoctor()) {
+                            {{ getInitials(appt.patient?.fullName) }}
+                          } @else {
+                            <i class="bi bi-person-badge-fill"></i>
+                          }
+                        </div>
+                        <div>
+                          <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="booking-code-chip">
+                              #{{ appt.bookingCode }}
+                            </span>
+                            <span class="user-display-name">
+                              @if (isDoctor()) {
+                                <a [routerLink]="['/doctor/patients', appt.patient?.id]" class="patient-link" title="Xem hồ sơ bệnh nhân">
+                                  {{ appt.patient?.fullName || 'Bệnh nhân' }}
+                                </a>
+                              } @else {
+                                <span>BS: {{ appt.doctor?.fullName || 'Chuyên gia MindBridge' }}</span>
+                              }
+                            </span>
+                            <!-- Status Pill with Icon -->
+                            <span class="appt-status" [ngClass]="'s-' + getStatusBadgeClass(appt.status)">
+                              <i class="bi me-1" [ngClass]="getStatusIcon(appt.status)"></i>
+                              {{ getStatusText(appt.status) }}
+                            </span>
+                          </div>
+
+                          <div class="user-subtext d-flex align-items-center gap-2 mt-1">
+                            @if (isDoctor()) {
+                              <span *ngIf="appt.patient?.phone" class="contact-item">
+                                <i class="bi bi-telephone-fill text-teal me-1"></i>{{ appt.patient?.phone }}
+                              </span>
+                              <span *ngIf="appt.patient?.gender" class="contact-item">
+                                • {{ appt.patient?.gender === 'MALE' ? 'Nam' : appt.patient?.gender === 'FEMALE' ? 'Nữ' : 'Khác' }}
+                              </span>
+                            } @else {
+                              <span class="contact-item text-muted">
+                                {{ appt.doctor?.title || 'Bác sĩ chuyên khoa' }}
+                              </span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 3. Consultation Mode & Time Badge -->
+                    <div class="appt-time-column text-center">
+                      <div class="time-badge">
+                        <i class="bi bi-clock me-1"></i>
+                        {{ formatTime(appt) }}
+                      </div>
+                      <div class="mt-1">
+                        <span class="mode-badge" [class.mode-online]="appt.consultationMode === 'ONLINE'" [class.mode-inperson]="appt.consultationMode === 'IN_PERSON'">
+                          <i class="bi me-1" [ngClass]="appt.consultationMode === 'ONLINE' ? 'bi-camera-video-fill' : 'bi-hospital-fill'"></i>
+                          {{ appt.consultationMode === 'ONLINE' ? 'Khám Online' : 'Tại Phòng Khám' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- 4. Action Buttons Toolbar -->
+                    <div class="appt-actions-toolbar d-flex align-items-center gap-1.5 ms-auto">
+                      <!-- View Details Button -->
+                      <a
+                        [routerLink]="['/appointment', appt.id, 'view']"
+                        class="action-btn btn-view"
+                        title="Xem chi tiết lịch hẹn"
+                      >
+                        <i class="bi bi-eye"></i>
+                      </a>
+
+                      <!-- Doctor Quick Actions -->
+                      @if (isDoctor()) {
+                        <!-- PENDING: Approve & Reject -->
+                        @if (appt.status === 'PENDING') {
+                          <button
+                            type="button"
+                            class="action-btn btn-approve"
+                            (click)="acceptAppointment(appt.id)"
+                            title="Phê duyệt lịch hẹn này"
+                          >
+                            <i class="bi bi-check-lg"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="action-btn btn-reject"
+                            (click)="openRejectModal(rejectModalTemplate, appt.id)"
+                            title="Từ chối lịch hẹn"
+                          >
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        }
+
+                        <!-- ACCEPTED: Start Consultation (time check) -->
+                        @if (appt.status === 'ACCEPTED') {
+                          @if (canStartAppointment(appt)) {
+                            <button
+                              type="button"
+                              class="btn btn-teal-primary btn-sm px-2.5 action-label-btn"
+                              (click)="startAppointment(appt.id)"
+                              title="Bắt đầu ca khám ngay"
+                            >
+                              <i class="bi bi-play-circle me-1"></i> Bắt Đầu Khám
+                            </button>
+                          } @else {
+                            <button
+                              type="button"
+                              class="btn btn-secondary btn-sm px-2.5 action-label-btn opacity-75"
+                              disabled
+                              title="Chỉ có thể bắt đầu trước tối đa 15 phút so với khung giờ hẹn"
+                            >
+                              <i class="bi bi-clock me-1"></i> Chưa Đến Giờ
+                            </button>
+                          }
+                        }
+
+                        <!-- IN_PROGRESS: Consultation Note & Complete -->
+                        @if (appt.status === 'IN_PROGRESS') {
+                          <button
+                            type="button"
+                            class="btn btn-teal-primary btn-sm px-2.5 action-label-btn"
+                            (click)="openNoteModal(noteModalTemplate, appt)"
+                            title="Ghi chép lâm sàng & phác đồ"
+                          >
+                            <i class="bi bi-journal-medical me-1"></i> Ghi Chú Khám
+                          </button>
+                          <button
+                            type="button"
+                            class="action-btn btn-complete"
+                            (click)="completeAppointment(appt.id, noteModalTemplate)"
+                            title="Đánh dấu hoàn thành ca khám"
+                          >
+                            <i class="bi bi-patch-check"></i>
+                          </button>
+                        }
+
+                        <!-- Patient Profile Link -->
+                        <a
+                          *ngIf="appt.patient?.id"
+                          [routerLink]="['/doctor/patients', appt.patient?.id]"
+                          class="action-btn btn-patient-profile"
+                          title="Hồ sơ y tế của bệnh nhân"
+                        >
+                          <i class="bi bi-file-earmark-person"></i>
+                        </a>
+                      }
+
+                      <!-- Patient Quick Actions -->
+                      @if (isPatient()) {
+                        @if (appt.status === 'PENDING' || appt.status === 'ACCEPTED') {
+                          <button
+                            type="button"
+                            class="action-btn btn-cancel"
+                            (click)="openCancelModal(cancelModalTemplate, appt.id)"
+                            title="Hủy lịch hẹn"
+                          >
+                            <i class="bi bi-x-circle"></i>
+                          </button>
+                        }
+                      }
+                    </div>
+                  </div>
+
+
+                  <!-- Diagnosis if completed -->
+                  @if (appt.diagnosis) {
+                    <div class="appt-diagnosis-box mt-2">
+                      <i class="bi bi-heart-pulse-fill me-1.5 text-success"></i>
+                      <span class="diagnosis-label">Chẩn đoán bác sĩ:</span>
+                      <span class="diagnosis-text">{{ appt.diagnosis }}</span>
+                    </div>
+                  }
+
+                  <!-- Cancellation Reason if any -->
+                  @if (appt.cancellationReason) {
+                    <div class="appt-cancellation-box mt-2">
+                      <i class="bi bi-exclamation-octagon-fill me-1.5 text-danger"></i>
+                      <span class="cancellation-label">Lý do từ chối / hủy:</span>
+                      <span class="cancellation-text">{{ appt.cancellationReason }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ══ PAGINATION BAR ══ -->
+    @if (totalItems() > 0) {
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4 pt-3 border-top">
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <span>Hiển thị</span>
+          <select
+            class="form-select form-select-sm"
+            style="width: auto; border-radius: 6px;"
+            [value]="pageSize()"
+            (change)="changePageSize($event)"
+          >
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span>ca / trang (Tổng <strong>{{ totalItems() }}</strong> ca khám)</span>
+        </div>
+
+        @if (totalPages() > 1) {
+          <nav aria-label="Appointment Pagination">
+            <ul class="pagination pagination-sm mb-0 gap-1">
+              <li class="page-item" [class.disabled]="page() === 1">
+                <button
+                  type="button"
+                  class="page-link"
+                  style="border-radius: 6px;"
+                  (click)="prevPage()"
+                  [disabled]="page() === 1"
+                  aria-label="Previous"
+                >
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+              </li>
+
+              @for (p of pageNumbers; track p) {
+                <li class="page-item" [class.active]="page() === p">
+                  <button
+                    type="button"
+                    class="page-link"
+                    style="border-radius: 6px;"
+                    (click)="goToPage(p)"
+                  >
+                    {{ p }}
+                  </button>
+                </li>
+              }
+
+              <li class="page-item" [class.disabled]="page() === totalPages()">
+                <button
+                  type="button"
+                  class="page-link"
+                  style="border-radius: 6px;"
+                  (click)="nextPage()"
+                  [disabled]="page() === totalPages()"
+                  aria-label="Next"
+                >
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: BÁC SĨ TỪ CHỐI LỊCH (Reject Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #rejectModalTemplate let-modal>
+  <div class="modal-header bg-light">
+    <h5 class="modal-title fw-bold text-dark">
+      <i class="bi bi-x-circle text-danger me-2"></i> Từ Chối Yêu Cầu Đặt Lịch
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <form [formGroup]="rejectForm" (ngSubmit)="submitReject(modal)">
+    <div class="modal-body p-4">
+      <p class="text-secondary small mb-3">
+        Khi bạn từ chối, khung giờ này sẽ được mở lại ở trạng thái <strong>Sẵn sàng (Available)</strong> để các bệnh nhân khác có thể đặt lịch.
+      </p>
+      <div class="mb-2">
+        <label class="form-label small fw-semibold text-secondary">Lý Do Từ Chối (gửi thông báo đến bệnh nhân)</label>
+        <textarea
+          class="form-control"
+          rows="3"
+          formControlName="rejectionReason"
+          placeholder="VD: Bác sĩ có ca hội chẩn đột xuất / Xin phép dời sang khung giờ khác..."
+          style="border-radius: 8px;"
+        ></textarea>
+      </div>
+    </div>
+    <div class="modal-footer bg-light">
+      <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Đóng</button>
+      <button type="submit" class="btn btn-danger fw-bold" style="border-radius: 8px;">Xác Nhận Từ Chối</button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: BỆNH NHÂN HỦY LỊCH (Cancel Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #cancelModalTemplate let-modal>
+  <div class="modal-header bg-light">
+    <h5 class="modal-title fw-bold text-dark">
+      <i class="bi bi-exclamation-triangle text-danger me-2"></i> Hủy Lịch Hẹn Đã Đặt
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <form [formGroup]="cancelForm" (ngSubmit)="submitCancel(modal)">
+    <div class="modal-body p-4">
+      <p class="text-secondary small mb-3">
+        Bạn có chắc chắn muốn hủy ca khám này? Khung giờ sẽ được giải phóng để Bác sĩ có thể tiếp nhận bệnh nhân khác.
+      </p>
+      <div class="mb-2">
+        <label class="form-label small fw-semibold text-secondary">Lý Do Hủy Lịch</label>
+        <textarea
+          class="form-control"
+          rows="3"
+          formControlName="cancellationReason"
+          placeholder="VD: Bận việc đột xuất / Muốn chọn ngày khác..."
+          style="border-radius: 8px;"
+        ></textarea>
+      </div>
+    </div>
+    <div class="modal-footer bg-light">
+      <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Không Hủy</button>
+      <button type="submit" class="btn btn-danger fw-bold" style="border-radius: 8px;">Xác Nhận Hủy Lịch</button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: GHI CHÚ LÂM SÀNG & PHÁC ĐỒ TRỊ LIỆU (Fast Note Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #noteModalTemplate let-modal>
+  <div class="modal-header bg-light">
+    <div>
+      <h5 class="modal-title fw-bold text-dark mb-0">
+        <i class="bi bi-journal-medical text-teal me-2"></i> Ghi Chép Lâm Sàng &amp; Phác Đồ Trị Liệu
+      </h5>
+      <span class="text-muted small">Ca khám: #{{ selectedAppointmentForNote()?.bookingCode }} - Bệnh nhân: {{ selectedAppointmentForNote()?.patient?.fullName }}</span>
+    </div>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body p-4">
+    <div class="row g-3">
+      <!-- 1. Diagnosis -->
+      <div class="col-12">
+        <label class="form-label fw-bold text-dark small mb-1">
+          Chẩn Đoán Lâm Sàng (Diagnosis) <span class="text-danger">*</span>
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="noteForm.diagnosis"
+          placeholder="VD: Rối loạn lo âu lan tỏa (GAD) F41.1, Căng thẳng công việc giai đoạn 2..."
+          style="border-radius: 8px;"
+        />
+      </div>
+
+      <!-- 2. Consultation Summary -->
+      <div class="col-12">
+        <label class="form-label fw-bold text-dark small mb-1">
+          Diễn Biến &amp; Tóm Tắt Buổi Tham Vấn (Consultation Notes)
+        </label>
+        <textarea
+          class="form-control"
+          rows="3"
+          [(ngModel)]="noteForm.consultationSummary"
+          placeholder="Ghi nhận phản hồi cảm xúc, hành vi, diễn biến tâm lý trong buổi khám..."
+          style="border-radius: 8px;"
+        ></textarea>
+      </div>
+
+      <!-- 3. Therapy Plan -->
+      <div class="col-12">
+        <label class="form-label fw-bold text-dark small mb-1">
+          Phác Đồ Trị Liệu &amp; Can Thiệp (Therapy Plan)
+        </label>
+        <textarea
+          class="form-control"
+          rows="2"
+          [(ngModel)]="noteForm.therapyPlan"
+          placeholder="Áp dụng liệu pháp Nhận thức Hành vi (CBT), Thư giãn cơ bắp tiến triển (PMR)..."
+          style="border-radius: 8px;"
+        ></textarea>
+      </div>
+
+      <!-- 4. Recommendations & Homework -->
+      <div class="col-12">
+        <label class="form-label fw-bold text-dark small mb-1">
+          Lời Dặn &amp; Bài Tập Về Nhà (Patient Recommendations / Homework)
+        </label>
+        <textarea
+          class="form-control"
+          rows="2"
+          [(ngModel)]="noteForm.recommendations"
+          placeholder="Nhật ký ghi nhận suy nghĩ tự động (Thought Record), Tập hít thở 4-7-8 trước khi ngủ..."
+          style="border-radius: 8px;"
+        ></textarea>
+      </div>
+
+      <!-- 5. Next Revisit Recommended Date -->
+      <div class="col-md-6">
+        <label class="form-label fw-bold text-dark small mb-1">
+          Đề Xuất Ngày Tái Khám (Recommended Follow-up)
+        </label>
+        <input
+          type="datetime-local"
+          class="form-control"
+          [(ngModel)]="noteForm.nextAppointmentRecommendedDate"
+          style="border-radius: 8px;"
+        />
+      </div>
+
+      <!-- 6. Mark Completed Checkbox -->
+      <div class="col-md-6 d-flex align-items-center pt-md-4">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="markCompletedSwitch"
+            [(ngModel)]="noteForm.markCompleted"
+          />
+          <label class="form-check-label fw-semibold text-dark small" for="markCompletedSwitch">
+            Đánh dấu ca khám này là ĐÃ HOÀN THÀNH (Completed)
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer bg-light">
+    <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Đóng</button>
+    <button
+      type="button"
+      class="btn btn-teal-primary fw-bold px-4"
+      (click)="submitNote(modal)"
+      [disabled]="isSavingNote()"
+      style="border-radius: 8px;"
+    >
+      <span *ngIf="isSavingNote()" class="spinner-border spinner-border-sm me-1"></span>
+      Lưu Ghi Chú &amp; Hồ Sơ
+    </button>
+  </div>
+</ng-template>

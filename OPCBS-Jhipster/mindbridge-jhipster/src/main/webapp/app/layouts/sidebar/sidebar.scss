@@ -1,0 +1,149 @@
+/* ==========================================================================
+   MindBridge Dashboard Sidebar Styles
+   ========================================================================== */
+
+.mb-dash-sidebar {
+  width: 270px;
+  min-width: 270px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  border-right: 1.5px solid #e2e8f0;
+  padding: 1.25rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1020;
+  box-shadow: 2px 0 10px rgba(15, 23, 42, 0.02);
+
+  /* Slim scrollbar */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .sidebar-brand {
+    padding: 0.35rem 0.5rem 0.85rem 0.5rem;
+    border-bottom: 1.5px solid #f1f5f9;
+
+    .sidebar-brand-title {
+      font-size: 1.15rem;
+      font-weight: 850;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .sidebar-brand-sub {
+      font-size: 0.75rem;
+      font-weight: 750;
+      color: #0f766e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .sb-section-label {
+      font-size: 0.7rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      text-transform: uppercase;
+      padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+    }
+
+    .sb-divider {
+      height: 1.5px;
+      background: #f1f5f9;
+      margin: 0.5rem 0;
+    }
+
+    .sb-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #334155;
+      text-decoration: none;
+      transition: all 0.15s ease;
+
+      i {
+        font-size: 1.1rem;
+        color: #64748b;
+        transition: color 0.15s ease;
+      }
+
+      &:hover {
+        background: #f1f5f9;
+        color: #0f766e;
+
+        i {
+          color: #0f766e;
+        }
+      }
+
+      &.active {
+        background: #0f766e;
+        color: #ffffff !important;
+        font-weight: 800;
+        box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
+
+        i {
+          color: #ffffff !important;
+        }
+      }
+
+      &.sb-back-home {
+        background: #f0fdfa;
+        border: 1px solid #ccfbf1;
+        color: #0f766e;
+
+        &:hover {
+          background: #ccfbf1;
+        }
+      }
+    }
+
+    .sb-logout {
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+      font-weight: 700;
+
+      &:hover {
+        background: #fef2f2;
+      }
+    }
+  }
+
+  .text-teal {
+    color: #0f766e !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .mb-dash-sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+}

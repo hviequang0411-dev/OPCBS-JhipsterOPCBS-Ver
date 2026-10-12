@@ -1,0 +1,10 @@
+node_modules/
+**/node_modules/
+target/
+**/target/
+dist/
+**/dist/
+.angular/
+**/.angular/
+*.log
+**/*.log

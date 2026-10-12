@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.app.json",
+  "files": [
+    "src/main/webapp/app/config/index.ts",
+    "src/main/webapp/app/core/auth/index.ts",
+    "src/main/webapp/app/core/request/index.ts",
+    "src/main/webapp/app/shared/alert/index.ts",
+    "src/main/webapp/app/shared/pagination/index.ts",
+    "src/main/webapp/app/shared/sort/index.ts",
+    "src/main/webapp/app/core/util/index.ts",
+    "src/main/webapp/app/shared/date/index.ts",
+    "src/main/webapp/app/entities/entity-navbar-items.ts",
+    "src/main/webapp/app/entities/entity.routes.ts"
+  ],
+  "include": [
+    "src/main/webapp/**/*.d.ts"
+  ]
+}

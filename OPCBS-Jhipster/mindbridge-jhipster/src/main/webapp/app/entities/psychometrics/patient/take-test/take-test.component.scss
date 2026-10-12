@@ -1,0 +1,58 @@
+.take-test-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.question-card {
+  border-radius: 12px;
+  border-left: 4px solid transparent !important;
+  transition: all 0.2s ease;
+  &.border-success {
+    border-left-color: #198754 !important;
+  }
+}
+
+.question-number-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.option-btn {
+  background-color: #fff;
+  border-color: #dee2e6;
+  transition: all 0.2s ease;
+  &:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+  }
+  &.active-option {
+    background-color: #e7f1ff;
+    border-color: #0d6efd;
+    color: #0d6efd;
+  }
+}
+
+.option-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #adb5bd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  &.checked {
+    border-color: #0d6efd;
+    background-color: #0d6efd;
+    color: white;
+  }
+}

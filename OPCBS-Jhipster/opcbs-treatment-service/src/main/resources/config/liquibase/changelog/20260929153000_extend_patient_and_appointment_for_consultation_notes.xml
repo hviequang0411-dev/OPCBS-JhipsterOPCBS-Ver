@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20260929153000-1" author="mindbridge">
+        <addColumn tableName="patient_profile">
+            <column name="allergies" type="varchar(500)">
+                <constraints nullable="true" />
+            </column>
+            <column name="emergency_contact_phone" type="varchar(30)">
+                <constraints nullable="true" />
+            </column>
+            <column name="blood_group" type="varchar(10)">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20260929153000-2" author="mindbridge">
+        <addColumn tableName="appointment">
+            <column name="diagnosis" type="varchar(500)">
+                <constraints nullable="true" />
+            </column>
+            <column name="consultation_summary" type="${clobType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="therapy_plan" type="${clobType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="recommendations" type="${clobType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="follow_up_notes" type="${clobType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="next_appointment_recommended_date" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <column name="completed_at" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

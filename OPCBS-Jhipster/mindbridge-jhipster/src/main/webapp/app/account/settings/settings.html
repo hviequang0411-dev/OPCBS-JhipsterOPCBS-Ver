@@ -1,0 +1,332 @@
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-md-11">
+
+      <!-- Profile Header Banner -->
+      <div class="prof-header-card d-flex align-items-center justify-content-between flex-wrap gap-3 p-4 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #09332a 0%, #0f766e 100%);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="position-relative">
+            @if (avatarUrl()) {
+              <img [src]="avatarUrl()" alt="Avatar" class="rounded-circle border border-3 border-white shadow" style="width: 72px; height: 72px; object-fit: cover;" />
+            } @else {
+              <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white border border-3 border-white shadow" style="width: 72px; height: 72px; background: #0d9488; font-size: 1.6rem;">
+                {{ userInitials() }}
+              </div>
+            }
+          </div>
+          <div>
+            <h3 class="text-white mb-1 fw-bold">
+              {{ settingsForm.get('fullName')?.value || settingsForm.get('firstName')?.value || 'Hồ Sơ Người Dùng' }}
+            </h3>
+            <p class="text-white-50 mb-0 d-flex align-items-center gap-2 small">
+              <i class="bi bi-envelope"></i> {{ settingsForm.get('email')?.value || 'Chưa cập nhật email' }}
+              <span>•</span>
+              <i class="bi bi-person-badge"></i> &#64;{{ settingsForm.get('login')?.value }}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <span
+            class="badge px-3 py-2 rounded-pill fw-semibold shadow-sm"
+            [ngClass]="{
+              'bg-light text-success': currentRole() === 'PATIENT',
+              'bg-warning text-dark': currentRole() === 'DOCTOR',
+              'bg-danger text-white': currentRole() === 'ADMIN',
+              'bg-light text-dark': currentRole() === 'USER'
+            }"
+            style="font-size: 0.85rem;"
+          >
+            <i
+              class="bi me-1"
+              [ngClass]="{
+                'bi-person-heart': currentRole() === 'PATIENT',
+                'bi-heart-pulse-fill': currentRole() === 'DOCTOR',
+                'bi-shield-lock-fill': currentRole() === 'ADMIN',
+                'bi-person-fill': currentRole() === 'USER'
+              }"
+            ></i>
+            {{ currentRole() === 'PATIENT' ? 'Thân Chủ / Bệnh Nhân' : (currentRole() === 'DOCTOR' ? 'Bác Sĩ / Chuyên Gia' : (currentRole() === 'ADMIN' ? 'Quản Trị Viên' : 'Người Dùng')) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Cloud Avatar Upload Widget -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 my-3 bg-white">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2.5 rounded-3 bg-teal-subtle text-teal">
+              <i class="bi bi-cloud-arrow-up-fill fs-4" style="color: #0f766e;"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold text-dark mb-0">Ảnh Đại Diện Hồ Sơ (Cloudinary Cloud Storage)</h6>
+              <small class="text-muted">Tải ảnh đại diện lưu trữ trực tiếp trên đám mây CDN Cloudinary tốc độ cao</small>
+            </div>
+          </div>
+
+          <div>
+            <input
+              type="file"
+              #avatarFileInput
+              class="d-none"
+              accept="image/png, image/jpeg, image/jpg, image/webp"
+              (change)="onAvatarFileSelected($event)"
+            />
+            <button
+              type="button"
+              class="btn btn-outline-teal d-flex align-items-center gap-2 rounded-pill px-3 py-2 fw-semibold"
+              style="border: 1.5px solid #0f766e; color: #0f766e;"
+              (click)="avatarFileInput.click()"
+              [disabled]="isUploadingAvatar()"
+            >
+              @if (isUploadingAvatar()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Đang tải lên Cloud...</span>
+              } @else {
+                <i class="bi bi-camera-fill"></i>
+                <span>Tải Ảnh Mới Lên Cloud</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        @if (avatarSuccess()) {
+          <div class="alert alert-success alert-dismissible fade show mt-3 mb-0 py-2 small" role="alert">
+            <i class="bi bi-check-circle-fill me-1"></i>
+            Đã tải ảnh đại diện lên Cloudinary và cập nhật hồ sơ thành công!
+          </div>
+        }
+        @if (uploadError()) {
+          <div class="alert alert-danger alert-dismissible fade show mt-3 mb-0 py-2 small" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            {{ uploadError() }}
+          </div>
+        }
+      </div>
+
+      @if (success()) {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" role="alert">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <strong>Cập nhật thành công!</strong> Thông tin hồ sơ của bạn đã được lưu an toàn vào hệ thống.
+        </div>
+      }
+
+      <jhi-alert-error />
+
+      <form name="form" (ngSubmit)="save()" [formGroup]="settingsForm" novalidate>
+
+        <!-- Personal Information Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white overflow-hidden">
+          <div class="p-3.5 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-person-lines-fill" style="color: #0f766e;"></i>
+              <span>Thông Tin Cá Nhân Cơ Bản</span>
+            </h6>
+            <small class="text-muted">Quản lý họ tên, email và địa chỉ liên hệ</small>
+          </div>
+          <div class="p-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="firstName">Họ &amp; Tên Đệm <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control rounded-3 py-2"
+                  id="firstName"
+                  name="firstName"
+                  placeholder="Ví dụ: Nguyễn Văn"
+                  formControlName="firstName"
+                  data-cy="firstname"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="lastName">Tên <span class="text-danger">*</span></label>
+                <input
+                  type="text"
+                  class="form-control rounded-3 py-2"
+                  id="lastName"
+                  name="lastName"
+                  placeholder="Ví dụ: An"
+                  formControlName="lastName"
+                  data-cy="lastname"
+                />
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label fw-semibold text-dark" for="fullName">Tên Hiển Thị Đầy Đủ Trên Hệ Thống</label>
+                <input
+                  type="text"
+                  class="form-control rounded-3 py-2"
+                  id="fullName"
+                  name="fullName"
+                  placeholder="Ví dụ: Bác sĩ Nguyễn Văn An hoặc Nguyễn Văn An"
+                  formControlName="fullName"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="email">Địa Chỉ Email <span class="text-danger">*</span></label>
+                <input
+                  type="email"
+                  class="form-control rounded-3 py-2"
+                  id="email"
+                  name="email"
+                  placeholder="email@domain.com"
+                  formControlName="email"
+                  data-cy="email"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="phone">Số Điện Thoại Liên Lạc</label>
+                <input
+                  type="text"
+                  class="form-control rounded-3 py-2"
+                  id="phone"
+                  name="phone"
+                  placeholder="0912345678"
+                  formControlName="phone"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="gender">Giới Tính</label>
+                <select class="form-select rounded-3 py-2" id="gender" name="gender" formControlName="gender">
+                  <option [ngValue]="null">-- Chọn Giới Tính --</option>
+                  <option value="MALE">Nam</option>
+                  <option value="FEMALE">Nữ</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark" for="dateOfBirth">Ngày Sinh</label>
+                <input
+                  type="date"
+                  class="form-control rounded-3 py-2"
+                  id="dateOfBirth"
+                  name="dateOfBirth"
+                  formControlName="dateOfBirth"
+                />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold text-dark" for="address">Địa Chỉ Thường Trú / Nơi Ở Hiện Tại</label>
+                <input
+                  type="text"
+                  class="form-control rounded-3 py-2"
+                  id="address"
+                  name="address"
+                  placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
+                  formControlName="address"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Specific: Patient Health Background -->
+        @if (currentRole() === 'PATIENT') {
+          <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white overflow-hidden">
+            <div class="p-3.5 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+              <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-heart-pulse-fill text-danger"></i>
+                <span>Tiền Sử Y Tế &amp; Ghi Chú Thân Chủ</span>
+              </h6>
+              <small class="text-muted">Cung cấp bối cảnh sức khỏe ban đầu cho bác sĩ tham vấn</small>
+            </div>
+            <div class="p-4">
+              <div class="mb-2">
+                <label class="form-label fw-semibold text-dark" for="medicalHistory">Mô Tả Tiền Sử Bệnh &amp; Vấn Đề Tâm Lý Từng Gặp</label>
+                <textarea
+                  class="form-control rounded-3"
+                  id="medicalHistory"
+                  name="medicalHistory"
+                  rows="3"
+                  placeholder="Tóm tắt ngắn gọn các triệu chứng lo âu, mất ngủ, tiền sử bệnh lý hoặc dị ứng thuốc..."
+                  formControlName="medicalHistory"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Role Specific: Doctor Details -->
+        @if (currentRole() === 'DOCTOR') {
+          <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white overflow-hidden">
+            <div class="p-3.5 px-4 border-bottom bg-light-subtle d-flex align-items-center justify-content-between">
+              <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-briefcase-fill" style="color: #0f766e;"></i>
+                <span>Thông Tin Hành Nghề &amp; Chi Phí Bác Sĩ</span>
+              </h6>
+              <small class="text-muted">Học hàm, chức danh, kinh nghiệm và mức phí phiên khám</small>
+            </div>
+            <div class="p-4">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold text-dark" for="title">Chức Danh &amp; Bằng Cấp Chuyên Môn</label>
+                  <input
+                    type="text"
+                    class="form-control rounded-3 py-2"
+                    id="title"
+                    name="title"
+                    placeholder="Ví dụ: Bác sĩ Chuyên khoa II, Tiến sĩ Tâm lý học Lâm sàng"
+                    formControlName="title"
+                  />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold text-dark" for="experienceYears">Số Năm Kinh Nghiệm</label>
+                  <input
+                    type="number"
+                    class="form-control rounded-3 py-2"
+                    id="experienceYears"
+                    name="experienceYears"
+                    min="0"
+                    placeholder="5"
+                    formControlName="experienceYears"
+                  />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold text-dark" for="consultationFee">Mức Phí Tham Vấn (₫/buổi)</label>
+                  <input
+                    type="number"
+                    class="form-control rounded-3 py-2"
+                    id="consultationFee"
+                    name="consultationFee"
+                    min="0"
+                    step="50000"
+                    placeholder="500000"
+                    formControlName="consultationFee"
+                  />
+                </div>
+                <div class="col-12">
+                  <label class="form-label fw-semibold text-dark" for="bio">Tiểu Sử Giới Thiệu Chuyên Gia</label>
+                  <textarea
+                    class="form-control rounded-3"
+                    id="bio"
+                    name="bio"
+                    rows="3"
+                    placeholder="Giới thiệu hướng tiếp cận trị liệu, trường phái tâm lý học và thế mạnh tham vấn..."
+                    formControlName="bio"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <div class="d-flex justify-content-end gap-2 mb-4">
+          <button
+            type="submit"
+            [disabled]="settingsForm.invalid"
+            class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm"
+            style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); border: none;"
+            data-cy="submit"
+          >
+            <i class="bi bi-check-circle-fill me-1"></i>Lưu Thay Đổi Hồ Sơ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,240 @@
+<div class="patient-records-container">
+  <!-- Alerts Message -->
+  @if (errorMessage) {
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 10px;">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+    </div>
+  }
+
+  <!-- Top Banner -->
+  <div class="page-header-card">
+    <div class="header-content">
+      <div class="header-text">
+        <h1 class="page-title">
+          <i class="bi bi-journal-medical me-2"></i>
+          Hồ Sơ Bệnh Án &amp; Ghi Chú Tham Vấn
+        </h1>
+        <p class="page-subtitle">
+          Theo dõi và xem lại toàn bộ kết quả chẩn đoán, diễn biến tham vấn, phác đồ điều trị và bài tập rèn luyện từ các Bác sĩ &amp; Chuyên gia tâm lý.
+        </p>
+      </div>
+      <div class="header-stat">
+        <span class="stat-number">{{ records.length }}</span>
+        <span class="stat-label">Hồ Sơ Ca Khám</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Toolbar -->
+  <div class="toolbar-card" *ngIf="records.length > 0">
+    <div class="search-box">
+      <i class="bi bi-search search-icon text-muted"></i>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilter()"
+        placeholder="Tìm kiếm theo mã ca, tên bác sĩ, chẩn đoán hoặc lời dặn..."
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" (click)="searchTerm = ''; applyFilter()" class="clear-btn" type="button">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="state-container">
+    <div class="spinner-border text-teal" role="status">
+      <span class="visually-hidden">Đang tải hồ sơ...</span>
+    </div>
+    <p class="mt-3 text-muted fw-semibold">Đang tải danh sách bệnh án...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredRecords.length === 0" class="state-container empty-state">
+    <div class="empty-icon-circle">
+      <i class="bi bi-journal-text fs-1 text-teal"></i>
+    </div>
+    <h3 class="empty-title">Chưa có hồ sơ ghi chú khám nào</h3>
+    <p class="empty-text">
+      {{ searchTerm ? 'Không tìm thấy hồ sơ nào khớp với từ khóa tìm kiếm.' : 'Sau khi bạn hoàn thành các buổi tư vấn/khám bệnh với Bác sĩ, kết quả và phác đồ điều trị sẽ hiển thị tại đây.' }}
+    </p>
+    <a *ngIf="!searchTerm" routerLink="/doctor-profile" class="btn btn-teal-primary mt-3 shadow-sm" style="border-radius: 8px;">
+      <i class="bi bi-calendar-plus me-1"></i>
+      Đặt lịch hẹn khám ngay
+    </a>
+  </div>
+
+  <!-- Records Grid -->
+  <div *ngIf="!isLoading && filteredRecords.length > 0" class="records-grid">
+    <div *ngFor="let rec of paginatedRecords" class="record-card shadow-sm">
+      <div class="record-card-header">
+        <div class="doctor-brief">
+          <div class="doc-avatar">
+            <i class="bi bi-person-badge-fill fs-5"></i>
+          </div>
+          <div class="doc-info">
+            <h4 class="doc-name">{{ rec.doctor?.fullName || 'Bác sĩ chuyên khoa MindBridge' }}</h4>
+            <span class="app-date">
+              <i class="bi bi-calendar-event me-1 text-teal"></i>
+              {{ rec.scheduledStart | formatMediumDatetime }}
+            </span>
+          </div>
+        </div>
+        <div class="booking-badge">
+          #{{ rec.bookingCode || rec.id }}
+        </div>
+      </div>
+
+      <div class="record-card-body">
+        <div class="clinical-field" *ngIf="rec.diagnosis">
+          <span class="field-title"><i class="bi bi-activity text-teal me-1"></i> Chẩn đoán lâm sàng:</span>
+          <span class="field-val diagnosis-val">{{ rec.diagnosis }}</span>
+        </div>
+
+        <div class="clinical-field" *ngIf="rec.therapyPlan">
+          <span class="field-title"><i class="bi bi-clipboard-check text-teal me-1"></i> Phác đồ trị liệu:</span>
+          <p class="field-text line-clamp-2">{{ rec.therapyPlan }}</p>
+        </div>
+
+        <div class="clinical-field advice-field" *ngIf="rec.recommendations">
+          <span class="field-title text-teal">
+            <i class="bi bi-lightbulb-fill text-success me-1"></i>Lời khuyên &amp; Bài tập về nhà:
+          </span>
+          <p class="field-text advice-text line-clamp-3">{{ rec.recommendations }}</p>
+        </div>
+
+        <div class="revisit-field" *ngIf="rec.nextAppointmentRecommendedDate">
+          <i class="bi bi-calendar-check-fill me-1 text-warning"></i>
+          <span class="fw-bold text-warning">Đề xuất tái khám:</span>
+          <span class="ms-1 fw-bold text-dark">{{ rec.nextAppointmentRecommendedDate | formatMediumDate }}</span>
+        </div>
+      </div>
+
+      <div class="record-card-footer">
+        <button class="btn btn-teal-action w-100" (click)="viewDetail(rec)">
+          <i class="bi bi-eye-fill me-1"></i>
+          Xem Toàn Bộ Bệnh Án Chi Tiết
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div *ngIf="!isLoading && totalItems > 0" class="pagination-wrapper mt-4 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="pagination-info text-muted small d-flex align-items-center gap-2">
+      <span>
+        Hiển thị <strong class="text-dark">{{ getFirstItemIndex() }} - {{ getSecondItemIndex() }}</strong> trên tổng số <strong class="text-dark">{{ totalItems }}</strong> hồ sơ bệnh án
+      </span>
+      <span class="text-secondary d-none d-sm-inline">•</span>
+      <div class="d-flex align-items-center gap-1.5 d-none d-sm-flex">
+        <span>Hiển thị:</span>
+        <select class="form-select form-select-sm page-size-select" [(ngModel)]="itemsPerPage" (change)="onItemsPerPageChange()">
+          <option [ngValue]="6">6 / trang</option>
+          <option [ngValue]="12">12 / trang</option>
+          <option [ngValue]="24">24 / trang</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pagination-controls" *ngIf="totalItems > itemsPerPage">
+      <ngb-pagination
+        [collectionSize]="totalItems"
+        [(page)]="page"
+        [pageSize]="itemsPerPage"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="onPageChange($event)"
+        class="pagination-teal mb-0"
+      />
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-backdrop-custom" *ngIf="selectedRecord">
+    <div class="modal-dialog-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <div class="modal-title-group">
+            <h3 class="modal-title">
+              <i class="bi bi-journal-medical me-2 text-teal"></i>
+              Chi Tiết Hồ Sơ Bệnh Án
+            </h3>
+            <p class="modal-subtitle">
+              Mã ca: <strong>#{{ selectedRecord.bookingCode || selectedRecord.id }}</strong> • Bác sĩ điều trị: <strong>{{ selectedRecord.doctor?.fullName || 'Bác sĩ chuyên khoa' }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeDetail()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body-custom">
+          <!-- Session Meta -->
+          <div class="session-meta-pill">
+            <div class="meta-item">
+              <span class="meta-label">Thời gian khám:</span>
+              <span class="meta-val">{{ selectedRecord.scheduledStart | formatMediumDatetime }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Hình thức:</span>
+              <span class="meta-val">{{ selectedRecord.consultationMode === 'ONLINE' ? 'Khám Trực Tuyến (Telehealth)' : 'Khám Tại Phòng Khám' }}</span>
+            </div>
+          </div>
+
+          <!-- Reason / Initial condition -->
+          <div class="detail-section" *ngIf="selectedRecord.reason">
+            <h4 class="section-title"><i class="bi bi-bullseye text-teal me-1"></i> Triệu Chứng &amp; Lý Do Khám:</h4>
+            <p class="section-content bg-light p-3 rounded-3 border">{{ selectedRecord.reason }}</p>
+          </div>
+
+          <!-- Diagnosis -->
+          <div class="detail-section" *ngIf="selectedRecord.diagnosis">
+            <h4 class="section-title text-teal"><i class="bi bi-activity text-teal me-1"></i> Chẩn Đoán Của Bác Sĩ (Preliminary Diagnosis):</h4>
+            <div class="diagnosis-highlight">
+              {{ selectedRecord.diagnosis }}
+            </div>
+          </div>
+
+          <!-- Consultation Summary -->
+          <div class="detail-section" *ngIf="selectedRecord.consultationSummary">
+            <h4 class="section-title"><i class="bi bi-file-earmark-medical text-secondary me-1"></i> Diễn Biến &amp; Tóm Tắt Buổi Tham Vấn:</h4>
+            <p class="section-content text-preserve">{{ selectedRecord.consultationSummary }}</p>
+          </div>
+
+          <!-- Therapy Plan -->
+          <div class="detail-section" *ngIf="selectedRecord.therapyPlan">
+            <h4 class="section-title text-teal"><i class="bi bi-clipboard-check text-teal me-1"></i> Kế Hoạch &amp; Phác Đồ Trị Liệu (Therapy Plan):</h4>
+            <p class="section-content text-preserve">{{ selectedRecord.therapyPlan }}</p>
+          </div>
+
+          <!-- Recommendations -->
+          <div class="detail-section" *ngIf="selectedRecord.recommendations">
+            <h4 class="section-title text-success"><i class="bi bi-lightbulb-fill text-success me-1"></i> Lời Khuyên &amp; Bài Tập Về Nhà (Recommendations &amp; Exercises):</h4>
+            <div class="recommendations-box">
+              <i class="bi bi-lightbulb-fill bulb-icon"></i>
+              <p class="section-content text-preserve mb-0">{{ selectedRecord.recommendations }}</p>
+            </div>
+          </div>
+
+          <!-- Revisit Date -->
+          <div class="revisit-banner" *ngIf="selectedRecord.nextAppointmentRecommendedDate">
+            <i class="bi bi-calendar-check-fill revisit-icon"></i>
+            <div>
+              <strong class="d-block">Lịch Đề Xuất Tái Khám:</strong>
+              <span>Bác sĩ đề xuất bạn nên đặt lịch hẹn tái khám vào: <strong>{{ selectedRecord.nextAppointmentRecommendedDate | formatMediumDatetime }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-custom">
+          <button type="button" class="btn btn-teal-primary px-4 fw-bold" (click)="closeDetail()" style="border-radius: 8px;">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,201 @@
+<div class="journal-container container-fluid py-4">
+  <div class="page-header d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <div>
+      <h2 class="h3 fw-bold text-primary mb-1">
+        <i class="bi bi-journal-richtext me-2"></i>Nhật Ký Cảm Xúc (Mood Tracker)
+      </h2>
+      <p class="text-muted mb-0">Tự theo dõi tâm trạng mỗi ngày, mức độ căng thẳng, giấc ngủ và đồng hành cùng chuyên gia</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="loadJournals(); loadStats()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal(journalModal)">
+        <i class="bi bi-plus-circle me-1"></i>Ghi Nhật Ký Hôm Nay
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div *ngIf="stats" class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100 bg-white">
+        <div class="card-body text-center p-3">
+          <span class="text-muted small d-block mb-1">Tổng Số Lần Ghi</span>
+          <h3 class="fw-bold text-primary mb-0">{{ stats.totalEntries }}</h3>
+          <span class="text-muted" style="font-size: 0.75rem;">nhật ký đã lưu</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100 bg-white">
+        <div class="card-body text-center p-3">
+          <span class="text-muted small d-block mb-1">Tâm Trạng Trung Bình</span>
+          <h3 class="fw-bold text-success mb-0">{{ stats.averageMood }}/5</h3>
+          <span class="text-muted" style="font-size: 0.75rem;">{{ getMoodEmoji(stats.averageMood) }} {{ getMoodLabel(stats.averageMood) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100 bg-white">
+        <div class="card-body text-center p-3">
+          <span class="text-muted small d-block mb-1">Mức Độ Căng Thẳng</span>
+          <h3 class="fw-bold text-warning-emphasis mb-0">{{ stats.averageStress }}/5</h3>
+          <span class="text-muted" style="font-size: 0.75rem;">{{ getStressLabel(stats.averageStress) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100 bg-white">
+        <div class="card-body text-center p-3">
+          <span class="text-muted small d-block mb-1">Thời Lượng Ngủ TB</span>
+          <h3 class="fw-bold text-info mb-0">{{ stats.averageSleepHours }}h</h3>
+          <span class="text-muted" style="font-size: 0.75rem;">mỗi đêm</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Đang tải nhật ký...</p>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!isLoading && journals.length === 0" class="text-center py-5 card border-0 shadow-sm">
+    <div class="card-body py-5">
+      <span class="display-1 d-block mb-3">📝</span>
+      <h5 class="text-muted">Bạn chưa ghi chép nhật ký cảm xúc nào</h5>
+      <p class="text-muted small">Hãy dành 2 phút mỗi ngày để ghi lại cảm xúc, mức độ stress và giấc ngủ để cải thiện sức khỏe tinh thần.</p>
+      <button class="btn btn-primary btn-sm mt-2" (click)="openCreateModal(journalModal)">
+        <i class="bi bi-plus-lg me-1"></i>Viết nhật ký đầu tiên
+      </button>
+    </div>
+  </div>
+
+  <!-- Journals Timeline List -->
+  <div *ngIf="!isLoading && journals.length > 0" class="row g-4">
+    <div *ngFor="let j of journals" class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100 journal-card">
+        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">{{ getMoodEmoji(j.moodScale) }}</span>
+            <div>
+              <span class="badge bg-primary-subtle text-primary fw-semibold">{{ getMoodLabel(j.moodScale) }}</span>
+              <span *ngIf="j.isShared" class="badge bg-success-subtle text-success ms-1">
+                <i class="bi bi-share me-1"></i>Chia sẻ với bác sĩ
+              </span>
+            </div>
+          </div>
+          <div class="dropdown" ngbDropdown>
+            <button class="btn btn-sm btn-light rounded-circle" ngbDropdownToggle>
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div ngbDropdownMenu class="dropdown-menu-end shadow border-0">
+              <button ngbDropdownItem (click)="openEditModal(journalModal, j)">
+                <i class="bi bi-pencil me-2 text-primary"></i>Chỉnh sửa
+              </button>
+              <button ngbDropdownItem class="text-danger" (click)="deleteJournal(j)">
+                <i class="bi bi-trash me-2"></i>Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title fw-bold text-dark mb-2">{{ j.title }}</h5>
+          <p class="card-text text-secondary small white-space-pre">{{ j.content || 'Không có ghi chú thêm.' }}</p>
+
+          <div class="bg-light rounded p-2 d-flex flex-wrap justify-content-between text-muted small mt-3">
+            <div><i class="bi bi-lightning-charge text-warning me-1"></i>Stress: <strong>{{ j.stressScale }}/5</strong></div>
+            <div *ngIf="j.sleepHours"><i class="bi bi-moon-stars text-info me-1"></i>Giấc ngủ: <strong>{{ j.sleepHours }} giờ</strong></div>
+            <div><i class="bi bi-calendar3 me-1"></i>{{ j.createdDate | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create / Edit Journal -->
+<ng-template #journalModal let-modal>
+  <div class="modal-header bg-light">
+    <h5 class="modal-title fw-bold text-primary">
+      <i class="bi bi-journal-heart me-2"></i>{{ isEditMode ? 'Chỉnh Sửa Nhật Ký' : 'Ghi Nhật Ký Cảm Xúc Mới' }}
+    </h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <!-- Mood Picker -->
+    <div class="mb-4 text-center">
+      <label class="form-label fw-bold d-block text-muted mb-2">Hôm nay tâm trạng của bạn thế nào?</label>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <button
+          *ngFor="let opt of moodOptions"
+          type="button"
+          class="btn mood-btn px-3 py-2 rounded-3 text-center"
+          [class.active]="currentJournal.moodScale === opt.value"
+          [ngClass]="currentJournal.moodScale === opt.value ? 'btn-primary' : 'btn-outline-secondary'"
+          (click)="selectMood(opt.value)"
+        >
+          <span class="fs-2 d-block">{{ opt.emoji }}</span>
+          <span class="small fw-semibold">{{ opt.label }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Tiêu đề nhật ký <span class="text-danger">*</span></label>
+      <input type="text" class="form-control" [(ngModel)]="currentJournal.title" placeholder="Hôm nay là một ngày..." />
+    </div>
+
+    <!-- Content -->
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Ghi chép cảm xúc & suy nghĩ chi tiết</label>
+      <textarea
+        class="form-control"
+        rows="4"
+        [(ngModel)]="currentJournal.content"
+        placeholder="Chia sẻ những điều diễn ra hôm nay, cảm xúc, suy nghĩ hoặc những điều khiến bạn bận tâm..."
+      ></textarea>
+    </div>
+
+    <!-- Sliders and Inputs -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold d-flex justify-content-between">
+          <span>Mức độ căng thẳng (Stress):</span>
+          <span class="badge bg-warning text-dark">{{ currentJournal.stressScale }}/5 - {{ getStressLabel(currentJournal.stressScale) }}</span>
+        </label>
+        <input type="range" class="form-range" min="1" max="5" step="1" [(ngModel)]="currentJournal.stressScale" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Số giờ ngủ đêm qua (giờ)</label>
+        <div class="input-group">
+          <input type="number" class="form-control" min="0" max="24" step="0.5" [(ngModel)]="currentJournal.sleepHours" />
+          <span class="input-group-text">giờ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sharing Checkbox -->
+    <div class="form-check form-switch p-3 bg-light rounded">
+      <input class="form-check-input ms-0 me-2" type="checkbox" id="shareWithDoctor" [(ngModel)]="currentJournal.isShared" />
+      <label class="form-check-label fw-semibold" for="shareWithDoctor">
+        <i class="bi bi-shield-check text-success me-1"></i>Chia sẻ nhật ký này với bác sĩ trị liệu của bạn
+      </label>
+      <p class="text-muted small mb-0 mt-1">Bác sĩ phụ trách có thể theo dõi diễn biến tâm trạng của bạn để đưa ra phác đồ tư vấn chính xác hơn.</p>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Hủy</button>
+    <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="saveJournal(modal)">
+      <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+      {{ isEditMode ? 'Cập Nhật Nhật Ký' : 'Lưu Nhật Ký' }}
+    </button>
+  </div>
+</ng-template>

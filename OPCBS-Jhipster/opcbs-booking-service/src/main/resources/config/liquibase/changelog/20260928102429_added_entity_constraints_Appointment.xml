@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+    <!--
+        Added the constraints for entity Appointment.
+    -->
+    <changeSet id="20260928102429-2" author="jhipster">
+
+        <addForeignKeyConstraint baseColumnNames="patient_id"
+                                 baseTableName="appointment"
+                                 constraintName="fk_appointment__patient_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="patient_profile"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="doctor_id"
+                                 baseTableName="appointment"
+                                 constraintName="fk_appointment__doctor_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="doctor_profile"
+                                 />
+
+        <addForeignKeyConstraint baseColumnNames="slot_id"
+                                 baseTableName="appointment"
+                                 constraintName="fk_appointment__slot_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="availability_slot"
+                                 />
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,53 @@
+{
+  "annotations": {
+    "changelogDate": "20260928102428"
+  },
+  "applications": ["opcbs"],
+  "documentation": "Khung giờ rảnh của bác sĩ để nhận lịch khám",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "startTime",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "endTime",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "consultationMode",
+      "fieldType": "ConsultationMode",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "ONLINE,IN_PERSON,BOTH"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "SlotStatus",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "AVAILABLE,BOOKED,CANCELLED"
+    },
+    {
+      "fieldName": "notes",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "255"
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "name": "AvailabilitySlot",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "fullName",
+      "otherEntityName": "doctorProfile",
+      "relationshipName": "doctor",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": "required"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

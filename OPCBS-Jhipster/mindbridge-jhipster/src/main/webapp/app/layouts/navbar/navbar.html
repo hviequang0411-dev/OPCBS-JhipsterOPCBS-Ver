@@ -1,0 +1,216 @@
+<nav data-cy="navbar" class="navbar navbar-expand-lg mb-main-navbar fixed-top">
+  <div class="container">
+    <!-- Brand -->
+    <a class="navbar-brand d-flex align-items-center gap-2" routerLink="/" (click)="collapseNavbar()">
+      <img src="content/images/logo-cropped.png" alt="MindBridge Logo" class="mb-brand-logo" onerror="this.style.display='none'" />
+      <span class="mb-brand-text">Mind<span>Bridge</span></span>
+    </a>
+
+    <!-- Mobile Toggler -->
+    <button
+      class="navbar-toggler border-0 shadow-none p-1"
+      type="button"
+      aria-controls="navbarResponsive"
+      [attr.aria-expanded]="!isNavbarCollapsed()"
+      aria-label="Toggle navigation"
+      (click)="isNavbarCollapsed.update(isNavbarCollapsed => !isNavbarCollapsed)"
+    >
+      <i class="bi" [class.bi-list]="isNavbarCollapsed()" [class.bi-x-lg]="!isNavbarCollapsed()"></i>
+    </button>
+
+    <!-- Navbar Content -->
+    <div class="navbar-collapse collapse" id="navbarResponsive" [ngbCollapse]="isNavbarCollapsed()">
+      <!-- Navigation Links -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="collapseNavbar()">
+            <i class="bi bi-house me-1 d-none d-lg-inline"></i>
+            <span>Trang Chủ</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/doctor-profile" routerLinkActive="active" (click)="collapseNavbar()">
+            <i class="bi bi-person-heart me-1 d-none d-lg-inline"></i>
+            <span>Đội Ngũ Chuyên Gia</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/patient/psychometrics" routerLinkActive="active" (click)="collapseNavbar()">
+            <i class="bi bi-clipboard2-pulse me-1 d-none d-lg-inline"></i>
+            <span>Trắc Nghiệm Tâm Lý</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Right Actions (Auth / User Profile) -->
+      <div class="d-flex align-items-center gap-2 mb-navbar-actions">
+        @let accountRef = account();
+        @if (accountRef !== null) {
+          <!-- User Dropdown Menu -->
+          <div ngbDropdown class="dropdown pointer" display="static" data-cy="accountMenu">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1 px-2 rounded-pill mb-user-pill" ngbDropdownToggle href="javascript:void(0);" id="account-menu">
+              @if (!accountRef?.imageUrl) {
+                <div class="mb-nav-avatar">
+                  {{ getUserInitials() }}
+                </div>
+              } @else {
+                <img [src]="accountRef.imageUrl" class="mb-nav-avatar-img rounded-circle" alt="Avatar" />
+              }
+              <div class="d-none d-md-flex flex-column text-start me-1">
+                <span class="mb-user-name">{{ getUserDisplayName() }}</span>
+                <span class="mb-user-role badge" [ngClass]="getPrimaryRoleBadge().class">{{ getPrimaryRoleBadge().label }}</span>
+              </div>
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end mb-glass-dropdown border-0 shadow-lg" ngbDropdownMenu aria-labelledby="account-menu" style="min-width: 250px;">
+              <!-- Header info on mobile -->
+              <li class="dropdown-header d-md-none">
+                <div class="fw-bold text-dark">{{ getUserDisplayName() }}</div>
+                <small class="text-muted">{{ accountRef.email }}</small>
+              </li>
+
+              <!-- ══ Role Specific Portal Entry Points ══ -->
+              @if (isDoctor()) {
+                <li>
+                  <a class="dropdown-item py-2 fw-bold text-teal" routerLink="/doctor/dashboard" (click)="collapseNavbar()">
+                    <i class="bi bi-speedometer2 me-2 text-teal"></i>
+                    <span>Tổng Quan Bác Sĩ (Dashboard)</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/availability-slot" (click)="collapseNavbar()">
+                    <i class="bi bi-calendar3 me-2 text-teal"></i>
+                    <span>Lịch Làm Việc Của Tôi</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/appointment" (click)="collapseNavbar()">
+                    <i class="bi bi-calendar-check me-2 text-teal"></i>
+                    <span>Quản Lý Ca Khám &amp; Bệnh Án</span>
+                  </a>
+                </li>
+
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/doctor/patients" (click)="collapseNavbar()">
+                    <i class="bi bi-people-fill me-2 text-teal"></i>
+                    <span>Hồ Sơ Bệnh Nhân Của Tôi</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/doctor/treatment-packages" (click)="collapseNavbar()">
+                    <i class="bi bi-box2-heart-fill me-2 text-teal"></i>
+                    <span>Gói Trị Liệu Tâm Lý</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/doctor/psychometrics" (click)="collapseNavbar()">
+                    <i class="bi bi-clipboard2-pulse-fill me-2 text-teal"></i>
+                    <span>Chỉ Định Trắc Nghiệm</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/doctor/verification" (click)="collapseNavbar()">
+                    <i class="bi bi-shield-check me-2 text-teal"></i>
+                    <span>Chứng Chỉ &amp; Thẩm Định Hồ Sơ</span>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+              } @else if (isPatient()) {
+                <li>
+                  <a class="dropdown-item py-2 fw-bold" routerLink="/appointment" (click)="collapseNavbar()">
+                    <i class="bi bi-calendar-check-fill me-2 text-teal"></i>
+                    <span>Lịch Hẹn Của Tôi</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/patient/clinical-records" (click)="collapseNavbar()">
+                    <i class="bi bi-file-earmark-medical-fill me-2 text-teal"></i>
+                    <span>Sổ Bệnh Án &amp; Lời Dặn</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/patient/treatment-packages" (click)="collapseNavbar()">
+                    <i class="bi bi-box2-heart-fill me-2 text-teal"></i>
+                    <span>Gói Trị Liệu Của Tôi</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/patient/journal" (click)="collapseNavbar()">
+                    <i class="bi bi-journal-heart-fill me-2 text-teal"></i>
+                    <span>Nhật Ký Cảm Xúc</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/patient/psychometrics" (click)="collapseNavbar()">
+                    <i class="bi bi-clipboard2-check-fill me-2 text-teal"></i>
+                    <span>Trắc Nghiệm Tâm Lý (DASS-21)</span>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+              } @else if (isAdmin()) {
+                <li>
+                  <a class="dropdown-item py-2 fw-bold text-dark" routerLink="/user-management" (click)="collapseNavbar()">
+                    <i class="bi bi-shield-lock me-2 text-primary"></i>
+                    <span>Quản Trị Người Dùng</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/specialization" (click)="collapseNavbar()">
+                    <i class="bi bi-tags-fill me-2 text-primary"></i>
+                    <span>Quản Lý Chuyên Khoa</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/doctor-profile" (click)="collapseNavbar()">
+                    <i class="bi bi-person-badge-fill me-2 text-primary"></i>
+                    <span>Quản Lý Bác Sĩ</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" routerLink="/patient-profile" (click)="collapseNavbar()">
+                    <i class="bi bi-person-lines-fill me-2 text-primary"></i>
+                    <span>Quản Lý Bệnh Nhân</span>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+              }
+
+              <li>
+                <a class="dropdown-item py-2" routerLink="/account/settings" (click)="collapseNavbar()" data-cy="settings">
+                  <i class="bi bi-person-gear me-2 text-secondary"></i>
+                  <span>Thông Tin Cá Nhân</span>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item py-2" routerLink="/account/password" (click)="collapseNavbar()" data-cy="passwordItem">
+                  <i class="bi bi-key-fill me-2 text-secondary"></i>
+                  <span>Đổi Mật Khẩu</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a class="dropdown-item py-2 text-danger fw-bold" (click)="logout()" id="logout" data-cy="logout" role="button">
+                  <i class="bi bi-box-arrow-right me-2"></i>
+                  <span>Đăng Xuất</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        } @else {
+          <!-- Guest CTAs -->
+          <a class="btn mb-btn-for-doctor d-none d-sm-inline-flex align-items-center gap-1" routerLink="/account/register-doctor" (click)="collapseNavbar()">
+            <i class="bi bi-hospital text-teal"></i>
+            <span>Dành Cho Bác Sĩ</span>
+          </a>
+          <a class="btn mb-btn-login" routerLink="/login" (click)="collapseNavbar()">
+            <span>Đăng Nhập</span>
+          </a>
+          <a class="btn mb-btn-get-started shadow-sm" routerLink="/account/register" (click)="collapseNavbar()">
+            <span>Đăng Ký Ngay</span>
+            <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+</nav>

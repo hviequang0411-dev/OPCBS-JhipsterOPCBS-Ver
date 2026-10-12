@@ -1,0 +1,211 @@
+<div>
+  <!-- ─── 1. Page Header ─── -->
+  <div class="dr-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="dr-header-icon-box">
+        <i class="bi bi-person-heart"></i>
+      </div>
+      <div>
+        <h1 class="dr-header-title">Find a Therapist</h1>
+        <p class="dr-header-sub">Search certified specialists by concern, specialization, and consultation schedule.</p>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" (click)="load()" [disabled]="isLoading()" style="border-radius: 9px; height: 38px">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span class="ms-1">Refresh</span>
+      </button>
+
+      @if (account()?.authorities?.includes('ROLE_ADMIN')) {
+        <button
+          id="jh-create-entity"
+          data-cy="entityCreateButton"
+          class="btn btn-primary btn-sm jh-create-entity create-doctor-profile"
+          [routerLink]="['/doctor-profile/new']"
+          style="border-radius: 9px; height: 38px"
+        >
+          <fa-icon icon="plus" />
+          <span class="ms-1">Add Doctor</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <jhi-alert-error />
+  <jhi-alert />
+
+  <!-- ─── 2. Filter Panel ─── -->
+  <div class="filter-card">
+    <form (ngSubmit)="onFilterSubmit()" id="doctorFilterForm">
+      <div class="d-flex align-items-center gap-2 flex-wrap flex-lg-nowrap">
+        <!-- Search Keyword -->
+        <div class="flex-grow-1" style="min-width: 240px">
+          <div style="position: relative; display: flex; align-items: center">
+            <i class="bi bi-search" style="position: absolute; left: 14px; color: #94a3b8; font-size: 0.9rem"></i>
+            <input
+              type="text"
+              id="filterSearchInput"
+              name="searchKeyword"
+              [(ngModel)]="searchKeyword"
+              class="form-control filter-control"
+              placeholder="Search by doctor name, title, bio..."
+              style="padding-left: 38px"
+            />
+          </div>
+        </div>
+
+        <!-- Specialization Dropdown -->
+        <div style="min-width: 200px; width: 260px">
+          <select
+            id="filterSpecSelect"
+            name="selectedSpecializationId"
+            [(ngModel)]="selectedSpecializationId"
+            class="form-select filter-control"
+          >
+            <option [ngValue]="null">All Specializations</option>
+            @for (s of specializations(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex gap-2">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            style="height: 42px; border-radius: 10px; font-weight: 600; font-size: 0.88rem; padding: 0 1.25rem"
+          >
+            <i class="bi bi-search me-1"></i>Search
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="resetFilters()"
+            style="height: 42px; width: 42px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center"
+            title="Reset filters"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ─── 3. Doctor Cards Grid ─── -->
+  @if (doctorProfiles().length === 0) {
+    <div class="card border-0 shadow-sm py-5 text-center" style="border-radius: 16px; background: rgba(255, 255, 255, 0.85)">
+      <div class="card-body">
+        <i class="bi bi-calendar-x text-muted mb-3 d-block" style="font-size: 2.75rem; opacity: 0.4"></i>
+        <h5 class="fw-bold text-dark">No Therapists Found</h5>
+        <p class="text-muted small mb-3">No specialists match your selected search keywords or criteria.</p>
+        <button
+          type="button"
+          class="btn btn-outline-primary btn-sm"
+          (click)="resetFilters()"
+          style="border-radius: 9px; font-weight: 600; padding: 6px 16px"
+        >
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Clear All Filters
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="row g-4 mb-4">
+      @for (doc of doctorProfiles(); track trackId(doc)) {
+        <div class="col-sm-6 col-lg-4 col-xl-3" style="position: relative">
+          <!-- Admin Actions Quick Menu -->
+          @if (account()?.authorities?.includes('ROLE_ADMIN')) {
+            <div class="admin-actions">
+              <div class="btn-group btn-group-sm">
+                <a [routerLink]="['/doctor-profile', doc.id, 'edit']" class="btn btn-light btn-sm border" title="Edit Doctor Profile">
+                  <fa-icon icon="pencil-alt" class="text-primary" />
+                </a>
+                <button type="button" (click)="delete(doc)" class="btn btn-light btn-sm border" title="Delete Doctor Profile">
+                  <fa-icon icon="times" class="text-danger" />
+                </button>
+              </div>
+            </div>
+          }
+
+          <a [routerLink]="['/doctor-profile', doc.id, 'view']" class="doctor-card-modern">
+            <!-- Avatar -->
+            <div class="avatar-wrapper">
+              <div class="doctor-avatar-initials">
+                {{ getInitials(doc.fullName) }}
+              </div>
+              @if (doc.isActive) {
+                <div class="verified-badge" title="Active Specialist">
+                  <i class="bi bi-patch-check-fill"></i>
+                </div>
+              }
+            </div>
+
+            <!-- Name & Title -->
+            <div class="doctor-name-modern">{{ doc.fullName }}</div>
+            <div class="d-inline-block">
+              <span class="doctor-spec-modern">{{ doc.title || 'Clinical Specialist' }}</span>
+            </div>
+
+            <!-- Specialization Tags -->
+            @if (doc.specializationses && doc.specializationses.length > 0) {
+              <div class="d-flex flex-wrap gap-1 justify-content-center mb-2" style="max-height: 44px; overflow: hidden">
+                @for (s of doc.specializationses.slice(0, 2); track s.id) {
+                  <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.68rem; border-radius: 6px">
+                    {{ s.name }}
+                  </span>
+                }
+                @if (doc.specializationses.length > 2) {
+                  <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.68rem; border-radius: 6px">
+                    +{{ doc.specializationses.length - 2 }}
+                  </span>
+                }
+              </div>
+            }
+
+            <!-- Bio Snippet -->
+            <div class="doctor-bio-snippet">
+              {{ doc.bio || 'Professional therapist dedicated to mental health and personal well-being.' }}
+            </div>
+
+            <!-- Rating simulation -->
+            <div class="d-flex align-items-center gap-1 justify-content-center mb-3">
+              <i class="bi bi-star-fill star-filled" style="font-size: 0.82rem"></i>
+              <i class="bi bi-star-fill star-filled" style="font-size: 0.82rem"></i>
+              <i class="bi bi-star-fill star-filled" style="font-size: 0.82rem"></i>
+              <i class="bi bi-star-fill star-filled" style="font-size: 0.82rem"></i>
+              <i class="bi bi-star-half star-filled" style="font-size: 0.82rem"></i>
+              <span style="font-size: 0.75rem; color: #64748b; margin-left: 3px">(4.9)</span>
+            </div>
+
+            <!-- Experience & Fee Meta -->
+            <div
+              class="mt-auto d-flex justify-content-between w-100 border-top pt-2.5"
+              style="font-size: 0.8rem; color: #64748b; padding-top: 10px"
+            >
+              <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ doc.experienceYears || 5 }} yrs exp</span>
+              @if (doc.consultationFee) {
+                <span class="fw-bold" style="color: var(--mb-primary)">{{ doc.consultationFee | number }}₫</span>
+              }
+            </div>
+          </a>
+        </div>
+      }
+    </div>
+
+    <!-- ─── 4. Pagination ─── -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 pt-2 border-top">
+      <jhi-item-count [params]="{ page: page(), totalItems: totalItems(), itemsPerPage: itemsPerPage() }" />
+
+      <ngb-pagination
+        [collectionSize]="totalItems()"
+        [page]="page()"
+        [pageSize]="itemsPerPage()"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      />
+    </div>
+  }
+</div>

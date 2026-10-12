@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20261001120000-1" author="mindbridge">
+        <createTable tableName="treatment_package">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="description" type="${clobType}"/>
+            <column name="target_outcome" type="${clobType}"/>
+            <column name="recommended_exercises" type="${clobType}"/>
+            <column name="instructions" type="${clobType}"/>
+            <column name="session_quantity" type="int" defaultValueNumeric="1">
+                <constraints nullable="false" />
+            </column>
+            <column name="remaining_sessions" type="int" defaultValueNumeric="1">
+                <constraints nullable="false" />
+            </column>
+            <column name="validity_days" type="int" defaultValueNumeric="30">
+                <constraints nullable="false" />
+            </column>
+            <column name="recommended_sessions_per_week" type="int" defaultValueNumeric="1">
+                <constraints nullable="false" />
+            </column>
+            <column name="expiration_date" type="${datetimeType}"/>
+            <column name="price" type="decimal(21,2)" defaultValueNumeric="0">
+                <constraints nullable="false" />
+            </column>
+            <column name="status" type="varchar(50)" defaultValue="CREATED">
+                <constraints nullable="false" />
+            </column>
+            <column name="assigned_date" type="${datetimeType}"/>
+            <column name="accepted_date" type="${datetimeType}"/>
+            <column name="acceptance_expires_at" type="${datetimeType}"/>
+            <column name="active_date" type="${datetimeType}"/>
+            <column name="expired_at" type="${datetimeType}"/>
+            <column name="rejection_reason" type="${clobType}"/>
+            <column name="cancellation_reason" type="${clobType}"/>
+            <column name="cancellation_requested_at" type="${datetimeType}"/>
+            <column name="doctor_id" type="bigint"/>
+            <column name="patient_id" type="bigint"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="doctor_id"
+                                 baseTableName="treatment_package"
+                                 constraintName="fk_treatment_package__doctor_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="doctor_profile"/>
+
+        <addForeignKeyConstraint baseColumnNames="patient_id"
+                                 baseTableName="treatment_package"
+                                 constraintName="fk_treatment_package__patient_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="patient_profile"/>
+    </changeSet>
+</databaseChangeLog>

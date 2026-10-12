@@ -1,0 +1,28 @@
+.journal-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mood-btn {
+  min-width: 90px;
+  transition: all 0.2s ease;
+  &:hover {
+    transform: scale(1.05);
+  }
+  &.active {
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+  }
+}
+
+.journal-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+.white-space-pre {
+  white-space: pre-line;
+}

@@ -1,0 +1,643 @@
+/* ═════════════════════════════════════════════════════════════════════
+   MindBridge Appointment Management Styles (C# Razor Pages Pattern)
+   ═════════════════════════════════════════════════════════════════════ */
+
+.appointments-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.5rem 0.5rem 3rem;
+}
+
+/* Page Header */
+.mb-page-header {
+  .page-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+
+    .title-icon {
+      color: #0f766e;
+    }
+  }
+
+  .page-subtitle {
+    font-size: 0.88rem;
+    color: #475569;
+    margin-bottom: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   FILTER SECTION (C# Razor Filter Bar)
+   ═══════════════════════════════════════════════════ */
+.filter-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.tab-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+
+  .tab-pill {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 0.45rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 650;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    &.active {
+      background: #0f766e;
+      border-color: #0f766e;
+      color: #ffffff;
+
+      .badge-count {
+        background: #ffffff;
+        color: #0f766e;
+      }
+    }
+
+    .badge-count {
+      margin-left: 0.45rem;
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 0.72rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 12px;
+      font-weight: 700;
+
+      &.badge-warning-count {
+        background: #fef3c7;
+        color: #92400e;
+      }
+    }
+  }
+}
+
+.search-input-group {
+  position: relative;
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .form-control {
+    padding-left: 34px;
+    padding-right: 32px;
+    height: 38px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border-color: #cbd5e1;
+
+    &:focus {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+  }
+
+  .clear-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 4px 6px;
+
+    &:hover {
+      color: #dc2626;
+    }
+  }
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .date-label {
+    font-size: 0.78rem;
+    font-weight: 650;
+    color: #475569;
+    white-space: nowrap;
+    margin-bottom: 0;
+  }
+
+  .form-control {
+    height: 38px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    border-color: #cbd5e1;
+  }
+}
+
+.btn-clear-filters {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #be123c;
+  font-size: 0.82rem;
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #ffe4e6;
+    color: #9f1239;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   DATE GROUP HEADER (C# Grouping Pattern)
+   ═══════════════════════════════════════════════════ */
+.date-group-header {
+  font-size: 0.85rem;
+  font-weight: 750;
+  color: #0f766e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 0;
+  border-bottom: 2px solid #e2e8f0;
+
+  .header-calendar-icon {
+    font-size: 0.95rem;
+  }
+
+  .header-count-badge {
+    font-size: 0.72rem;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   APPOINTMENT CARD (C# appt-card Pattern)
+   ═══════════════════════════════════════════════════ */
+.appt-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  border-left: 4px solid transparent;
+  overflow: hidden;
+
+  &:hover {
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+    transform: translateX(2px);
+  }
+
+  &.status-pending {
+    border-left-color: #f59e0b;
+  }
+  &.status-approved,
+  &.status-accepted {
+    border-left-color: #0f766e;
+  }
+  &.status-inprogress {
+    border-left-color: #8b5cf6;
+  }
+  &.status-completed {
+    border-left-color: #10b981;
+  }
+  &.status-cancelled {
+    border-left-color: #ef4444;
+  }
+  &.status-rejected {
+    border-left-color: #64748b;
+  }
+
+  .appt-card-body {
+    padding: 0.9rem 1.25rem;
+  }
+}
+
+/* Date Box */
+.appt-date-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+
+  .appt-date-day {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+
+  .appt-date-month {
+    font-size: 0.58rem;
+    font-weight: 750;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* User Avatar */
+.patient-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 750;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+
+  &.avatar-patient {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+  }
+
+  &.avatar-doctor {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+  }
+}
+
+/* Booking Code Chip */
+.booking-code-chip {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 750;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* User Name & Links */
+.user-display-name {
+  font-size: 0.92rem;
+  font-weight: 750;
+  color: #0f172a;
+
+  .patient-link {
+    color: #0f172a;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #0f766e;
+      text-decoration: underline;
+    }
+  }
+}
+
+.user-subtext {
+  font-size: 0.78rem;
+  color: #64748b;
+
+  .contact-item {
+    font-weight: 550;
+  }
+}
+
+/* Status Badges */
+.appt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2.5px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+
+  &.s-pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  &.s-approved,
+  &.s-accepted {
+    background: #f0fdfa;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+  }
+
+  &.s-inprogress {
+    background: #ede9fe;
+    color: #5b21b6;
+    border: 1px solid #ddd6fe;
+  }
+
+  &.s-completed {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+  }
+
+  &.s-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecdd3;
+  }
+
+  &.s-rejected {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+}
+
+/* Time & Mode Column */
+.time-badge {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 650;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+
+  &.mode-online {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  &.mode-inperson {
+    background: #faf5ff;
+    color: #7e22ce;
+  }
+}
+
+/* Action Buttons (C# Action Toolbar) */
+.appt-actions-toolbar {
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    padding: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    &.btn-view {
+      color: #0f766e;
+      border-color: #99f6e4;
+      background: #f0fdfa;
+
+      &:hover {
+        background: #0f766e;
+        color: #ffffff;
+      }
+    }
+
+    &.btn-approve {
+      color: #16a34a;
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+
+      &:hover {
+        background: #16a34a;
+        color: #ffffff;
+      }
+    }
+
+    &.btn-reject {
+      color: #dc2626;
+      border-color: #fecdd3;
+      background: #fff1f2;
+
+      &:hover {
+        background: #dc2626;
+        color: #ffffff;
+      }
+    }
+
+    &.btn-complete {
+      color: #059669;
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+
+      &:hover {
+        background: #059669;
+        color: #ffffff;
+      }
+    }
+
+    &.btn-patient-profile {
+      color: #0284c7;
+      border-color: #bae6fd;
+      background: #f0f9ff;
+
+      &:hover {
+        background: #0284c7;
+        color: #ffffff;
+      }
+    }
+
+    &.btn-cancel {
+      color: #e11d48;
+      border-color: #fecdd3;
+      background: #fff1f2;
+
+      &:hover {
+        background: #e11d48;
+        color: #ffffff;
+      }
+    }
+  }
+
+  .action-label-btn {
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 118, 110, 0.1);
+  }
+}
+
+/* Secondary Boxes */
+.appt-pre-reason-box {
+  background: #f8fafc;
+  border-left: 3px solid #0f766e;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+
+  .reason-label {
+    font-weight: 700;
+    color: #334155;
+    margin-right: 4px;
+  }
+
+  .reason-text {
+    color: #475569;
+  }
+}
+
+.appt-diagnosis-box {
+  background: #f0fdf4;
+  border-left: 3px solid #16a34a;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+
+  .diagnosis-label {
+    font-weight: 700;
+    color: #166534;
+    margin-right: 4px;
+  }
+
+  .diagnosis-text {
+    color: #15803d;
+    font-weight: 600;
+  }
+}
+
+.appt-cancellation-box {
+  background: #fff1f2;
+  border-left: 3px solid #ef4444;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+
+  .cancellation-label {
+    font-weight: 700;
+    color: #991b1b;
+    margin-right: 4px;
+  }
+
+  .cancellation-text {
+    color: #b91c1c;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   EMPTY STATE & HELPERS
+   ═══════════════════════════════════════════════════ */
+.empty-state-card {
+  padding: 3rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  .empty-icon-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    font-size: 1.1rem;
+    font-weight: 750;
+    color: #1e293b;
+    margin-bottom: 0.35rem;
+  }
+
+  .empty-subtitle {
+    font-size: 0.88rem;
+    color: #64748b;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+.btn-teal-primary {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #ffffff;
+
+  &:hover,
+  &:focus {
+    background: #115e59;
+    border-color: #115e59;
+    color: #ffffff;
+  }
+}
+
+.btn-outline-teal {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: transparent;
+
+  &:hover {
+    background: #0f766e;
+    color: #ffffff;
+  }
+}
+
+.text-teal {
+  color: #0f766e !important;
+}

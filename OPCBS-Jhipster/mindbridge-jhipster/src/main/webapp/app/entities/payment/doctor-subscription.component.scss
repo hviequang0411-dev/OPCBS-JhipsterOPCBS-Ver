@@ -1,0 +1,65 @@
+.active-sub-card {
+  background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+}
+
+.sub-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #34d399;
+  display: inline-block;
+  box-shadow: 0 0 8px #34d399;
+}
+
+.pricing-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0 !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.02) !important;
+  }
+
+  &.highlight-card {
+    border: 2px solid #0d9488 !important;
+    box-shadow: 0 15px 30px -5px rgba(13, 148, 136, 0.15) !important;
+  }
+}
+
+.badge-ribbon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: linear-gradient(135deg, #0d9488, #059669);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.payment-method-card {
+  transition: all 0.2s ease;
+
+  &.active {
+    border-color: #0d9488 !important;
+    background-color: rgba(13, 148, 136, 0.04);
+  }
+
+  &:hover {
+    border-color: #0d9488 !important;
+  }
+}
+
+.success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #d1fae5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

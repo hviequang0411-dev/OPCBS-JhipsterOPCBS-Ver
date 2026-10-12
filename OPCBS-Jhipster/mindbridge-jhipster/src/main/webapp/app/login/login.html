@@ -1,0 +1,242 @@
+<div class="auth-page-viewport">
+  <div class="auth-dual-card">
+    <!-- ══ LEFT PANEL: BRAND & VALUE PROPOSITION ══ -->
+    <div class="auth-brand-panel">
+      <!-- Brand Logo Header -->
+      <div class="brand-top-nav">
+        <a routerLink="/" class="brand-logo-link" title="Quay về Trang chủ MindBridge">
+          <img src="content/images/logo-cropped.png" alt="MindBridge Logo" class="brand-logo-img" onerror="this.style.display='none'" />
+          <span class="brand-name">Mind<span>Bridge</span></span>
+        </a>
+        <p class="brand-tagline">
+          Nền tảng đặt lịch khám &amp; tư vấn sức khỏe tâm lý chuyên sâu cùng các chuyên gia hàng đầu.
+        </p>
+      </div>
+
+      <!-- Trust Pillars -->
+      <div class="brand-trust-features">
+        <div class="trust-item">
+          <div class="trust-icon-box">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <div>
+            <div class="trust-title">Bảo Mật Chuẩn Y Tế</div>
+            <p class="trust-desc">Hồ sơ bệnh án và lịch sử tư vấn được mã hóa bảo mật tuyệt đối.</p>
+          </div>
+        </div>
+
+        <div class="trust-item">
+          <div class="trust-icon-box">
+            <i class="bi bi-person-check-fill"></i>
+          </div>
+          <div>
+            <div class="trust-title">100% Chuyên Gia Cấp Phép</div>
+            <p class="trust-desc">Đội ngũ Bác sĩ, Thạc sĩ &amp; Chuyên gia tâm lý giàu kinh nghiệm lâm sàng.</p>
+          </div>
+        </div>
+
+        <div class="trust-item">
+          <div class="trust-icon-box">
+            <i class="bi bi-camera-video-fill"></i>
+          </div>
+          <div>
+            <div class="trust-title">Tư Vấn Linh Hoạt 24/7</div>
+            <p class="trust-desc">Hỗ trợ phiên khám trực tuyến qua Video Call hoặc trực tiếp tại phòng khám.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Demo Account Switcher -->
+      <div class="brand-demo-box">
+        <div class="demo-label">
+          <i class="bi bi-lightning-charge-fill"></i> Tài Khoản Demo Nhanh:
+        </div>
+        <div class="demo-buttons-row">
+          <button type="button" class="btn-demo-pill" (click)="fillDemo('doctor1', 'user')">
+            👨‍⚕️ Bác sĩ (doctor1)
+          </button>
+          <button type="button" class="btn-demo-pill" (click)="fillDemo('patient1', 'user')">
+            🧑 Bệnh nhân (patient1)
+          </button>
+          <button type="button" class="btn-demo-pill" (click)="fillDemo('admin', 'admin')">
+            👑 Quản trị (admin)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RIGHT PANEL: LOGIN FORM ══ -->
+    <div class="auth-form-panel">
+      <!-- Form Header -->
+      <div class="form-header-box">
+        <a routerLink="/" class="mobile-brand-link">
+          <img src="content/images/logo-cropped.png" alt="MindBridge" style="height: 32px;" onerror="this.style.display='none'" />
+          <span class="fs-4 fw-bold text-dark">Mind<span style="color: #0f766e;">Bridge</span></span>
+        </a>
+        <h1 class="form-main-title">Chào Mừng Trở Lại</h1>
+        <p class="form-sub-title">Đăng nhập vào tài khoản MindBridge của bạn để tiếp tục</p>
+      </div>
+
+      <!-- Rich Diagnostic Error Alerts -->
+      @if (authenticationError()) {
+        @if (errorCode() === 'NOT_ACTIVATED') {
+          <div class="alert alert-warning shadow-sm border-0 mb-4 p-3" role="alert" style="border-radius: 12px; background-color: #fffbeb; border-left: 5px solid #f59e0b !important;">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-shield-exclamation text-warning fs-4 flex-shrink-0"></i>
+              <div class="flex-grow-1">
+                <div class="fw-bold text-dark mb-1">Tài Khoản Chưa Được Xác Thực Email!</div>
+                <div class="small text-muted mb-2">{{ errorMessage() }}</div>
+                <a
+                  [routerLink]="['/account/verify-otp']"
+                  [queryParams]="{ username: unactivatedAccount() }"
+                  class="btn btn-sm btn-warning fw-bold text-dark d-inline-flex align-items-center gap-1 shadow-sm px-3 py-1.5"
+                  style="border-radius: 8px;"
+                >
+                  <i class="bi bi-patch-check-fill"></i>
+                  <span>Nhập Mã OTP &amp; Kích Hoạt Ngay</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        } @else if (errorCode() === 'USER_NOT_FOUND') {
+          <div class="alert alert-danger shadow-sm border-0 mb-4 p-3" role="alert" style="border-radius: 12px;">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-person-x-fill text-danger fs-4 flex-shrink-0"></i>
+              <div>
+                <div class="fw-bold mb-1">Không Tìm Thấy Tài Khoản!</div>
+                <div class="small mb-1">{{ errorMessage() }}</div>
+                <div class="small">
+                  Bạn có muốn <a routerLink="/account/register" class="fw-bold alert-link text-decoration-underline">Đăng ký tài khoản mới</a> không?
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else if (errorCode() === 'INVALID_PASSWORD') {
+          <div class="alert alert-danger shadow-sm border-0 mb-4 p-3" role="alert" style="border-radius: 12px;">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi bi-key-fill text-danger fs-4 flex-shrink-0"></i>
+              <div>
+                <div class="fw-bold mb-1">Mật Khẩu Không Chính Xác!</div>
+                <div class="small mb-1">{{ errorMessage() }}</div>
+                <div class="small">
+                  Nếu bạn quên mật khẩu, hãy <a routerLink="/account/reset/request" class="fw-bold alert-link text-decoration-underline">Khôi phục mật khẩu tại đây</a>.
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="alert alert-danger shadow-sm border-0 d-flex align-items-center mb-4" role="alert" style="border-radius: 12px;">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2 flex-shrink-0"></i>
+            <div>
+              <strong>Đăng nhập không thành công!</strong> Vui lòng kiểm tra lại thông tin.
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Form Inputs -->
+      <form class="auth-form" (ngSubmit)="login()" [formGroup]="loginForm">
+        <!-- Username Input -->
+        <div class="auth-input-group">
+          <label class="auth-label" for="username">Tên Đăng Nhập / Email</label>
+          <div class="input-with-icon">
+            <i class="bi bi-person-fill input-icon-left"></i>
+            <input
+              type="text"
+              #username
+              class="auth-input"
+              name="username"
+              id="username"
+              placeholder="Nhập username (vd: doctor1, patient1)"
+              formControlName="username"
+              data-cy="username"
+              autocomplete="username"
+            />
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="auth-input-group">
+          <label class="auth-label" for="password">Mật Khẩu</label>
+          <div class="input-with-icon">
+            <i class="bi bi-shield-lock-fill input-icon-left"></i>
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              class="auth-input"
+              name="password"
+              id="password"
+              placeholder="Nhập mật khẩu của bạn"
+              formControlName="password"
+              data-cy="password"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="btn-toggle-password"
+              (click)="togglePasswordVisibility()"
+              title="Ẩn/Hiện mật khẩu"
+            >
+              <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Remember Me & Forgot Password -->
+        <div class="auth-actions-row">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="rememberMe" id="rememberMe" formControlName="rememberMe" />
+            <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+          </div>
+          <a routerLink="/account/reset/request" class="forgot-password-link">
+            Quên mật khẩu?
+          </a>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-auth-submit mb-3" data-cy="submit">
+          <span>Đăng Nhập</span>
+          <i class="bi bi-arrow-right-short fs-4"></i>
+        </button>
+
+        <!-- Divider -->
+        <div class="auth-divider">
+          <span>HOẶC</span>
+        </div>
+
+        <!-- Continue with Google Button -->
+        <button type="button" class="btn-google-auth" (click)="loginWithGoogle()" [disabled]="isGoogleLoading()">
+          @if (isGoogleLoading()) {
+            <span class="spinner-border spinner-border-sm text-primary me-2" role="status"></span>
+            <span>Đang kết nối Google...</span>
+          } @else {
+            <svg class="google-icon" viewBox="0 0 48 48" width="22" height="22">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="none" d="M0 0h48v48H0z"/>
+            </svg>
+            <span class="google-btn-text">Tiếp tục với Google (Continue with Google)</span>
+          }
+        </button>
+      </form>
+
+      <!-- Switch To Registration & OTP -->
+      <div class="auth-switch-section">
+        <p class="switch-text mb-2">
+          Chưa có tài khoản?
+          <a routerLink="/account/register" class="switch-link">Đăng ký tài khoản bệnh nhân</a>
+        </p>
+        <p class="switch-text mb-3">
+          <i class="bi bi-shield-check text-primary me-1"></i> Chưa hoàn tất xác thực?
+          <a routerLink="/account/verify-otp" class="switch-link text-decoration-underline">Nhập mã OTP kích hoạt tài khoản</a>
+        </p>
+        <a routerLink="/account/register-doctor" class="doctor-register-banner">
+          <i class="bi bi-heart-pulse-fill"></i>
+          <span>Bạn là Bác sĩ chuyên khoa?</span>
+          <span class="doc-cta">Đăng ký hồ sơ Bác sĩ &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

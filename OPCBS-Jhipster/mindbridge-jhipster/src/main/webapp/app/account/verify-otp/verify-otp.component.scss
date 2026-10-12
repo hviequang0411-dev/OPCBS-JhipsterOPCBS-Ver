@@ -1,0 +1,321 @@
+/* ══════════════════════════════════════════════════════════════
+   MindBridge Healthcare OTP Verification Screen Styling
+   ══════════════════════════════════════════════════════════════ */
+
+.otp-page-viewport {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background: radial-gradient(circle at 10% 10%, rgba(15, 118, 110, 0.12) 0%, rgba(240, 253, 250, 0.6) 50%, rgba(248, 250, 252, 1) 100%);
+  position: relative;
+  overflow-x: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -15%;
+    width: 650px;
+    height: 650px;
+    background: radial-gradient(circle, rgba(45, 212, 191, 0.18) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.otp-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow:
+    0 25px 60px -15px rgba(15, 118, 110, 0.18),
+    0 0 0 1px rgba(226, 232, 240, 0.9);
+  padding: 3rem 2.5rem;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 576px) {
+    padding: 2rem 1.5rem;
+  }
+}
+
+.otp-icon-header {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.12) 0%, rgba(20, 184, 166, 0.18) 100%);
+  color: #0f766e;
+  font-size: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem auto;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+}
+
+.otp-title {
+  font-size: 1.85rem;
+  font-weight: 850;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.otp-subtitle {
+  font-size: 0.92rem;
+  color: #475569;
+  font-weight: 550;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+/* Account Pill & Edit Section */
+.account-pill-box {
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.25rem;
+
+  .text-teal {
+    color: #0f766e;
+    font-size: 1.1rem;
+  }
+
+  .user-email-badge {
+    color: #0f766e;
+    font-weight: 800;
+    font-size: 0.92rem;
+  }
+
+  .btn-change-account {
+    background: transparent;
+    border: none;
+    color: #0f766e;
+    font-size: 0.82rem;
+    font-weight: 750;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ccfbf1;
+      text-decoration: underline;
+    }
+  }
+}
+
+.account-edit-box {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+
+  .account-edit-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 750;
+    color: #0f172a;
+    margin-bottom: 0.4rem;
+  }
+
+  .custom-acc-input {
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    &:focus {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+  }
+
+  .btn-teal-action {
+    background: #0f766e;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.84rem;
+    border-radius: 8px;
+
+    &:hover {
+      background: #115e59;
+    }
+  }
+}
+
+/* Timer Box */
+.otp-timer-box {
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.35rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+
+  .timer-active {
+    font-size: 0.88rem;
+    color: #334155;
+    font-weight: 600;
+
+    .timer-digits {
+      color: #0f766e;
+      font-size: 1.05rem;
+      font-weight: 850;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+  }
+
+  .timer-expired {
+    font-size: 0.85rem;
+    color: #e11d48;
+    font-weight: 700;
+  }
+
+  &.expired {
+    background: #fff1f2;
+    border-color: #fecdd3;
+  }
+}
+
+/* 6-Digit OTP Inputs */
+.otp-inputs-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
+
+  .otp-digit-box {
+    width: 52px;
+    height: 60px;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.75rem;
+    font-weight: 850;
+    color: #0f172a;
+    background: #ffffff;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    @media (max-width: 480px) {
+      width: 44px;
+      height: 52px;
+      font-size: 1.4rem;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #0f766e;
+      background: #f0fdfa;
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+      transform: translateY(-2px);
+    }
+
+    &.filled {
+      border-color: #0f766e;
+      background: #f8fafc;
+    }
+  }
+}
+
+.btn-verify-submit {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  margin-bottom: 1.5rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.35);
+    background: linear-gradient(135deg, #115e59 0%, #044e45 100%);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* Resend Section */
+.resend-section {
+  font-size: 0.88rem;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+
+  .countdown-timer {
+    color: #0f766e;
+    font-weight: 800;
+    margin-left: 4px;
+  }
+
+  .btn-resend {
+    background: transparent;
+    border: none;
+    color: #0f766e;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    text-decoration: underline;
+
+    &:hover:not(:disabled) {
+      color: #115e59;
+    }
+
+    &:disabled {
+      color: #94a3b8;
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+  }
+}
+
+/* Back Link */
+.back-to-login {
+  border-top: 1.5px solid #f1f5f9;
+  padding-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #475569;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #0f766e;
+      text-decoration: underline;
+    }
+  }
+}

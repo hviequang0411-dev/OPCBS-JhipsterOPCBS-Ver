@@ -1,0 +1,18 @@
+.test-result-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.report-header-card {
+  border-radius: 12px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .test-result-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}

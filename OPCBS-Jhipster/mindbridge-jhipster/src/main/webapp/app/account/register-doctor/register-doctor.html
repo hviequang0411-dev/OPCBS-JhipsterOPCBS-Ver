@@ -1,0 +1,247 @@
+<div class="auth-wrapper">
+  <div class="mb-auth-card extra-wide">
+    <div class="text-center mb-3">
+      <div
+        class="rounded-circle mx-auto d-flex align-items-center justify-content-center"
+        style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--mb-primary), #6366f1); color: white;"
+      >
+        <i class="bi bi-heart-pulse-fill" style="font-size: 1.6rem;"></i>
+      </div>
+    </div>
+
+    <h2>Become a Doctor</h2>
+    <p class="auth-subtitle">Register a doctor consulting account on MindBridge</p>
+
+    @if (success()) {
+      <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill me-1"></i>
+        <strong>Doctor account created!</strong> Your doctor profile is ready and active. You can now
+        <a routerLink="/login" class="alert-link fw-bold">Log In</a> to set your availability slots.
+      </div>
+    }
+
+    @if (error()) {
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill me-1"></i>
+        <strong>Registration failed!</strong> Please check your information and try again.
+      </div>
+    }
+
+    @if (errorUserExists()) {
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill me-1"></i>
+        <strong>Username already registered!</strong> Please choose another one.
+      </div>
+    }
+
+    @if (errorEmailExists()) {
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill me-1"></i>
+        <strong>Email is already in use!</strong> Please choose another one.
+      </div>
+    }
+
+    @if (doNotMatch()) {
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        The password and its confirmation do not match!
+      </div>
+    }
+
+    @if (!success()) {
+      <form name="form" (ngSubmit)="registerDoctor()" [formGroup]="registerForm">
+        <!-- Step 1: Account Info -->
+        <h6 class="fw-bold text-muted mb-3">
+          <i class="bi bi-1-circle me-1 text-primary"></i>Account Info
+        </h6>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="fullName">Full Name <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="fullName"
+              name="fullName"
+              placeholder="e.g. Dr. John Smith"
+              formControlName="fullName"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="login">Username <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="login"
+              name="login"
+              placeholder="dr_johnsmith"
+              formControlName="login"
+            />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
+            <input
+              type="email"
+              class="form-control"
+              id="email"
+              name="email"
+              placeholder="doctor@example.com"
+              formControlName="email"
+            />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="phone">Phone Number <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="phone"
+              name="phone"
+              placeholder="0912345678"
+              formControlName="phone"
+            />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="password">Password <span class="text-danger">*</span></label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              placeholder="At least 4 characters"
+              formControlName="password"
+            />
+            @let passwordRef = registerForm.get('password')!;
+            <div class="mt-2">
+              <jhi-password-strength-bar [passwordToCheck]="passwordRef.value" />
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="confirmPassword">Confirm Password <span class="text-danger">*</span></label>
+            <input
+              type="password"
+              class="form-control"
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="Re-enter password"
+              formControlName="confirmPassword"
+            />
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Step 2: Professional Info -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-muted mb-0">
+            <i class="bi bi-2-circle me-1 text-primary"></i>Professional Info
+          </h6>
+          <span class="badge bg-light text-muted border" style="font-size: 0.75rem;">Optional</span>
+        </div>
+
+        <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
+          <i class="bi bi-info-circle me-1"></i>You can update and refine these details anytime in your <strong>Profile Settings</strong>.
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="title">Professional Title</label>
+          <input
+            type="text"
+            class="form-control"
+            id="title"
+            name="title"
+            placeholder="e.g. PhD, Psychiatrist, MSc in Psychotherapy"
+            formControlName="title"
+          />
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="form-label" for="bio">Biography / Summary</label>
+            <textarea
+              class="form-control"
+              id="bio"
+              name="bio"
+              rows="3"
+              placeholder="Brief description of your expertise, experience, and consultation philosophy..."
+              formControlName="bio"
+            ></textarea>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-2">
+              <label class="form-label" for="experienceYears">Years of Exp</label>
+              <input
+                type="number"
+                class="form-control"
+                id="experienceYears"
+                name="experienceYears"
+                min="0"
+                formControlName="experienceYears"
+              />
+            </div>
+            <div>
+              <label class="form-label" for="consultationFee">Fee ($)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="consultationFee"
+                name="consultationFee"
+                min="0"
+                step="0.01"
+                formControlName="consultationFee"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Specializations Checkboxes -->
+        @if (specializations().length > 0) {
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              Specializations <small class="text-muted fw-normal">(select one or more)</small>
+            </label>
+            <div class="row g-2">
+              @for (spec of specializations(); track spec.id) {
+                <div class="col-md-6">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'spec_' + spec.id"
+                      [checked]="selectedSpecializationIds().includes(spec.id)"
+                      (change)="toggleSpecialization(spec.id)"
+                    />
+                    <label class="form-check-label" [for]="'spec_' + spec.id">
+                      {{ spec.name }}
+                    </label>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <button
+          type="submit"
+          [disabled]="registerForm.invalid"
+          class="btn-mb-primary mt-2"
+        >
+          <i class="bi bi-person-plus-fill me-1"></i>Register Doctor Account
+        </button>
+      </form>
+    }
+
+    <div class="auth-footer">
+      Already have an account? <a routerLink="/login">Log In</a>
+      <div class="mt-2 pt-2 border-top">
+        <small class="text-muted">Want to register as a patient?</small>
+        <a routerLink="/account/register" class="ms-1">Register here</a>
+      </div>
+    </div>
+  </div>
+</div>

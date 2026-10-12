@@ -1,0 +1,400 @@
+<div class="booking-page-container">
+  <!-- Alerts -->
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3 fw-semibold" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+      <button type="button" class="btn-close" (click)="errorMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  <!-- ══ SUCCESS STATE ══ -->
+  @if (bookingSuccess()) {
+    <div class="card border-0 shadow-sm rounded-4 text-center p-5 my-4 mx-auto" style="max-width: 680px; background: #ffffff;">
+      <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px; background: #ccfbf1; color: #0f766e; font-size: 2.5rem;">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h2 class="fw-bold text-dark mb-2" style="font-weight: 850; color: #0f172a;">Đặt Lịch Hẹn Thành Công!</h2>
+      <p class="mb-4" style="color: #334155; font-size: 0.95rem; font-weight: 550;">
+        Yêu cầu đặt lịch của bạn đã được gửi đến Bác sĩ. Bác sĩ sẽ xem xét và xác nhận lịch hẹn của bạn trong thời gian sớm nhất.
+      </p>
+
+      <div class="p-3 rounded-3 mb-4 d-inline-block mx-auto" style="background: #f0fdfa; border: 2px dashed #0f766e;">
+        <div class="text-uppercase fw-bold mb-1" style="font-size: 0.78rem; color: #0f766e; letter-spacing: 0.05em;">MÃ ĐẶT LỊCH CỦA BẠN</div>
+        <div class="fw-bold" style="color: #0f766e; font-size: 2rem; letter-spacing: 0.06em; font-weight: 900;">
+          {{ successBookingCode() }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-center gap-3">
+        <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-bold text-dark" routerLink="/doctor-profile" style="border-radius: 8px; border-color: #cbd5e1;">
+          <i class="bi bi-search me-1"></i> Khám Phá Thêm Chuyên Gia
+        </button>
+        <button type="button" class="btn btn-primary fw-bold px-4 py-2" (click)="goToMyAppointments()" style="background: #0f766e; border-color: #0f766e; border-radius: 8px;">
+          <i class="bi bi-calendar-check me-1"></i> Xem Lịch Hẹn Của Tôi
+        </button>
+      </div>
+    </div>
+  } @else {
+    <!-- ══ NO DOCTOR SELECTED STATE ══ -->
+    @if (!doctorId()) {
+      <div class="card border-0 shadow-sm rounded-4 text-center p-5 my-4" style="background: #ffffff;">
+        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 70px; height: 70px; background: #f0fdfa; color: #0f766e; font-size: 2rem;">
+          <i class="bi bi-person-heart"></i>
+        </div>
+        <h3 class="fw-bold mb-2" style="font-weight: 850; color: #0f172a;">Vui Lòng Chọn Bác Sĩ / Chuyên Gia</h3>
+        <p class="mb-4" style="color: #334155; font-size: 0.95rem; font-weight: 550;">
+          Hãy tìm kiếm và lựa chọn chuyên gia tâm lý phù hợp với nhu cầu tham vấn của bạn trước khi chọn khung giờ.
+        </p>
+        <div>
+          <a routerLink="/doctor-profile" class="btn btn-primary px-4 py-2 fw-bold" style="background: #0f766e; border-color: #0f766e; border-radius: 8px;">
+            <i class="bi bi-search me-1"></i> Xem Danh Sách Bác Sĩ
+          </a>
+        </div>
+      </div>
+    } @else {
+      <!-- Page Header Banner -->
+      <div class="booking-header-card d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h1 class="booking-title">
+            <i class="bi bi-calendar-check-fill me-2"></i> Đặt Lịch Hẹn Tư Vấn Y Tế
+          </h1>
+          <p class="booking-subtitle">
+            Lựa chọn khung giờ rảnh phù hợp của Bác sĩ để đặt lịch khám trực tuyến hoặc trực tiếp.
+          </p>
+        </div>
+        <div>
+          <a routerLink="/doctor-profile" class="btn btn-light btn-sm fw-bold px-3 py-2" style="border-radius: 8px; color: #0f766e; font-size: 0.88rem;">
+            <i class="bi bi-arrow-left me-1"></i> Đổi Bác Sĩ Khác
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Content 2 Columns -->
+      <div class="d-flex flex-column flex-lg-row gap-4">
+        <!-- ══ COLUMN 1: SIDEBAR ══ -->
+        <aside class="booking-sidebar">
+          <!-- Doctor Summary Card -->
+          @if (doctor()) {
+            <div class="doctor-summary-card">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="doc-avatar-box">
+                  {{ doctorInitials() }}
+                  <div class="online-indicator" title="Đang trực tuyến"></div>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                  <div class="doc-name text-truncate">
+                    {{ doctor()?.fullName }}
+                    <i class="bi bi-patch-check-fill text-primary ms-1" title="Bác sĩ đã xác thực"></i>
+                  </div>
+                  <div class="doc-title text-truncate">{{ doctor()?.title || 'Chuyên gia Tâm lý MindBridge' }}</div>
+                  <div class="d-flex align-items-center gap-1 mt-1 doc-exp-text">
+                    <i class="bi bi-briefcase text-teal" style="color: #0f766e;"></i>
+                    <span>{{ doctor()?.experienceYears || 5 }} năm kinh nghiệm</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact & Fee Details -->
+              <div class="border-top pt-3 mt-2">
+                @if (doctor()?.phone) {
+                  <div class="doc-contact-item">
+                    <i class="bi bi-telephone-fill"></i>
+                    <span>{{ doctor()?.phone }}</span>
+                  </div>
+                }
+                @if (doctor()?.user?.login) {
+                  <div class="doc-contact-item">
+                    <i class="bi bi-person-badge-fill"></i>
+                    <span>Tài khoản: <strong>{{ doctor()?.user?.login }}</strong></span>
+                  </div>
+                }
+                <div class="d-flex align-items-center justify-content-between pt-2.5 mt-2 border-top">
+                  <span class="doc-fee-label">Phí tư vấn:</span>
+                  <span class="doc-fee-badge">{{ (doctor()?.consultationFee || 500000) | number:'1.0-0' }} VNĐ</span>
+                </div>
+              </div>
+
+              <div class="mt-3 pt-2 text-center border-top">
+                <a [routerLink]="['/doctor-profile', doctor()?.id, 'view']" class="fw-bold text-decoration-none" style="color: #0f766e; font-size: 0.88rem;">
+                  Xem Hồ Sơ Bác Sĩ <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          }
+
+          <!-- Info Guide -->
+          <div class="booking-guide-card">
+            <div class="guide-title"><i class="bi bi-info-circle-fill" style="color: #0f766e;"></i> Hướng dẫn đặt lịch:</div>
+            <ol class="guide-list">
+              <li>Chọn ngày và bấm vào <strong>khung giờ còn trống</strong> màu xanh.</li>
+              <li>Điền thông tin liên hệ và lý do / triệu chứng tiền khám.</li>
+              <li>Bác sĩ sẽ duyệt yêu cầu và gửi thông báo xác nhận lịch hẹn.</li>
+            </ol>
+          </div>
+        </aside>
+
+        <!-- ══ COLUMN 2: SLOTS WEEK GRID ══ -->
+        <section class="slots-main-area">
+          <!-- Week Navigation Toolbar -->
+          <div class="slots-nav-bar">
+            <div class="d-flex align-items-center gap-2">
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="prevWeek()" title="Tuần trước">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="goToToday()">
+                  Hôm nay
+                </button>
+                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="nextWeek()" title="Tuần sau">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+              <span class="week-range-text ms-2">
+                <i class="bi bi-calendar3 me-1" style="color: #0f766e;"></i> {{ weekRangeDisplay() }}
+              </span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success-subtle text-success border border-success fw-bold px-2.5 py-1.5" style="font-size: 0.78rem;">
+                <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> Khung giờ trống (Bấm để đặt)
+              </span>
+            </div>
+          </div>
+
+          <!-- Week Days Grid -->
+          <div class="slots-days-grid">
+            @for (day of weekDays(); track day.dateStr) {
+              <div class="slot-day-col" [class.today-col]="day.isToday">
+                <!-- Day Header -->
+                <div class="slot-day-header">
+                  <div class="d-name">{{ day.dayName }}</div>
+                  <div class="d-num">{{ day.dayNumber }}</div>
+                </div>
+
+                <!-- Day Slots List -->
+                <div class="slot-day-body">
+                  @for (slot of day.slots; track slot.id) {
+                    @if (slot.status === 'AVAILABLE' && !isSlotInPast(slot)) {
+                      <div class="patient-slot-btn" (click)="selectSlotForBooking(slot, bookingModalTemplate)" title="Bấm để đặt khung giờ này">
+                        <div class="slot-time-text">
+                          <i class="bi bi-clock me-1"></i>{{ formatSlotTime(slot) }}
+                        </div>
+                        <div class="slot-mode-chip">
+                          <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
+                          {{ slot.consultationMode }}
+                        </div>
+                      </div>
+                    } @else if (isSlotInPast(slot)) {
+                      <div class="slot-booked-card" style="opacity: 0.55; background: #f1f5f9;" title="Khung giờ này đã qua trong quá khứ">
+                        <div class="slot-time-text text-muted">{{ formatSlotTime(slot) }}</div>
+                        <div class="slot-booked-label text-muted"><i class="bi bi-clock-history me-1"></i>Đã qua</div>
+                      </div>
+                    } @else {
+                      <div class="slot-booked-card" title="Khung giờ này đã kín lịch">
+                        <div class="slot-time-text">{{ formatSlotTime(slot) }}</div>
+                        <div class="slot-booked-label"><i class="bi bi-lock-fill me-1"></i>Đã Đặt</div>
+                      </div>
+                    }
+                  }
+
+                  @if (day.slots.length === 0) {
+                    <div class="text-center py-4 fw-semibold" style="color: #94a3b8; font-size: 0.82rem;">
+                      <i class="bi bi-cup-hot fs-5 d-block mb-1"></i>
+                      <span>Không có giờ</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  }
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: XÁC NHẬN ĐẶT LỊCH (High Contrast) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #bookingModalTemplate let-modal>
+  <div class="modal-header modal-header-gradient">
+    <div>
+      <h5 class="modal-title mb-0">
+        <i class="bi bi-calendar-check-fill me-2" style="color: #0f766e;"></i> Xác Nhận Đặt Lịch Hẹn
+      </h5>
+      <p class="modal-subtitle mb-0">Vui lòng kiểm tra thông tin và điền phiếu đánh giá tiền khám lâm sàng.</p>
+    </div>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+
+  <form [formGroup]="bookingForm" (ngSubmit)="submitBooking(modal)">
+    <div class="modal-body p-4">
+      <!-- Error Alert in Modal -->
+      @if (modalErrorMessage()) {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3 fw-semibold" role="alert" style="border-radius: 8px;">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ modalErrorMessage() }}
+          <button type="button" class="btn-close" (click)="modalErrorMessage.set(null)" aria-label="Close"></button>
+        </div>
+      }
+
+      <!-- Appointment Summary Card -->
+      <div class="appointment-summary-box mb-4">
+        <div class="row g-3">
+          <div class="col-4">
+            <div class="summary-label">BÁC SĨ KHÁM</div>
+            <div class="summary-val">{{ doctor()?.fullName }}</div>
+          </div>
+          <div class="col-4">
+            <div class="summary-label">NGÀY KHÁM</div>
+            <div class="summary-val" style="color: #0f766e;">
+              {{ selectedSlot() ? formatSlotDate(selectedSlot()!) : '—' }}
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="summary-label">GIỜ KHÁM</div>
+            <div class="summary-val" style="color: #0f766e;">
+              {{ selectedSlot() ? formatSlotTime(selectedSlot()!) : '—' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient Information -->
+      <div class="booking-form-section-title">
+        <i class="bi bi-person-lines-fill" style="color: #0f766e;"></i>
+        <span>Thông Tin Người Đặt Khám</span>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="booking-form-label">Họ Và Tên <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control booking-form-control"
+            [class.is-invalid]="bookingForm.get('patientName')?.invalid && bookingForm.get('patientName')?.touched"
+            formControlName="patientName"
+            placeholder="VD: Nguyễn Văn A"
+          />
+          @if (bookingForm.get('patientName')?.invalid && bookingForm.get('patientName')?.touched) {
+            <div class="invalid-feedback d-block fw-semibold" style="font-size: 0.8rem;">
+              Vui lòng nhập họ và tên của bạn.
+            </div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label class="booking-form-label">Địa Chỉ Email <span class="text-danger">*</span></label>
+          <input
+            type="email"
+            class="form-control booking-form-control"
+            [class.is-invalid]="bookingForm.get('patientEmail')?.invalid && bookingForm.get('patientEmail')?.touched"
+            formControlName="patientEmail"
+            placeholder="email@example.com"
+          />
+          @if (bookingForm.get('patientEmail')?.invalid && bookingForm.get('patientEmail')?.touched) {
+            <div class="invalid-feedback d-block fw-semibold" style="font-size: 0.8rem;">
+              Vui lòng nhập địa chỉ email hợp lệ.
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="booking-form-label">Số Điện Thoại Liên Hệ <span class="text-danger">*</span></label>
+          <input
+            type="tel"
+            class="form-control booking-form-control"
+            [class.is-invalid]="bookingForm.get('contactPhone')?.invalid && bookingForm.get('contactPhone')?.touched"
+            formControlName="contactPhone"
+            placeholder="VD: 0901234567"
+          />
+          @if (bookingForm.get('contactPhone')?.invalid && bookingForm.get('contactPhone')?.touched) {
+            <div class="invalid-feedback d-block fw-semibold" style="font-size: 0.8rem;">
+              Vui lòng nhập số điện thoại liên hệ.
+            </div>
+          }
+        </div>
+        <div class="col-md-6">
+          <label class="booking-form-label">Số Zalo (nếu có)</label>
+          <input type="tel" class="form-control booking-form-control" formControlName="contactZalo" placeholder="VD: 0901234567" />
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="booking-form-label">Hình Thức Tư Vấn <span class="text-danger">*</span></label>
+          <select class="form-select booking-form-control" formControlName="consultationMode">
+            <option value="ONLINE">Online (Tư vấn trực tuyến qua Video Call)</option>
+            <option value="IN_PERSON">Khám trực tiếp (Tại phòng khám MindBridge)</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="booking-form-label">Địa Chỉ Bệnh Nhân</label>
+          <input type="text" class="form-control booking-form-control" formControlName="patientAddress" placeholder="VD: Quận 1, TP.HCM" />
+        </div>
+      </div>
+
+      <hr style="border-color: #cbd5e1; margin: 1.4rem 0;" />
+
+      <!-- Pre-Appointment Clinical Evaluation -->
+      <div class="booking-form-section-title">
+        <i class="bi bi-clipboard2-pulse-fill" style="color: #0f766e;"></i>
+        <span>Đánh Giá Tiền Khám Lâm Sàng</span>
+      </div>
+      <p class="mb-3 fw-semibold" style="color: #334155; font-size: 0.85rem;">Thông tin này giúp Bác sĩ chuẩn bị phác đồ và tài liệu chuyên môn chu đáo trước buổi khám.</p>
+
+      <div class="mb-3">
+        <label class="booking-form-label">Lý Do Đặt Khám / Vấn Đề Gặp Phải <span class="text-danger">*</span></label>
+        <textarea
+          class="form-control booking-form-control"
+          [class.is-invalid]="bookingForm.get('reason')?.invalid && bookingForm.get('reason')?.touched"
+          rows="2"
+          formControlName="reason"
+          placeholder="Mô tả ngắn gọn vấn đề tâm lý hoặc sức khỏe bạn muốn được tư vấn..."
+        ></textarea>
+        @if (bookingForm.get('reason')?.invalid && bookingForm.get('reason')?.touched) {
+          <div class="invalid-feedback d-block fw-semibold" style="font-size: 0.8rem;">
+            Vui lòng nhập lý do đặt lịch hẹn tư vấn.
+          </div>
+        }
+      </div>
+
+      <div class="mb-3">
+        <label class="booking-form-label">Triệu Chứng Hiện Tại (Symptoms)</label>
+        <textarea class="form-control booking-form-control" rows="2" formControlName="symptoms" placeholder="VD: Khó ngủ, lo âu kéo dài, mệt mỏi, căng thẳng công việc..."></textarea>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="booking-form-label">Tiền Sử Y Tế / Tâm Lý (Medical History)</label>
+          <textarea class="form-control booking-form-control" rows="2" formControlName="medicalHistory" placeholder="Đã từng điều trị hoặc dùng thuốc gì trước đây..."></textarea>
+        </div>
+        <div class="col-md-6">
+          <label class="booking-form-label">Kỳ Vọng Buổi Tham Vấn (Expectations)</label>
+          <textarea class="form-control booking-form-control" rows="2" formControlName="expectations" placeholder="Bạn mong muốn đạt được kết quả gì sau ca tư vấn này..."></textarea>
+        </div>
+      </div>
+
+      <!-- Privacy Notice -->
+      <div class="booking-privacy-box">
+        <i class="bi bi-shield-lock-fill text-success fs-5"></i>
+        <span>Thông tin bệnh án và thông tin cá nhân của bạn được bảo mật tuyệt đối theo tiêu chuẩn y tế MindBridge.</span>
+      </div>
+    </div>
+
+    <div class="modal-footer bg-light border-top px-4 py-3">
+      <button type="button" class="btn btn-light px-4 fw-bold text-dark border" (click)="modal.dismiss()" style="border-radius: 8px;">Hủy Bỏ</button>
+      <button
+        type="submit"
+        class="btn btn-primary fw-bold px-4"
+        [disabled]="isLoading()"
+        style="background: #0f766e; border-color: #0f766e; border-radius: 8px; font-size: 0.95rem;"
+      >
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Xác Nhận Đặt Lịch Hẹn
+      </button>
+    </div>
+  </form>
+</ng-template>

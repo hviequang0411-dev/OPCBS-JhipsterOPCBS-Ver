@@ -1,0 +1,22 @@
+@if (isAuthPage()) {
+  <!-- 1. Auth Mode: Clean fullscreen without header/footer/sidebar -->
+  <main class="mb-auth-fullscreen">
+    <router-outlet />
+  </main>
+} @else if (isDashboardPage()) {
+  <!-- 2. Management / Portal Mode: No public Header -> Full Dashboard with Sidebar -->
+  <div class="mb-portal-container">
+    <jhi-sidebar />
+    <main class="mb-portal-main">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <!-- 3. Public Marketing Mode (Home, Doctor Directory, Doctor Details, Booking Flow): Uses Public Header & Footer -->
+  <jhi-page-ribbon />
+  <router-outlet name="navbar" />
+  <main class="mb-main-content">
+    <router-outlet />
+  </main>
+  <jhi-footer />
+}

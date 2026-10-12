@@ -1,0 +1,215 @@
+/* ==========================================================================
+   MindBridge Main Navbar Styles
+   ========================================================================== */
+
+.mb-main-navbar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  padding: 0.65rem 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1030;
+
+  .container {
+    max-width: 1240px;
+  }
+
+  /* Brand */
+  .mb-brand-logo {
+    max-height: 38px;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+  }
+
+  .mb-brand-text {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 1.32rem;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+    text-decoration: none;
+
+    span {
+      color: var(--mb-primary, #3e8e7e);
+    }
+  }
+
+  &:hover .mb-brand-logo {
+    transform: scale(1.02);
+  }
+
+  /* Nav Links */
+  .navbar-nav {
+    .nav-item {
+      margin: 0 0.15rem;
+
+      .nav-link {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #475569;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+
+        i {
+          font-size: 1rem;
+        }
+
+        &:hover {
+          color: var(--mb-primary, #3e8e7e);
+          background-color: rgba(62, 142, 126, 0.06);
+        }
+
+        &.active {
+          color: var(--mb-primary, #3e8e7e);
+          background-color: rgba(62, 142, 126, 0.1);
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  /* Right action buttons */
+  .mb-navbar-actions {
+    .mb-btn-for-doctor {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0f766e;
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #ccfbf1;
+        color: #115e59;
+        border-color: #99f6e4;
+      }
+    }
+
+    .mb-btn-login {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #334155;
+      padding: 0.45rem 1rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: var(--mb-primary, #3e8e7e);
+        background: #f1f5f9;
+      }
+    }
+
+    .mb-btn-get-started {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--mb-primary, #3e8e7e) 0%, #2f6f62 100%);
+      border: none;
+      padding: 0.5rem 1.15rem;
+      border-radius: 9px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      &:hover {
+        background: linear-gradient(135deg, #357a6c 0%, #26594e 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px -2px rgba(62, 142, 126, 0.38) !important;
+      }
+    }
+
+    /* User Pill */
+    .mb-user-pill {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover,
+      &[aria-expanded='true'] {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      .mb-nav-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3e8e7e 0%, #2c6e61 100%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mb-nav-avatar-img {
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+      }
+
+      .mb-user-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #1e293b;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+      }
+
+      .mb-user-role {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        align-self: flex-start;
+      }
+    }
+  }
+
+  /* Glass Dropdown */
+  .mb-glass-dropdown {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0.5rem;
+    min-width: 210px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.12) !important;
+    margin-top: 0.4rem;
+
+    .dropdown-item {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #334155;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+      }
+
+      &.active {
+        background-color: rgba(62, 142, 126, 0.1);
+        color: var(--mb-primary, #3e8e7e);
+      }
+    }
+  }
+
+  .text-teal {
+    color: var(--mb-primary, #3e8e7e) !important;
+  }
+}

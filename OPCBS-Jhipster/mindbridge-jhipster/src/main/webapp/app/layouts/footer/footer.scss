@@ -1,0 +1,105 @@
+/* ==========================================================================
+   MindBridge Footer Styles
+   ========================================================================== */
+
+.mb-footer {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 4rem 0 2rem 0;
+  margin-top: auto;
+  color: #475569;
+
+  .container {
+    max-width: 1240px;
+  }
+
+  .mb-footer-logo {
+    max-height: 40px;
+    width: auto;
+  }
+
+  .mb-footer-brand-text {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.03em;
+    color: #0f172a;
+
+    span {
+      color: var(--mb-primary, #3e8e7e);
+    }
+  }
+
+  .mb-footer-desc {
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.65;
+    max-width: 320px;
+  }
+
+  .mb-footer-heading {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #1e293b;
+    text-transform: uppercase;
+    margin-bottom: 1.15rem;
+  }
+
+  .mb-footer-links {
+    li a {
+      font-size: 0.88rem;
+      color: #64748b;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      font-weight: 500;
+
+      &:hover {
+        color: var(--mb-primary, #3e8e7e);
+        padding-left: 3px;
+      }
+    }
+  }
+
+  .mb-footer-contact {
+    font-size: 0.88rem;
+    color: #64748b;
+
+    i {
+      font-size: 1.1rem;
+    }
+  }
+
+  .mb-footer-bottom {
+    border-color: #f1f5f9 !important;
+  }
+
+  .mb-social-icons {
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #f8fafc;
+      color: #64748b;
+      text-decoration: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(62, 142, 126, 0.12);
+        color: var(--mb-primary, #3e8e7e);
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  .text-teal {
+    color: var(--mb-primary, #3e8e7e) !important;
+  }
+
+  .bg-teal-subtle {
+    background-color: rgba(62, 142, 126, 0.1) !important;
+  }
+}

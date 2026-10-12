@@ -1,0 +1,443 @@
+/* ══════════════════════════════════════════════════════════════
+   MindBridge Modern Dual-Panel Healthcare Registration System
+   ══════════════════════════════════════════════════════════════ */
+
+.auth-page-viewport {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: radial-gradient(circle at 0% 0%, rgba(15, 118, 110, 0.12) 0%, rgba(240, 253, 250, 0.6) 50%, rgba(248, 250, 252, 1) 100%);
+  position: relative;
+  overflow-x: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -15%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(45, 212, 191, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+}
+
+.auth-dual-card {
+  width: 100%;
+  max-width: 1120px;
+  min-height: 660px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow:
+    0 25px 60px -15px rgba(15, 118, 110, 0.18),
+    0 0 0 1px rgba(226, 232, 240, 0.8);
+  display: grid;
+  grid-template-columns: 42% 58%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+    max-width: 580px;
+  }
+}
+
+/* ── 1. LEFT BRAND PANEL ── */
+.auth-brand-panel {
+  background: linear-gradient(150deg, #0f766e 0%, #115e59 55%, #134e4a 100%);
+  padding: 3rem 2.5rem;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    right: -60px;
+    width: 240px;
+    height: 240px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  @media (max-width: 960px) {
+    display: none;
+  }
+}
+
+.brand-top-nav {
+  .brand-logo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: #ffffff;
+
+    .brand-logo-img {
+      height: 42px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    }
+
+    .brand-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+
+      span {
+        color: #5eead4;
+      }
+    }
+  }
+
+  .brand-tagline {
+    font-size: 0.95rem;
+    color: #ccfbf1;
+    margin-top: 0.6rem;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+}
+
+.brand-trust-features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.35rem;
+  margin: 2rem 0;
+
+  .trust-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+
+    .trust-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5eead4;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .trust-title {
+      font-size: 0.98rem;
+      font-weight: 750;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .trust-desc {
+      font-size: 0.85rem;
+      color: #e0f2fe;
+      margin: 0;
+      line-height: 1.4;
+      font-weight: 450;
+    }
+  }
+}
+
+.brand-patient-perk {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+
+  .perk-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #5eead4;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .perk-text {
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    margin: 0;
+    line-height: 1.45;
+  }
+}
+
+/* ── 2. RIGHT FORM PANEL ── */
+.auth-form-panel {
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+  position: relative;
+
+  @media (max-width: 960px) {
+    padding: 2.25rem 1.5rem;
+  }
+}
+
+.form-header-box {
+  margin-bottom: 1.5rem;
+
+  .mobile-brand-link {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+
+    @media (max-width: 960px) {
+      display: inline-flex;
+    }
+  }
+
+  .form-main-title {
+    font-size: 1.85rem;
+    font-weight: 850;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-sub-title {
+    font-size: 0.92rem;
+    color: #475569;
+    font-weight: 550;
+    margin: 0;
+  }
+}
+
+/* Form Controls */
+.auth-input-group {
+  position: relative;
+  margin-bottom: 1.15rem;
+
+  .auth-label {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 750;
+    color: #0f172a;
+    margin-bottom: 0.35rem;
+
+    .required-star {
+      color: #e11d48;
+    }
+  }
+
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .input-icon-left {
+      position: absolute;
+      left: 14px;
+      color: #64748b;
+      font-size: 1.05rem;
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 0.65rem 1rem 0.65rem 2.65rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #0f172a;
+      background: #ffffff;
+      transition: all 0.2s ease;
+
+      &::placeholder {
+        color: #94a3b8;
+        font-weight: 450;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #0f766e;
+        box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+
+        + .input-icon-left,
+        ~ .input-icon-left {
+          color: #0f766e;
+        }
+      }
+    }
+  }
+}
+
+.form-field-error {
+  font-size: 0.78rem;
+  color: #e11d48;
+  font-weight: 650;
+  margin-top: 0.25rem;
+}
+
+.btn-auth-submit {
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.4);
+    background: linear-gradient(135deg, #115e59 0%, #044e45 100%);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+/* ── GOOGLE AUTH & DIVIDER ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.15rem 0;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+
+  span {
+    padding: 0 0.85rem;
+    color: #64748b;
+  }
+}
+
+.btn-google-auth {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 750;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+
+  .google-icon {
+    flex-shrink: 0;
+  }
+
+  .google-btn-text {
+    letter-spacing: -0.01em;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+/* Auth Switch Links */
+.auth-switch-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1.5px solid #f1f5f9;
+  text-align: center;
+
+  .switch-text {
+    font-size: 0.9rem;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 0.65rem;
+
+    .switch-link {
+      color: #0f766e;
+      font-weight: 800;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .doctor-register-banner {
+    background: #f0fdfa;
+    border: 1.5px solid #99f6e4;
+    border-radius: 12px;
+    padding: 0.65rem 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    i {
+      color: #0f766e;
+      font-size: 1.05rem;
+    }
+
+    .doc-cta {
+      color: #0f766e;
+      font-weight: 850;
+      margin-left: 4px;
+    }
+
+    &:hover {
+      background: #ccfbf1;
+      border-color: #0f766e;
+      transform: translateY(-1px);
+    }
+  }
+}

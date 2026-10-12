@@ -1,0 +1,223 @@
+<div class="container-fluid py-3 px-md-4 my-2">
+  <div class="msg-container">
+    <!-- ══ Left Sidebar: Conversations List ══ -->
+    <aside class="msg-sidebar">
+      <!-- Header & Search -->
+      <div class="msg-sidebar-header">
+        <div class="msg-sidebar-title">
+          <div class="msg-icon-circle">
+            <i class="bi bi-chat-dots-fill"></i>
+          </div>
+          <div>
+            <h2>Hộp Thư Tư Vấn</h2>
+            <small class="text-muted" style="font-size: 0.72rem;">Trao đổi y tế bảo mật 1-1</small>
+          </div>
+        </div>
+
+        <div class="msg-search-box">
+          <i class="bi bi-search"></i>
+          <input
+            type="text"
+            placeholder="Tìm kiếm thân chủ, bác sĩ..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+        </div>
+
+        <div class="msg-filter-pills">
+          <button
+            type="button"
+            class="msg-filter-pill"
+            [class.active]="activeFilter() === 'all'"
+            (click)="activeFilter.set('all')"
+          >
+            Tất cả ({{ conversations().length }})
+          </button>
+          <button
+            type="button"
+            class="msg-filter-pill"
+            [class.active]="activeFilter() === 'unread'"
+            (click)="activeFilter.set('unread')"
+          >
+            Chưa đọc
+          </button>
+        </div>
+      </div>
+
+      <!-- Conversations Scroll List -->
+      <div class="msg-convo-list">
+        @if (isLoading()) {
+          <div class="p-4 text-center text-muted">
+            <div class="spinner-border spinner-border-sm text-teal mb-2"></div>
+            <p class="small mb-0">Đang tải cuộc trò chuyện...</p>
+          </div>
+        } @else if (getFilteredConversations().length === 0) {
+          <div class="p-4 text-center text-muted">
+            <i class="bi bi-chat-square-heart fs-2 text-teal mb-2 d-block opacity-50"></i>
+            <p class="small fw-semibold text-dark mb-1">Chưa có hội thoại nào</p>
+            <p class="small text-muted mb-0" style="font-size: 0.78rem;">
+              Bấm vào chuyên gia hoặc thân chủ để bắt đầu tư vấn.
+            </p>
+          </div>
+        } @else {
+          @for (conv of getFilteredConversations(); track conv.id) {
+            <div
+              class="msg-convo-item"
+              [class.active]="activeConversation()?.id === conv.id"
+              [class.unread]="conv.unreadCount && conv.unreadCount > 0"
+              (click)="selectConversation(conv)"
+            >
+              <!-- Avatar -->
+              <div class="msg-convo-avatar">
+                {{ getInitials(getInterlocutorName(conv)) }}
+              </div>
+
+              <!-- Info -->
+              <div class="msg-convo-info">
+                <div class="msg-convo-name">
+                  <span>{{ getInterlocutorName(conv) }}</span>
+                  <span class="msg-convo-role">{{ isDoctor() ? 'Thân chủ' : 'Bác sĩ' }}</span>
+                </div>
+                <div class="msg-convo-preview">
+                  {{ conv.lastMessage || 'Bắt đầu trao đổi thông tin khám...' }}
+                </div>
+                <div class="msg-convo-meta">
+                  <span class="msg-convo-time">
+                    @if (conv.lastMessageTime) {
+                      {{ conv.lastMessageTime | date:'HH:mm dd/MM' }}
+                    } @else {
+                      Vừa xong
+                    }
+                  </span>
+                  @if (conv.unreadCount && conv.unreadCount > 0) {
+                    <span class="msg-unread-badge">{{ conv.unreadCount }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- ══ Right Area: Active Chat ══ -->
+    <section class="msg-chat">
+      @if (activeConversation(); as active) {
+        <!-- Chat Header -->
+        <header class="msg-chat-header">
+          <div class="msg-chat-header-left">
+            <div class="msg-chat-header-avatar">
+              {{ getInitials(getInterlocutorName(active)) }}
+            </div>
+            <div>
+              <div class="msg-chat-header-name">{{ getInterlocutorName(active) }}</div>
+              <div class="msg-chat-header-subtitle">
+                <span class="msg-status-dot active"></span>
+                <span>{{ getInterlocutorRole(active) }} • Đang trực tuyến</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg-chat-header-actions">
+            @if (active.appointmentId) {
+              <a [routerLink]="['/appointment', active.appointmentId, 'view']" class="msg-header-btn" title="Xem ca khám liên quan">
+                <i class="bi bi-calendar2-check"></i>
+                <span>Ca khám #{{ active.appointmentId }}</span>
+              </a>
+            }
+            @if (isDoctor() && active.patientId) {
+              <a [routerLink]="['/doctor/patients', active.patientId, 'view']" class="msg-header-btn" title="Xem hồ sơ bệnh án">
+                <i class="bi bi-file-earmark-medical"></i>
+                <span>Hồ sơ bệnh án</span>
+              </a>
+            }
+          </div>
+        </header>
+
+        <!-- Secure Banner -->
+        <div class="msg-secure-banner">
+          <i class="bi bi-shield-lock-fill"></i>
+          <span>Cuộc trò chuyện bảo mật y tế tiêu chuẩn MindBridge giữa Chuyên gia &amp; Bệnh nhân</span>
+        </div>
+
+        <!-- Messages Stream -->
+        <div class="msg-messages" #messagesScrollContainer>
+          <div class="date-divider">
+            <span>Hôm nay</span>
+          </div>
+
+          @for (msg of messages(); track msg.id || msg.createdDate) {
+            @let isMine = isMyMessage(msg);
+            <div class="msg-bubble-row" [class.sent]="isMine" [class.received]="!isMine">
+              @if (!isMine) {
+                <div class="msg-user-avatar">
+                  {{ getInitials(msg.senderName || getInterlocutorName(active)) }}
+                </div>
+              }
+
+              <div class="msg-bubble-wrapper">
+                <div class="msg-bubble" [class.sent]="isMine" [class.received]="!isMine">
+                  @if (!isMine && msg.senderName) {
+                    <div class="fw-bold mb-1" style="font-size: 0.72rem; color: #0f766e;">{{ msg.senderName }}</div>
+                  }
+                  <div>{{ msg.content }}</div>
+                </div>
+                <div class="msg-bubble-time">
+                  <span>{{ msg.createdDate | date:'HH:mm' }}</span>
+                  @if (isMine) {
+                    <i class="bi bi-check2-all msg-read-icon"></i>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Composer / Input Area -->
+        <footer class="msg-input-area">
+          <div class="msg-composer-tools">
+            <button type="button" class="msg-tool-btn" title="Đính kèm tài liệu y tế">
+              <i class="bi bi-paperclip"></i>
+            </button>
+            <button type="button" class="msg-tool-btn" title="Biểu tượng cảm xúc">
+              <i class="bi bi-emoji-smile"></i>
+            </button>
+          </div>
+
+          <textarea
+            rows="1"
+            placeholder="Nhập nội dung tin nhắn tư vấn... (Enter để gửi)"
+            [(ngModel)]="newMessageText"
+            (keydown.enter)="$event.preventDefault(); sendMessage()"
+          ></textarea>
+
+          <button
+            type="button"
+            class="msg-send-btn"
+            (click)="sendMessage()"
+            [disabled]="!newMessageText.trim() || isSending()"
+          >
+            @if (isSending()) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              <span>Gửi</span>
+              <i class="bi bi-send-fill"></i>
+            }
+          </button>
+        </footer>
+      } @else {
+        <!-- Placeholder when no conversation is selected -->
+        <div class="flex-grow-1 d-flex flex-column align-items-center justify-content-center p-5 text-center bg-light-subtle">
+          <div class="msg-placeholder-icon mb-3">
+            <i class="bi bi-chat-heart text-teal fs-1"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-1">Chọn một cuộc trò chuyện</h5>
+          <p class="text-secondary small mb-0" style="max-width: 380px;">
+            Chọn thân chủ hoặc bác sĩ từ danh sách bên trái để bắt đầu phiên trao đổi y tế trực tuyến.
+          </p>
+        </div>
+      }
+    </section>
+  </div>
+</div>
+

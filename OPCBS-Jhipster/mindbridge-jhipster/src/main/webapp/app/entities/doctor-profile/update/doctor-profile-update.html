@@ -1,0 +1,189 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2 id="jhi-doctor-profile-heading" data-cy="DoctorProfileCreateUpdateHeading">Create or edit a Doctor Profile</h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let fullNameRef = editForm.get('fullName')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_fullName">Full Name</label>
+          <input type="text" class="form-control" name="fullName" id="field_fullName" data-cy="fullName" formControlName="fullName" />
+          @if (fullNameRef.invalid && (fullNameRef.dirty || fullNameRef.touched)) {
+            <div>
+              @if (fullNameRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+              @if (fullNameRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 160 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        @let titleRef = editForm.get('title')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+          @if (titleRef.invalid && (titleRef.dirty || titleRef.touched)) {
+            <div>
+              @if (titleRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 100 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_bio">Bio</label>
+          <textarea class="form-control" name="bio" id="field_bio" data-cy="bio" formControlName="bio"></textarea>
+        </div>
+
+        @let experienceYearsRef = editForm.get('experienceYears')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_experienceYears">Experience Years</label>
+          <input
+            type="number"
+            class="form-control"
+            name="experienceYears"
+            id="field_experienceYears"
+            data-cy="experienceYears"
+            formControlName="experienceYears"
+          />
+          @if (experienceYearsRef.invalid && (experienceYearsRef.dirty || experienceYearsRef.touched)) {
+            <div>
+              @if (experienceYearsRef.errors?.min) {
+                <small class="form-text text-danger">This field should be at least 0.</small>
+              }
+              <small class="form-text text-danger" [hidden]="!experienceYearsRef.errors?.number">This field should be a number.</small>
+            </div>
+          }
+        </div>
+
+        @let consultationFeeRef = editForm.get('consultationFee')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_consultationFee">Consultation Fee</label>
+          <input
+            type="number"
+            class="form-control"
+            name="consultationFee"
+            id="field_consultationFee"
+            data-cy="consultationFee"
+            formControlName="consultationFee"
+          />
+          @if (consultationFeeRef.invalid && (consultationFeeRef.dirty || consultationFeeRef.touched)) {
+            <div>
+              @if (consultationFeeRef.errors?.min) {
+                <small class="form-text text-danger">This field should be at least 0.</small>
+              }
+              <small class="form-text text-danger" [hidden]="!consultationFeeRef.errors?.number">This field should be a number.</small>
+            </div>
+          }
+        </div>
+
+        @let phoneRef = editForm.get('phone')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_phone">Phone</label>
+          <input type="text" class="form-control" name="phone" id="field_phone" data-cy="phone" formControlName="phone" />
+          @if (phoneRef.invalid && (phoneRef.dirty || phoneRef.touched)) {
+            <div>
+              @if (phoneRef.errors?.maxlength) {
+                <small class="form-text text-danger">This field cannot be longer than 30 characters.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_gender">Gender</label>
+          <select class="form-select" name="gender" formControlName="gender" id="field_gender" data-cy="gender">
+            <option [ngValue]="null"></option>
+            @for (gender of genderValues; track $index) {
+              <option [value]="gender">{{ { null: '', MALE: 'MALE', FEMALE: 'FEMALE', OTHER: 'OTHER' }[gender] }}</option>
+            }
+          </select>
+        </div>
+
+        @let isActiveRef = editForm.get('isActive')!;
+        <div class="mb-3 form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            name="isActive"
+            id="field_isActive"
+            data-cy="isActive"
+            formControlName="isActive"
+          />
+          <label class="form-check-label" for="field_isActive">Is Active</label>
+          @if (isActiveRef.invalid && (isActiveRef.dirty || isActiveRef.touched)) {
+            <div>
+              @if (isActiveRef.errors?.required) {
+                <small class="form-text text-danger">This field is required.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_user">User</label>
+          <select class="form-select" id="field_user" data-cy="user" name="user" formControlName="user" [compareWith]="compareUser">
+            @if (!editForm.get('user')!.value) {
+              <option [ngValue]="null" selected></option>
+            }
+            @for (userOption of usersSharedCollection(); track $index) {
+              <option [ngValue]="userOption">{{ userOption.login }}</option>
+            }
+          </select>
+        </div>
+        @if (editForm.get(['user'])!.invalid && (editForm.get(['user'])!.dirty || editForm.get(['user'])!.touched)) {
+          <div>
+            @if (editForm.get(['user'])?.errors?.required) {
+              <small class="form-text text-danger">This field is required.</small>
+            }
+          </div>
+        }
+
+        <div class="mb-3">
+          <label for="field_specializationses">Specializations</label>
+          <select
+            class="form-select"
+            id="field_specializationses"
+            data-cy="specializations"
+            multiple
+            name="specializationses"
+            formControlName="specializationses"
+            [compareWith]="compareSpecialization"
+          >
+            @for (specializationOption of specializationsSharedCollection(); track $index) {
+              <option [ngValue]="specializationOption">{{ specializationOption.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span>Cancel</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span>Save</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

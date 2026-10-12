@@ -1,0 +1,124 @@
+<div class="test-result-container container py-4">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-2">Đang tải báo cáo kết quả trắc nghiệm...</p>
+  </div>
+
+  <div *ngIf="!isLoading && submission">
+    <!-- Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+      <a class="btn btn-outline-secondary" [routerLink]="['/patient/psychometrics']">
+        <i class="bi bi-arrow-left me-1"></i>Về danh mục trắc nghiệm
+      </a>
+      <button class="btn btn-primary" (click)="printReport()">
+        <i class="bi bi-printer me-1"></i>In / Xuất Báo Cáo Y Khoa
+      </button>
+    </div>
+
+    <!-- Report Header Card -->
+    <div class="card border-0 shadow-sm mb-4 report-header-card">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+          <div>
+            <span class="badge bg-primary mb-2">{{ submission.test?.testType || 'ASSESSMENT' }}</span>
+            <h2 class="h3 fw-bold text-dark mb-1">{{ submission.test?.title }}</h2>
+            <p class="text-muted mb-0">{{ submission.test?.purpose }}</p>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-success-subtle text-success fs-6"><i class="bi bi-check-circle me-1"></i>Đã Hoàn Thành</span>
+            <div class="text-muted small mt-1">{{ submission.completedAt || submission.createdDate | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+        </div>
+
+        <!-- Clinical Result Highlights for DASS-21 -->
+        <div *ngIf="submission.test?.testType === 'DASS21'" class="row g-3 py-2">
+          <!-- Depression -->
+          <div class="col-md-4">
+            <div class="card border-0 bg-light p-3 text-center h-100">
+              <span class="text-muted small fw-semibold">TRẦM CẢM (Depression)</span>
+              <h2 class="fw-bold text-primary my-2">{{ scoreData.depressionScore || 0 }} <span class="fs-6 text-muted">điểm</span></h2>
+              <div>
+                <span [class]="getSeverityBadge(scoreData.depressionLevel)">{{ scoreData.depressionLevel || 'Bình thường' }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Anxiety -->
+          <div class="col-md-4">
+            <div class="card border-0 bg-light p-3 text-center h-100">
+              <span class="text-muted small fw-semibold">LO ÂU (Anxiety)</span>
+              <h2 class="fw-bold text-warning-emphasis my-2">{{ scoreData.anxietyScore || 0 }} <span class="fs-6 text-muted">điểm</span></h2>
+              <div>
+                <span [class]="getSeverityBadge(scoreData.anxietyLevel)">{{ scoreData.anxietyLevel || 'Bình thường' }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Stress -->
+          <div class="col-md-4">
+            <div class="card border-0 bg-light p-3 text-center h-100">
+              <span class="text-muted small fw-semibold">CĂNG THẲNG (Stress)</span>
+              <h2 class="fw-bold text-danger my-2">{{ scoreData.stressScore || 0 }} <span class="fs-6 text-muted">điểm</span></h2>
+              <div>
+                <span [class]="getSeverityBadge(scoreData.stressLevel)">{{ scoreData.stressLevel || 'Bình thường' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Single Score Highlights (PHQ-9 or GAD-7) -->
+        <div *ngIf="submission.test?.testType !== 'DASS21'" class="text-center py-4 bg-light rounded-3">
+          <span class="text-muted small fw-semibold d-block mb-1">TỔNG ĐIỂM ĐÁNH GIÁ LÂM SÀNG</span>
+          <h1 class="display-4 fw-bold text-primary mb-2">{{ submission.totalScore }}</h1>
+          <span [class]="getSeverityBadge(scoreData.severityLevel)" class="fs-6 px-3 py-2">
+            {{ scoreData.severityLevel || submission.interpretation }}
+          </span>
+        </div>
+
+        <!-- Overall Interpretation -->
+        <div class="mt-4 p-3 border rounded bg-white">
+          <h6 class="fw-bold text-dark mb-1"><i class="bi bi-chat-quote-fill text-primary me-2"></i>Kết Luận & Diễn Giải Kết Quả:</h6>
+          <p class="text-muted mb-0 small">{{ submission.interpretation }}</p>
+        </div>
+
+        <!-- Doctor Notes if present -->
+        <div *ngIf="submission.doctorNotes" class="mt-3 p-3 border-start border-4 border-info bg-light">
+          <h6 class="fw-bold text-dark mb-1"><i class="bi bi-person-badge text-info me-2"></i>Nhận Xét / Lời Khuyên Của Bác Sĩ:</h6>
+          <p class="text-secondary mb-0 small">{{ submission.doctorNotes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question Answers Review -->
+    <div class="card border-0 shadow-sm" *ngIf="submission.answers && submission.answers.length > 0">
+      <div class="card-header bg-white border-0 pt-4 pb-2">
+        <h5 class="fw-bold text-dark mb-0">
+          <i class="bi bi-list-check me-2"></i>Chi Tiết Các Câu Trả Lời
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 60px;">#</th>
+                <th>Nội Dung Câu Hỏi</th>
+                <th style="width: 140px;">Phân Loại</th>
+                <th style="width: 140px;" class="text-center">Điểm Đánh Giá</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ans of submission.answers; let i = index">
+                <td class="fw-semibold text-muted">{{ ans.question?.questionNumber || (i + 1) }}</td>
+                <td>{{ ans.question?.questionText }}</td>
+                <td><span class="badge bg-light text-muted border">{{ ans.question?.category || 'Chung' }}</span></td>
+                <td class="text-center">
+                  <span class="badge bg-primary-subtle text-primary fw-bold fs-6">{{ ans.score }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

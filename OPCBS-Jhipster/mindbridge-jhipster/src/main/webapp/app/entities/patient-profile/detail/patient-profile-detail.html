@@ -1,0 +1,58 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (patientProfile(); as patientProfileRef) {
+      <div>
+        <h2 data-cy="patientProfileDetailsHeading"><span>Patient Profile</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span>ID</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.id }}</span>
+          </dd>
+          <dt><span>Full Name</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.fullName }}</span>
+          </dd>
+          <dt><span>Phone</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.phone }}</span>
+          </dd>
+          <dt><span>Date Of Birth</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.dateOfBirth | formatMediumDate }}</span>
+          </dd>
+          <dt><span>Gender</span></dt>
+          <dd>
+            <span>{{ { null: '', MALE: 'MALE', FEMALE: 'FEMALE', OTHER: 'OTHER' }[patientProfileRef.gender ?? 'null'] }}</span>
+          </dd>
+          <dt><span>Address</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.address }}</span>
+          </dd>
+          <dt><span>Medical History</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.medicalHistory }}</span>
+          </dd>
+          <dt><span>User</span></dt>
+          <dd>
+            <span>{{ patientProfileRef.user?.login }}</span>
+          </dd>
+        </dl>
+
+        <button type="button" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left" />&nbsp;<span>Back</span>
+        </button>
+
+        <button type="button" [routerLink]="['/patient-profile', patientProfileRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt" />&nbsp;<span>Edit</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

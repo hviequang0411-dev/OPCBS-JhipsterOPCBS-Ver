@@ -1,0 +1,64 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (availabilitySlot(); as availabilitySlotRef) {
+      <div>
+        <h2 data-cy="availabilitySlotDetailsHeading"><span>Availability Slot</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span>ID</span></dt>
+          <dd>
+            <span>{{ availabilitySlotRef.id }}</span>
+          </dd>
+          <dt><span>Start Time</span></dt>
+          <dd>
+            <span>{{ availabilitySlotRef.startTime | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span>End Time</span></dt>
+          <dd>
+            <span>{{ availabilitySlotRef.endTime | formatMediumDatetime }}</span>
+          </dd>
+          <dt><span>Consultation Mode</span></dt>
+          <dd>
+            <span>{{
+              { null: '', ONLINE: 'ONLINE', IN_PERSON: 'IN_PERSON', OFFLINE: 'OFFLINE', BOTH: 'BOTH' }[
+                availabilitySlotRef.consultationMode ?? 'null'
+              ]
+            }}</span>
+          </dd>
+          <dt><span>Status</span></dt>
+          <dd>
+            <span>{{
+              { null: '', AVAILABLE: 'AVAILABLE', BOOKED: 'BOOKED', CANCELLED: 'CANCELLED' }[availabilitySlotRef.status ?? 'null']
+            }}</span>
+          </dd>
+          <dt><span>Notes</span></dt>
+          <dd>
+            <span>{{ availabilitySlotRef.notes }}</span>
+          </dd>
+          <dt><span>Doctor</span></dt>
+          <dd>
+            @if (availabilitySlot()!.doctor) {
+              <div>
+                <a [routerLink]="['/doctor-profile', availabilitySlot()!.doctor?.id, 'view']">{{ availabilitySlotRef.doctor?.fullName }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="button" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left" />&nbsp;<span>Back</span>
+        </button>
+
+        <button type="button" [routerLink]="['/availability-slot', availabilitySlotRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt" />&nbsp;<span>Edit</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

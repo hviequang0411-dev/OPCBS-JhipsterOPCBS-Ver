@@ -1,0 +1,574 @@
+<div class="doctor-schedule-container">
+  <!-- Alerts Message -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage() }}
+      <button type="button" class="btn-close" (click)="successMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage() }}
+      <button type="button" class="btn-close" (click)="errorMessage.set(null)" aria-label="Close"></button>
+    </div>
+  }
+
+  <!-- Page Header Banner -->
+  <div class="page-header-card d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="page-title">
+        <i class="bi bi-calendar2-week-fill"></i> Quản lý Khung Giờ Khám Bệnh
+      </h1>
+      <p class="page-subtitle">
+        Cấu hình thời gian làm việc, mở khung giờ rảnh (Availability Slots) để bệnh nhân đặt lịch hẹn tư vấn.
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <button class="btn btn-light btn-sm fw-bold px-3 py-2 text-teal shadow-sm" (click)="openBatchModal(batchModalTemplate)" style="border-radius: 8px; color: #0f766e;">
+        <i class="bi bi-magic me-1"></i> Cấu hình Tuần Tự Động
+      </button>
+      <button class="btn btn-warning btn-sm fw-bold px-3 py-2 text-dark shadow-sm" (click)="openAddSingleModal(singleModalTemplate)" style="border-radius: 8px;">
+        <i class="bi bi-plus-circle-fill me-1"></i> Thêm Khung Giờ
+      </button>
+      <button class="btn btn-outline-light btn-sm px-2 py-2" (click)="loadSlots()" title="Làm mới">
+        <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toolbar & Filters -->
+  <div class="doctor-schedule-toolbar-wrapper mt-3 mb-3">
+    <!-- Row 1: View Mode, Date Range Navigator, Mode Filter -->
+    <div class="toolbar-top-row">
+      <!-- View Segmented Switcher -->
+      <div class="segmented-control">
+        <button type="button" class="btn-segment" [class.active]="viewMode() === 'week'" (click)="setViewMode('week')">
+          <i class="bi bi-calendar-week"></i> Theo Tuần
+        </button>
+        <button type="button" class="btn-segment" [class.active]="viewMode() === 'list'" (click)="setViewMode('list')">
+          <i class="bi bi-list-ul"></i> Danh Sách
+        </button>
+      </div>
+
+      <!-- Date Navigation -->
+      <div class="nav-date-group">
+        <div class="btn-group shadow-sm">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="prevWeek()" title="Tuần trước">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" (click)="goToToday()">
+            Hôm nay
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="nextWeek()" title="Tuần sau">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+
+        <span class="date-range-badge shadow-sm">
+          <i class="bi bi-calendar3 me-1 text-teal"></i> {{ weekRangeDisplay() }}
+        </span>
+
+        <input type="date" class="form-control form-control-sm date-picker-input shadow-sm" (change)="onDatePicked($event)" title="Chọn ngày xem lịch" />
+      </div>
+
+      <!-- Mode Filter Dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle shadow-sm d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" style="border-radius: 8px; font-weight: 500;">
+          <i class="bi bi-funnel text-teal"></i> Hình thức: 
+          <strong>{{ filterMode() === 'ALL' ? 'Tất cả' : (filterMode() === 'ONLINE' ? 'Online' : (filterMode() === 'OFFLINE' ? 'Khám Trực Tiếp' : 'Cả hai')) }}</strong>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="setFilterMode('ALL')"><i class="bi bi-grid-fill me-2 text-muted"></i>Tất cả hình thức</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="setFilterMode('ONLINE')"><i class="bi bi-camera-video text-primary me-2"></i>Khám Online (Video Call)</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="setFilterMode('OFFLINE')"><i class="bi bi-hospital text-success me-2"></i>Khám trực tiếp tại phòng khám</a></li>
+          <li><a class="dropdown-item" href="javascript:void(0)" (click)="setFilterMode('BOTH')"><i class="bi bi-arrow-repeat text-info me-2"></i>Cả hai hình thức (Both)</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Row 2: Status Filter Segmented Tab Pills -->
+    <div class="toolbar-filter-status-row">
+      <div class="filter-label">
+        <i class="bi bi-filter-circle text-teal me-1"></i> Trạng thái khung giờ:
+      </div>
+      <div class="status-filter-pills">
+        <button type="button" class="filter-pill" [class.active]="filterStatus() === 'ALL'" (click)="setFilterStatus('ALL')">
+          <span class="pill-dot all"></span>
+          <span>Tất cả</span>
+          <span class="pill-count">{{ totalSlotsCount() }}</span>
+        </button>
+        <button type="button" class="filter-pill" [class.active]="filterStatus() === 'AVAILABLE'" (click)="setFilterStatus('AVAILABLE')">
+          <span class="pill-dot available"></span>
+          <span>Còn trống</span>
+          <span class="pill-count available">{{ availableSlotsCount() }}</span>
+        </button>
+        <button type="button" class="filter-pill" [class.active]="filterStatus() === 'BOOKED'" (click)="setFilterStatus('BOOKED')">
+          <span class="pill-dot booked"></span>
+          <span>Đã có hẹn</span>
+          <span class="pill-count booked">{{ bookedSlotsCount() }}</span>
+        </button>
+        <button type="button" class="filter-pill" [class.active]="filterStatus() === 'CANCELLED'" (click)="setFilterStatus('CANCELLED')">
+          <span class="pill-dot unavailable"></span>
+          <span>Tạm đóng</span>
+          <span class="pill-count unavailable">{{ unavailableSlotsCount() }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VIEW 1: WEEK CALENDAR GRID ══ -->
+  @if (viewMode() === 'week') {
+    <div class="week-grid-container">
+      <div class="week-grid">
+        @for (day of weekDays(); track day.dateStr) {
+          <div class="day-column" [class.is-today]="day.isToday" [class.is-past]="day.isPast">
+            <!-- Day Header -->
+            <div class="day-header">
+              <div class="day-name">{{ day.dayName }}</div>
+              <div class="day-number">{{ day.dayNumber }}</div>
+              <div class="day-slot-count">
+                <span class="badge" [class.bg-teal-subtle]="day.slots.length > 0" [class.bg-light]="day.slots.length === 0">
+                  {{ day.slots.length }} khung giờ
+                </span>
+              </div>
+            </div>
+
+            <!-- Slots List -->
+            <div class="day-slots-list">
+              @for (slot of day.slots; track slot.id) {
+                <div class="slot-card" [class.status-available]="slot.status === 'AVAILABLE'" [class.status-booked]="slot.status === 'BOOKED'" [class.status-unavailable]="slot.status === 'CANCELLED'">
+                  <!-- Slot Header -->
+                  <div class="slot-header">
+                    <span class="slot-time">
+                      <i class="bi bi-clock-fill"></i> {{ formatSlotTime(slot) }}
+                    </span>
+                    <span class="slot-badge-status" [class.available]="slot.status === 'AVAILABLE'" [class.booked]="slot.status === 'BOOKED'" [class.unavailable]="slot.status === 'CANCELLED'">
+                      @if (slot.status === 'AVAILABLE') {
+                        <i class="bi bi-check-circle-fill me-1"></i>Trống
+                      } @else if (slot.status === 'BOOKED') {
+                        <i class="bi bi-calendar-check-fill me-1"></i>Đã Đặt
+                      } @else {
+                        <i class="bi bi-dash-circle-fill me-1"></i>Đóng
+                      }
+                    </span>
+                  </div>
+
+                  <!-- Slot Meta -->
+                  <div class="slot-meta">
+                    <span class="slot-mode">
+                      <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
+                      {{ slot.consultationMode === 'BOTH' ? 'Online / Trực tiếp' : (slot.consultationMode === 'ONLINE' ? 'Online Video' : 'Phòng khám') }}
+                    </span>
+                  </div>
+
+                  <!-- Notes if any -->
+                  @if (slot.notes) {
+                    <div class="slot-notes" [title]="slot.notes">
+                      <i class="bi bi-chat-left-dots-fill me-1 text-teal"></i>{{ slot.notes }}
+                    </div>
+                  }
+
+                  <!-- Booked Patient Info & Direct Navigation Link -->
+                  @if (slot.status === 'BOOKED' && slot.appointmentId) {
+                    <div class="slot-patient-box">
+                      <div class="patient-header">
+                        <div class="patient-name-text text-truncate" [title]="slot.patientName">
+                          <i class="bi bi-person-fill-check text-primary me-1"></i>
+                          <strong>{{ slot.patientName || 'Bệnh nhân' }}</strong>
+                        </div>
+                        @if (slot.appointmentBookingCode) {
+                          <span class="badge bg-primary text-white" style="font-size: 0.65rem;">
+                            #{{ slot.appointmentBookingCode }}
+                          </span>
+                        }
+                      </div>
+                      @if (slot.patientPhone) {
+                        <div class="patient-phone">
+                          <i class="bi bi-telephone-fill me-1 text-teal"></i>{{ slot.patientPhone }}
+                        </div>
+                      }
+                      <a [routerLink]="['/appointment', slot.appointmentId, 'view']" class="btn-view-appointment-link">
+                        <span>Xem Chi Tiết Ca Khám</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                      </a>
+                    </div>
+                  }
+
+                  <!-- Actions -->
+                  <div class="slot-actions">
+                    @if (isSlotInPast(slot)) {
+                      <span class="text-secondary small fw-semibold" style="font-size: 0.72rem;">
+                        <i class="bi bi-clock-history me-1"></i>Đã qua
+                      </span>
+                    } @else if (slot.status !== 'BOOKED') {
+                      <!-- Toggle Status Button -->
+                      <button type="button" class="btn-slot-action" (click)="toggleSlotStatus(slot)" [title]="slot.status === 'AVAILABLE' ? 'Tạm khóa khung giờ này' : 'Mở lại khung giờ này'">
+                        <i class="bi" [class.bi-eye-slash-fill]="slot.status === 'AVAILABLE'" [class.bi-eye-fill]="slot.status === 'CANCELLED'"></i>
+                        <span class="action-text">{{ slot.status === 'AVAILABLE' ? 'Tắt' : 'Mở' }}</span>
+                      </button>
+                      <!-- Edit Button -->
+                      <button type="button" class="btn-slot-action" (click)="openEditModal(editModalTemplate, slot)" title="Chỉnh sửa khung giờ">
+                        <i class="bi bi-pencil-square"></i>
+                        <span class="action-text">Sửa</span>
+                      </button>
+                      <!-- Delete Button -->
+                      <button type="button" class="btn-slot-action btn-delete" (click)="deleteSlot(slot)" title="Xóa khung giờ">
+                        <i class="bi bi-trash3-fill"></i>
+                      </button>
+                    } @else if (!slot.appointmentId) {
+                      <span class="text-primary small fw-semibold" style="font-size: 0.72rem;">
+                        <i class="bi bi-lock-fill me-1"></i>Đang phục vụ
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (day.slots.length === 0) {
+                <div class="empty-day-state">
+                  <div class="empty-day-icon">
+                    <i class="bi bi-calendar-plus"></i>
+                  </div>
+                  <span class="empty-day-text">Chưa có khung giờ</span>
+                </div>
+              }
+
+              <!-- Quick Add Button at Bottom of Day Column -->
+              @if (!day.isPast) {
+                <button type="button" class="day-add-slot-btn mt-auto" (click)="openAddSingleModal(singleModalTemplate, day.dateStr)">
+                  <i class="bi bi-plus-lg me-1"></i> Thêm giờ
+                </button>
+              } @else {
+                <div class="text-center text-muted small py-2 mt-auto" style="font-size: 0.72rem;">
+                  <i class="bi bi-clock-history me-1"></i>Ngày đã qua
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══ VIEW 2: LIST TABLE VIEW ══ -->
+  @if (viewMode() === 'list') {
+    <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr class="text-uppercase text-secondary" style="font-size: 0.76rem; letter-spacing: 0.04em;">
+              <th class="ps-3 py-3">Ngày Khám</th>
+              <th class="py-3">Thời Gian</th>
+              <th class="py-3">Hình Thức</th>
+              <th class="py-3">Trạng Thái & Bệnh Nhân</th>
+              <th class="py-3">Ghi Chú</th>
+              <th class="text-end pe-3 py-3">Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (slot of filteredSlots(); track slot.id) {
+              <tr>
+                <td class="ps-3 fw-bold text-dark">
+                  <i class="bi bi-calendar-event me-2 text-teal" style="color: #0f766e;"></i>{{ formatSlotDate(slot) }}
+                </td>
+                <td class="fw-bold" style="color: #0f766e;">
+                  {{ formatSlotTime(slot) }}
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="getModeBadgeClass(slot.consultationMode)">
+                    <i class="bi me-1" [ngClass]="getModeIcon(slot.consultationMode)"></i>{{ slot.consultationMode }}
+                  </span>
+                </td>
+                <td>
+                  @if (slot.status === 'AVAILABLE') {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                      <i class="bi bi-check-circle me-1"></i>Sẵn sàng (Available)
+                    </span>
+                  } @else if (slot.status === 'BOOKED') {
+                    <div class="d-flex flex-column gap-1">
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 text-start">
+                        <i class="bi bi-person-check-fill me-1"></i>{{ slot.patientName || 'Đã có bệnh nhân đặt' }}
+                      </span>
+                      @if (slot.appointmentBookingCode) {
+                        <span class="text-muted small" style="font-size: 0.75rem;">Mã ca khám: #{{ slot.appointmentBookingCode }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                      <i class="bi bi-dash-circle me-1"></i>Tạm Đóng
+                    </span>
+                  }
+                </td>
+                <td class="text-muted small">
+                  {{ slot.notes || '—' }}
+                </td>
+                <td class="text-end pe-3">
+                  @if (slot.status === 'BOOKED' && slot.appointmentId) {
+                    <a [routerLink]="['/appointment', slot.appointmentId, 'view']" class="btn btn-sm btn-primary text-white d-inline-flex align-items-center gap-1 shadow-sm px-3 py-1" style="border-radius: 8px; font-size: 0.8rem;">
+                      <i class="bi bi-calendar2-check-fill me-1"></i> Xem Ca Khám
+                    </a>
+                  } @else if (slot.status !== 'BOOKED') {
+                    <div class="btn-group btn-group-sm">
+                      <button type="button" class="btn btn-outline-secondary" (click)="toggleSlotStatus(slot)" [title]="slot.status === 'AVAILABLE' ? 'Tắt khung giờ' : 'Mở lại khung giờ'">
+                        <i class="bi" [class.bi-eye-slash]="slot.status === 'AVAILABLE'" [class.bi-eye]="slot.status === 'CANCELLED'"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary" (click)="openEditModal(editModalTemplate, slot)" title="Chỉnh sửa">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-danger" (click)="deleteSlot(slot)" title="Xóa">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="badge bg-light text-primary border"><i class="bi bi-lock-fill me-1"></i>Không thể sửa</span>
+                  }
+                </td>
+              </tr>
+            }
+
+            @if (filteredSlots().length === 0) {
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="bi bi-calendar-x display-6 mb-2"></i>
+                  <p class="mb-0">Không có khung giờ nào phù hợp với bộ lọc</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Legend Bar -->
+  <div class="schedule-legend-bar">
+    <div class="legend-items">
+      <span class="fw-bold text-dark"><i class="bi bi-palette-fill me-1"></i> Chú thích màu:</span>
+      <div class="legend-item"><div class="legend-color-dot available"></div> Sẵn sàng (Available)</div>
+      <div class="legend-item"><div class="legend-color-dot booked"></div> Đã có hẹn (Booked)</div>
+      <div class="legend-item"><div class="legend-color-dot unavailable"></div> Tạm đóng (Unavailable)</div>
+    </div>
+    <div>
+      <i class="bi bi-info-circle me-1"></i> Bệnh nhân chỉ có thể nhìn thấy và đặt lịch với các khung giờ ở trạng thái <strong>Sẵn sàng</strong>.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 1: THÊM KHUNG GIỜ ĐƠN (Single Slot Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #singleModalTemplate let-modal>
+  <div class="modal-header modal-header-custom">
+    <h5 class="modal-title fw-bold text-dark">
+      <i class="bi bi-plus-circle-fill text-teal me-2" style="color: #0f766e;"></i> Thêm Khung Giờ Mới
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <form [formGroup]="singleSlotForm" (ngSubmit)="submitSingleSlot(modal)">
+    <div class="modal-body p-4">
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-secondary">Ngày Làm Việc <span class="text-danger">*</span></label>
+        <input type="date" class="form-control" [min]="todayDateStr()" formControlName="date" style="border-radius: 8px;" />
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Giờ Bắt Đầu <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="startTime" style="border-radius: 8px;" />
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Giờ Kết Thúc <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="endTime" style="border-radius: 8px;" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-secondary">Hình Thức Tư Vấn <span class="text-danger">*</span></label>
+        <select class="form-select" formControlName="consultationMode" style="border-radius: 8px;">
+          <option value="BOTH">Cả hai (Online & Khám trực tiếp)</option>
+          <option value="ONLINE">Online (Tư vấn trực tuyến qua Video)</option>
+          <option value="OFFLINE">Khám trực tiếp (Tại phòng khám MindBridge)</option>
+        </select>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-semibold small text-secondary">Ghi Chú Khung Giờ</label>
+        <textarea class="form-control" rows="2" formControlName="notes" placeholder="VD: Ca khám sáng, ưu tiên tái khám..." style="border-radius: 8px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer modal-footer-custom">
+      <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Hủy bỏ</button>
+      <button type="submit" class="btn btn-primary fw-bold px-4" [disabled]="singleSlotForm.invalid || isLoading()" style="background: #0f766e; border-color: #0f766e; border-radius: 8px;">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Lưu Khung Giờ
+      </button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 2: CẤU HÌNH HÀNG LOẠT THEO TUẦN (Batch Generate Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #batchModalTemplate let-modal>
+  <div class="modal-header modal-header-custom">
+    <div>
+      <h5 class="modal-title fw-bold text-dark">
+        <i class="bi bi-magic text-teal me-2" style="color: #0f766e;"></i> Cấu Hình Lịch Rảnh Hàng Loạt
+      </h5>
+      <p class="text-muted small mb-0">Hệ thống sẽ tự động cắt khung giờ làm việc thành các ca khám nhỏ và sinh tự động cho các ngày đã chọn.</p>
+    </div>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <form [formGroup]="batchSlotForm" (ngSubmit)="submitBatchSlots(modal)">
+    <div class="modal-body p-4">
+      <!-- Date Range -->
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Từ Ngày <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" [min]="todayDateStr()" formControlName="startDate" style="border-radius: 8px;" />
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Đến Ngày <span class="text-danger">*</span></label>
+          <input type="date" class="form-control" [min]="todayDateStr()" formControlName="endDate" style="border-radius: 8px;" />
+        </div>
+      </div>
+
+      <!-- Days of Week Picker -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-secondary">Các Ngày Áp Dụng Trong Tuần <span class="text-danger">*</span></label>
+        <div class="day-checkbox-grid">
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(1)" (change)="toggleDayOfWeek(1)" />
+            <span>Thứ Hai</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(2)" (change)="toggleDayOfWeek(2)" />
+            <span>Thứ Ba</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(3)" (change)="toggleDayOfWeek(3)" />
+            <span>Thứ Tư</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(4)" (change)="toggleDayOfWeek(4)" />
+            <span>Thứ Năm</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(5)" (change)="toggleDayOfWeek(5)" />
+            <span>Thứ Sáu</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(6)" (change)="toggleDayOfWeek(6)" />
+            <span>Thứ Bảy</span>
+          </label>
+          <label class="day-check-box">
+            <input type="checkbox" [checked]="isDaySelected(7)" (change)="toggleDayOfWeek(7)" />
+            <span>Chủ Nhật</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Daily Time & Duration -->
+      <div class="row g-3 mb-3">
+        <div class="col-4">
+          <label class="form-label fw-semibold small text-secondary">Giờ Bắt Đầu Hằng Ngày</label>
+          <input type="time" class="form-control" formControlName="dailyStartTime" style="border-radius: 8px;" />
+        </div>
+        <div class="col-4">
+          <label class="form-label fw-semibold small text-secondary">Giờ Kết Thúc Hằng Ngày</label>
+          <input type="time" class="form-control" formControlName="dailyEndTime" style="border-radius: 8px;" />
+        </div>
+        <div class="col-4">
+          <label class="form-label fw-semibold small text-secondary">Thời Lượng Ca Khám</label>
+          <select class="form-select" formControlName="slotDurationMinutes" style="border-radius: 8px;">
+            <option [value]="30">30 phút / ca</option>
+            <option [value]="45">45 phút / ca</option>
+            <option [value]="60">60 phút (1 giờ) / ca</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mode & Notes -->
+      <div class="row g-3 mb-2">
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Hình Thức Tư Vấn</label>
+          <select class="form-select" formControlName="consultationMode" style="border-radius: 8px;">
+            <option value="BOTH">Cả hai (Online & Trực tiếp)</option>
+            <option value="ONLINE">Chỉ Online</option>
+            <option value="OFFLINE">Chỉ Khám trực tiếp</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Ghi Chú Mặc Định</label>
+          <input type="text" class="form-control" formControlName="notes" placeholder="VD: Khung giờ tư vấn MindBridge" style="border-radius: 8px;" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer modal-footer-custom">
+      <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Hủy bỏ</button>
+      <button type="submit" class="btn btn-primary fw-bold px-4" [disabled]="batchSlotForm.invalid || isLoading()" style="background: #0f766e; border-color: #0f766e; border-radius: 8px;">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Tạo Lịch Tự Động
+      </button>
+    </div>
+  </form>
+</ng-template>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- MODAL 3: CHỈNH SỬA KHUNG GIỜ (Edit Slot Modal) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<ng-template #editModalTemplate let-modal>
+  <div class="modal-header modal-header-custom">
+    <h5 class="modal-title fw-bold text-dark">
+      <i class="bi bi-pencil-square text-teal me-2" style="color: #0f766e;"></i> Chỉnh Sửa Khung Giờ
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <form [formGroup]="editSlotForm" (ngSubmit)="submitEditSlot(modal)">
+    <div class="modal-body p-4">
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-secondary">Ngày Làm Việc <span class="text-danger">*</span></label>
+        <input type="date" class="form-control" [min]="todayDateStr()" formControlName="date" style="border-radius: 8px;" />
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Giờ Bắt Đầu <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="startTime" style="border-radius: 8px;" />
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold small text-secondary">Giờ Kết Thúc <span class="text-danger">*</span></label>
+          <input type="time" class="form-control" formControlName="endTime" style="border-radius: 8px;" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small text-secondary">Hình Thức Tư Vấn <span class="text-danger">*</span></label>
+        <select class="form-select" formControlName="consultationMode" style="border-radius: 8px;">
+          <option value="BOTH">Cả hai (Online & Trực tiếp)</option>
+          <option value="ONLINE">Online (Tư vấn trực tuyến qua Video)</option>
+          <option value="OFFLINE">Khám trực tiếp (Tại phòng khám MindBridge)</option>
+        </select>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label fw-semibold small text-secondary">Ghi Chú Khung Giờ</label>
+        <textarea class="form-control" rows="2" formControlName="notes" style="border-radius: 8px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer modal-footer-custom">
+      <button type="button" class="btn btn-light" (click)="modal.dismiss()" style="border-radius: 8px;">Hủy bỏ</button>
+      <button type="submit" class="btn btn-primary fw-bold px-4" [disabled]="editSlotForm.invalid || isLoading()" style="background: #0f766e; border-color: #0f766e; border-radius: 8px;">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Cập Nhật
+      </button>
+    </div>
+  </form>
+</ng-template>

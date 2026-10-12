@@ -1,0 +1,98 @@
+<div class="psychometrics-container container-fluid py-4">
+  <div class="page-header mb-4 pb-3 border-bottom">
+    <h2 class="h3 fw-bold text-primary mb-1">
+      <i class="bi bi-clipboard2-pulse me-2"></i>Trắc Nghiệm Sức Khỏe Tâm Lý
+    </h2>
+    <p class="text-muted mb-0">Các bài trắc nghiệm sàng lọc chuẩn y khoa (DASS-21, PHQ-9, GAD-7) giúp bạn đánh giá mức độ căng thẳng, lo âu và trầm cảm</p>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills mb-4">
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab === 'catalog'" (click)="activeTab = 'catalog'">
+        <i class="bi bi-grid-fill me-1"></i>Danh Mục Trắc Nghiệm
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">
+        <i class="bi bi-clock-history me-1"></i>Lịch Sử & Kết Quả Đã Làm ({{ mySubmissions.length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab 1: Catalog -->
+  <div *ngIf="activeTab === 'catalog'">
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-2">Đang tải danh sách bài trắc nghiệm...</p>
+    </div>
+
+    <div *ngIf="!isLoading && tests.length > 0" class="row g-4">
+      <div *ngFor="let test of tests" class="col-12 col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm test-card">
+          <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+            <span [class]="getBadgeForTest(test.testType)">{{ test.category || 'Tâm lý' }}</span>
+            <span class="text-muted small"><i class="bi bi-file-text me-1"></i>{{ test.questions?.length || (test.testType === 'DASS21' ? 21 : test.testType === 'PHQ9' ? 9 : 7) }} câu hỏi</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title fw-bold text-dark mb-2">{{ test.title }}</h5>
+            <p class="card-text text-muted small mb-3 description-clamp">{{ test.description }}</p>
+
+            <div class="p-3 bg-light rounded small mb-3">
+              <div class="text-muted mb-1"><i class="bi bi-bullseye text-primary me-1"></i><strong>Mục đích:</strong></div>
+              <div>{{ test.purpose || 'Đánh giá sức khỏe tinh thần' }}</div>
+            </div>
+          </div>
+          <div class="card-footer bg-white border-0 pt-0 pb-4">
+            <a class="btn btn-primary w-100 rounded-3 fw-semibold py-2" [routerLink]="['/patient/psychometrics/take', test.id]">
+              <i class="bi bi-pencil-square me-1"></i>Bắt Đầu Làm Bài
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: History & Results -->
+  <div *ngIf="activeTab === 'history'">
+    <div *ngIf="mySubmissions.length === 0" class="text-center py-5 card border-0 shadow-sm">
+      <div class="card-body py-5">
+        <i class="bi bi-journal-x display-1 text-muted opacity-50 mb-3 d-block"></i>
+        <h5 class="text-muted">Bạn chưa hoàn thành bài trắc nghiệm nào</h5>
+        <p class="text-muted small">Hãy chọn một bài trắc nghiệm trong danh mục để tự đánh giá sức khỏe tinh thần của mình.</p>
+        <button class="btn btn-primary btn-sm mt-2" (click)="activeTab = 'catalog'">
+          <i class="bi bi-arrow-left me-1"></i>Xem danh mục bài test
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="mySubmissions.length > 0" class="row g-3">
+      <div *ngFor="let sub of mySubmissions" class="col-12">
+        <div class="card border-0 shadow-sm submission-row-card">
+          <div class="card-body p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+              <span class="badge bg-secondary me-2">{{ sub.test?.testType || 'TEST' }}</span>
+              <strong class="text-dark fs-6">{{ sub.test?.title }}</strong>
+              <div class="text-muted small mt-1">
+                <i class="bi bi-clock me-1"></i>Hoàn thành lúc: {{ sub.completedAt || sub.createdDate | date:'dd/MM/yyyy HH:mm' }}
+                <span *ngIf="sub.assignedByDoctor" class="ms-2 badge bg-info-subtle text-info">
+                  BS chỉ định: {{ sub.assignedByDoctor?.fullName || sub.assignedByDoctor?.user?.login }}
+                </span>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+              <div class="text-end">
+                <div class="small fw-semibold text-primary">Điểm: {{ sub.totalScore }}</div>
+                <div class="small text-muted text-truncate" style="max-width: 300px;">{{ sub.interpretation }}</div>
+              </div>
+              <a class="btn btn-outline-primary btn-sm" [routerLink]="['/patient/psychometrics/result', sub.id]">
+                <i class="bi bi-bar-chart-line me-1"></i>Xem Báo Cáo
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

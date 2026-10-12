@@ -1,0 +1,565 @@
+{
+  "info": {
+    "name": "MindBridge OPCBS - API Test Payloads & Collection",
+    "description": "Bộ mẫu dữ liệu JSON và thông tin endpoint hoàn chỉnh để kiểm thử toàn bộ 43 REST APIs của hệ thống OPCBS qua Postman / Thunder Client / cURL / REST Client",
+    "baseUrl": "http://localhost:8081",
+    "authHeaderTemplate": "Authorization: Bearer <JWT_TOKEN>"
+  },
+  "environments": {
+    "local": {
+      "baseUrl": "http://localhost:8081",
+      "defaultPassword": "user",
+      "adminPassword": "admin"
+    }
+  },
+  "endpoints": [
+    {
+      "group": "1. Authentication & Account",
+      "tests": [
+        {
+          "name": "1.1. Đăng nhập Bác sĩ (Login as Doctor)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/authenticate",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "username": "doctor1",
+            "password": "user",
+            "rememberMe": true
+          },
+          "expectedStatus": 200,
+          "notes": "Trả về id_token (JWT Token). Dùng token này để gắn vào Header Authorization cho các API cần quyền ROLE_DOCTOR."
+        },
+        {
+          "name": "1.2. Đăng nhập Bệnh nhân (Login as Patient)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/authenticate",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "username": "patient1",
+            "password": "user",
+            "rememberMe": true
+          },
+          "expectedStatus": 200,
+          "notes": "Trả về id_token của bệnh nhân để gọi các API đặt lịch, làm bài test, xem bệnh án."
+        },
+        {
+          "name": "1.3. Đăng nhập Quản trị viên (Login as Admin)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/authenticate",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "username": "admin",
+            "password": "admin",
+            "rememberMe": true
+          },
+          "expectedStatus": 200
+        },
+        {
+          "name": "1.4. Đăng ký tài khoản Bệnh nhân mới",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/register",
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "login": "new_patient_01",
+            "email": "new_patient_01@example.com",
+            "password": "user1234",
+            "langKey": "vi"
+          },
+          "expectedStatus": 201
+        },
+        {
+          "name": "1.5. Lấy thông tin tài khoản hiện tại (Profile)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/account",
+          "headers": {
+            "Authorization": "Bearer <JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        }
+      ]
+    },
+    {
+      "group": "2. Doctor Schedule & Availability Slots",
+      "tests": [
+        {
+          "name": "2.1. Bác sĩ xem danh sách Slot của mình (My Slots)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/my-slots?page=0&size=50&sort=startTime,asc",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "2.2. Bác sĩ tạo 1 khung giờ rảnh đơn lẻ (Create Slot)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/doctor/slots",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "startTime": "2026-10-05T08:30:00Z",
+            "endTime": "2026-10-05T09:30:00Z",
+            "consultationMode": "ONLINE",
+            "notes": "Tư vấn trực tuyến qua Google Meet"
+          },
+          "expectedStatus": 201
+        },
+        {
+          "name": "2.3. Bác sĩ tạo lịch rảnh hàng loạt theo tuần (Batch Generate Slots)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/doctor/slots/batch",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "startDate": "2026-10-05",
+            "endDate": "2026-10-09",
+            "dailyStartTime": "08:00",
+            "dailyEndTime": "17:00",
+            "slotDurationMinutes": 60,
+            "daysOfWeek": [1, 2, 3, 4, 5],
+            "consultationMode": "ONLINE",
+            "notes": "Lịch làm việc cố định trong tuần"
+          },
+          "expectedStatus": 201,
+          "notes": "Tự động sinh các slot rảnh 60 phút từ Thứ 2 đến Thứ 6."
+        },
+        {
+          "name": "2.4. Bác sĩ cập nhật thông tin Slot",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/doctor/slots/1",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "id": 1,
+            "startTime": "2026-10-05T09:00:00Z",
+            "endTime": "2026-10-05T10:00:00Z",
+            "status": "AVAILABLE",
+            "consultationMode": "IN_PERSON",
+            "notes": "Khám trực tiếp tại phòng khám MindBridge Quận 1"
+          },
+          "expectedStatus": 200
+        },
+        {
+          "name": "2.5. Bác sĩ bật/tắt nhanh trạng thái Slot (Toggle Status)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/doctor/slots/1/toggle-status",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200,
+          "notes": "Chuyển đổi trạng thái giữa AVAILABLE <-> UNAVAILABLE."
+        },
+        {
+          "name": "2.6. Bác sĩ xóa Slot chưa có người đặt",
+          "method": "DELETE",
+          "url": "{{baseUrl}}/api/doctor/slots/1",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 204
+        }
+      ]
+    },
+    {
+      "group": "3. Patient Booking & Appointment Management",
+      "tests": [
+        {
+          "name": "3.1. Bệnh nhân đặt lịch hẹn tư vấn (Book Appointment)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/patient/appointments/book",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": {
+            "slotId": 1,
+            "consultationMode": "ONLINE",
+            "reason": "Thường xuyên mất ngủ, căng thẳng kéo dài do áp lực công việc và gia đình",
+            "symptoms": "Tim đập nhanh, đau đầu vùng thái dương, khó tập trung làm việc, mệt mỏi vào buổi sáng",
+            "medicalHistory": "Từng điều trị rối loạn lo âu nhẹ năm 2024, không dị ứng thuốc",
+            "expectations": "Mong muốn được bác sĩ tư vấn liệu pháp tâm lý nhận thức hành vi (CBT) và hướng dẫn kỹ thuật kiểm soát cảm xúc",
+            "contactPhone": "0901234567",
+            "contactZalo": "0901234567",
+            "patientAddress": "123 Nguyễn Huệ, Quận 1, TP.HCM"
+          },
+          "expectedStatus": 201,
+          "notes": "Tự động tạo Appointment trạng thái PENDING, cập nhật Slot thành BOOKED và sinh mã bookingCode MB-yyyyMMdd-XXXXX."
+        },
+        {
+          "name": "3.2. Bệnh nhân xem danh sách lịch hẹn của mình",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/my-appointments?page=0&size=20&sort=scheduledStart,desc",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.3. Bệnh nhân hủy lịch hẹn",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/patient/appointments/1/cancel",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": {
+            "cancellationReason": "Có việc đột xuất phải đi công tác, xin phép đổi lịch sau"
+          },
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.4. Bác sĩ xem danh sách lịch hẹn cần duyệt",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/appointments?status=PENDING&page=0&size=20",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.5. Bác sĩ xem thống kê lịch hẹn (Stats)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/appointments/stats",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.6. Bác sĩ chấp nhận ca khám (Accept)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/doctor/appointments/1/accept",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.7. Bác sĩ từ chối ca khám (Reject)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/doctor/appointments/1/reject",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "rejectionReason": "Bác sĩ có lịch hội chẩn khẩn cấp tại bệnh viện trong khung giờ này"
+          },
+          "expectedStatus": 200
+        },
+        {
+          "name": "3.8. Bác sĩ bắt đầu ca khám (Start Consultation)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/doctor/appointments/1/start",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200,
+          "notes": "Chuyển trạng thái ca khám sang IN_PROGRESS."
+        },
+        {
+          "name": "3.9. Bác sĩ lưu bệnh án & Hoàn thành ca khám (Save Consultation Note)",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/doctor/appointments/1/consultation-note",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "diagnosis": "F41.1 - Rối loạn lo âu lan tỏa (Generalized Anxiety Disorder) mức độ vừa",
+            "consultationSummary": "Bệnh nhân tỉnh táo, tiếp xúc tốt, có dấu hiệu căng thẳng thần kinh và suy nhược nhẹ do mất ngủ kéo dài. Đã giải tỏa tâm lý bước đầu.",
+            "therapyPlan": "Liệu pháp nhận thức hành vi (CBT) 4 buổi kết hợp kỹ thuật thở 4-7-8 và vệ sinh giấc ngủ",
+            "recommendations": "Uống đủ 2 lít nước mỗi ngày, hạn chế caffeine sau 14h, tập thể dục nhẹ nhàng 30 phút mỗi sáng",
+            "followUpNotes": "Tái khám sau 2 tuần để đánh giá lại chỉ số lo âu DASS-21",
+            "nextAppointmentRecommendedDate": "2026-10-19T09:00:00Z",
+            "markCompleted": true
+          },
+          "expectedStatus": 200,
+          "notes": "Lưu bệnh án chi tiết và tự động chuyển trạng thái ca khám sang COMPLETED."
+        }
+      ]
+    },
+    {
+      "group": "4. Clinical Records (Sổ Bệnh Án)",
+      "tests": [
+        {
+          "name": "4.1. Bệnh nhân xem toàn bộ bệnh án & phác đồ điều trị của mình",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/my-clinical-records",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "4.2. Bác sĩ xem danh sách bệnh nhân đã/đang phụ trách",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/my-patients",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "4.3. Bác sĩ xem hồ sơ chi tiết và lịch sử khám của 1 bệnh nhân",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/patients/1",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        }
+      ]
+    },
+    {
+      "group": "5. Treatment Packages (Gói Trị Liệu)",
+      "tests": [
+        {
+          "name": "5.1. Bác sĩ tạo gói trị liệu mới cho bệnh nhân",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/doctor/treatment-packages",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "name": "Phác Đồ Phục Hồi & Quản Trị Căng Thẳng (CBT 6 Buổi)",
+            "description": "Chương trình can thiệp chuyên sâu nhằm nhận diện suy nghĩ tiêu cực, phục hồi năng lượng và xây dựng sức bền tinh thần.",
+            "targetOutcome": "Giảm 60% chỉ số stress DASS-21, cải thiện chất lượng giấc ngủ đạt 7-8 tiếng/đêm.",
+            "recommendedExercises": "Bài tập thư giãn cơ tiến triển (PMR), ghi nhật ký cảm xúc 3 lần/ngày, thiền chánh niệm 15 phút.",
+            "instructions": "Bệnh nhân thực hiện bài tập đều đặn và tham gia buổi tham vấn online 1 lần/tuần.",
+            "sessionQuantity": 6,
+            "validityDays": 60,
+            "price": 3600000,
+            "patientId": 1
+          },
+          "expectedStatus": 201
+        },
+        {
+          "name": "5.2. Bác sĩ xem danh sách gói trị liệu",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/treatment-packages",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "5.3. Bệnh nhân xem danh sách gói trị liệu được chỉ định",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/my-treatment-packages",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "5.4. Bệnh nhân đồng ý tiếp nhận gói trị liệu (Accept)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/patient/my-treatment-packages/1/accept",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "5.5. Bệnh nhân từ chối gói trị liệu (Reject)",
+          "method": "PUT",
+          "url": "{{baseUrl}}/api/patient/my-treatment-packages/1/reject",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        }
+      ]
+    },
+    {
+      "group": "6. Emotion Journals (Nhật Ký Cảm Xúc)",
+      "tests": [
+        {
+          "name": "6.1. Bệnh nhân tạo nhật ký cảm xúc hàng ngày",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/patient/journals",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": {
+            "title": "Ngày đầu tuần cảm thấy nhẹ nhõm hơn sau buổi tham vấn",
+            "content": "Hôm nay tôi đã áp dụng kỹ thuật thở sâu khi gặp áp lực dự án ở công ty. Cảm giác hồi hộp đã giảm đi đáng kể.",
+            "moodScale": 4,
+            "stressScale": 2,
+            "sleepHours": 7.5,
+            "depressionScale": 1,
+            "isShared": true
+          },
+          "expectedStatus": 201,
+          "notes": "moodScale từ 1 (Rất tệ) đến 5 (Tuyệt vời); isShared = true cho phép bác sĩ xem nhật ký."
+        },
+        {
+          "name": "6.2. Bệnh nhân xem danh sách nhật ký của mình",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/journals",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "6.3. Bệnh nhân xem biểu đồ thống kê tâm trạng (Stats)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/journals/stats",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "6.4. Bác sĩ xem nhật ký được bệnh nhân chia sẻ",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/patients/1/shared-journals",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        }
+      ]
+    },
+    {
+      "group": "7. Psychometric Tests (Trắc Nghiệm Tâm Lý Y Khoa)",
+      "tests": [
+        {
+          "name": "7.1. Lấy danh mục các bài test chuẩn (DASS-21, PHQ-9, GAD-7)",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/psychometrics/tests",
+          "headers": {},
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "7.2. Lấy chi tiết bài test kèm danh sách câu hỏi",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/psychometrics/tests/1",
+          "headers": {},
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "7.3. Bệnh nhân nộp bài làm test DASS-21 và nhận kết quả tự động",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/psychometrics/tests/1/submit",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": {
+            "answers": [
+              { "questionId": 1, "score": 2 },
+              { "questionId": 2, "score": 1 },
+              { "questionId": 3, "score": 2 },
+              { "questionId": 4, "score": 1 },
+              { "questionId": 5, "score": 2 },
+              { "questionId": 6, "score": 3 },
+              { "questionId": 7, "score": 1 },
+              { "questionId": 8, "score": 2 },
+              { "questionId": 9, "score": 1 },
+              { "questionId": 10, "score": 2 },
+              { "questionId": 11, "score": 2 },
+              { "questionId": 12, "score": 2 },
+              { "questionId": 13, "score": 2 },
+              { "questionId": 14, "score": 2 },
+              { "questionId": 15, "score": 1 },
+              { "questionId": 16, "score": 2 },
+              { "questionId": 17, "score": 2 },
+              { "questionId": 18, "score": 3 },
+              { "questionId": 19, "score": 1 },
+              { "questionId": 20, "score": 1 },
+              { "questionId": 21, "score": 2 }
+            ]
+          },
+          "expectedStatus": 200,
+          "notes": "Backend tự động nhân đôi điểm DASS-21, phân tách 3 nhánh: Trầm cảm, Lo âu, Căng thẳng và trả về kết luận lâm sàng."
+        },
+        {
+          "name": "7.4. Bệnh nhân xem lịch sử các bài trắc nghiệm đã làm",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/patient/psychometrics/my-submissions",
+          "headers": {
+            "Authorization": "Bearer <PATIENT_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "7.5. Xem phiếu báo cáo chi tiết kết quả trắc nghiệm y khoa",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/psychometrics/submissions/1",
+          "headers": {
+            "Authorization": "Bearer <JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        },
+        {
+          "name": "7.6. Bác sĩ chỉ định bài test cho bệnh nhân",
+          "method": "POST",
+          "url": "{{baseUrl}}/api/doctor/psychometrics/assign",
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": {
+            "testId": 1,
+            "patientId": 1,
+            "appointmentId": 1,
+            "doctorNotes": "Yêu cầu bệnh nhân hoàn thành bài đánh giá DASS-21 trước buổi tái khám tuần sau."
+          },
+          "expectedStatus": 200
+        },
+        {
+          "name": "7.7. Bác sĩ xem biểu đồ lịch sử điểm trắc nghiệm của bệnh nhân",
+          "method": "GET",
+          "url": "{{baseUrl}}/api/doctor/patients/1/psychometrics",
+          "headers": {
+            "Authorization": "Bearer <DOCTOR_JWT_TOKEN>"
+          },
+          "body": null,
+          "expectedStatus": 200
+        }
+      ]
+    }
+  ]
+}

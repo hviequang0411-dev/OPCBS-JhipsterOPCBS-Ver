@@ -1,0 +1,20 @@
+@if (appointment) {
+  <form name="deleteForm" (ngSubmit)="confirmDelete(appointment.id)">
+    <div class="modal-header">
+      <h4 class="modal-title" data-cy="appointmentDeleteDialogHeading">Confirm delete operation</h4>
+    </div>
+
+    <div class="modal-body">
+      <jhi-alert-error />
+      <p id="jhi-delete-appointment-heading">Are you sure you want to delete Appointment {{ appointment.id }}?</p>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="cancel()"><fa-icon icon="ban" />&nbsp;<span>Cancel</span></button>
+
+      <button id="jhi-confirm-delete-appointment" data-cy="entityConfirmDeleteButton" type="submit" class="btn btn-danger">
+        <fa-icon icon="times" />&nbsp;<span>Delete</span>
+      </button>
+    </div>
+  </form>
+}

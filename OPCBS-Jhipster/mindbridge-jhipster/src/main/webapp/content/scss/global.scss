@@ -1,0 +1,391 @@
+@import 'bootstrap-variables';
+@import 'bootstrap/scss/functions';
+@import 'bootswatch/dist/brite/variables';
+@import 'bootstrap/scss/variables';
+
+/* ==============================================================
+   MindBridge Typography & High-Contrast Readability System
+   ============================================================== */
+
+body {
+  color: #1e293b;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: #f8fafc;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #0f172a;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+p,
+span,
+li,
+td,
+th {
+  color: #1e293b;
+}
+
+.text-muted {
+  color: #475569 !important; /* Crisp slate rather than faint grey */
+  font-weight: 500;
+}
+
+.text-secondary {
+  color: #334155 !important;
+  font-weight: 550;
+}
+
+.text-teal {
+  color: #0f766e !important;
+}
+
+.text-teal-hover:hover {
+  color: #115e59 !important;
+}
+
+a {
+  color: #0f766e;
+  text-decoration: none;
+  font-weight: 550;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: #115e59;
+    cursor: pointer;
+  }
+}
+
+.dropdown-item:hover {
+  color: #0f766e;
+  background-color: #f1f5f9;
+}
+
+/* ==========================================================================
+   Modern Cards, Tables & Form Controls
+   ========================================================================== */
+
+.jh-card {
+  padding: 1.5rem;
+  margin-top: 1.25rem;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  overflow: hidden;
+
+  .card-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 750;
+    color: #0f172a;
+    padding: 1rem 1.25rem;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+}
+
+/* Crisp form inputs */
+.form-control,
+.form-select {
+  background-color: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #0f172a;
+  font-weight: 500;
+  border-radius: 10px;
+  padding: 0.55rem 0.85rem;
+  transition: all 0.15s ease;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:focus {
+    border-color: #0f766e;
+    box-shadow: 0 0 0 0.18rem rgba(15, 118, 110, 0.18);
+    color: #0f172a;
+  }
+}
+
+.form-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+/* Polished buttons */
+.btn {
+  font-weight: 650;
+  border-radius: 10px;
+  padding: 0.52rem 1.15rem;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.btn-primary {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+    border-color: #0f766e;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(15, 118, 110, 0.25);
+
+    &:hover,
+    &:focus {
+      background: linear-gradient(135deg, #115e59 0%, #0f766e 100%);
+      border-color: #115e59;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(15, 118, 110, 0.35);
+    }
+  }
+
+  &.btn-outline-primary {
+    border-color: #0f766e;
+    color: #0f766e;
+    background: transparent;
+
+    &:hover {
+      background: #0f766e;
+      color: #ffffff;
+    }
+  }
+
+  &.btn-secondary {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+
+    &:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+  }
+}
+
+/* Status Badges */
+.badge {
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  letter-spacing: 0.02em;
+
+  &.bg-primary {
+    background-color: #0f766e !important;
+  }
+  &.bg-info {
+    background-color: #0284c7 !important;
+  }
+  &.bg-success {
+    background-color: #059669 !important;
+  }
+  &.bg-warning {
+    background-color: #d97706 !important;
+    color: #ffffff !important;
+  }
+  &.bg-danger {
+    background-color: #e11d48 !important;
+  }
+}
+
+/* Polished Tables */
+.table {
+  color: #1e293b;
+  vertical-align: middle;
+
+  thead th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0.85rem 1rem;
+  }
+
+  tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    color: #1e293b;
+  }
+
+  tbody tr:hover {
+    background-color: #f8fafc;
+  }
+}
+
+.error {
+  color: white;
+  background-color: #e11d48;
+}
+
+.pad {
+  padding: 10px;
+}
+
+.w-40 {
+  width: 40% !important;
+}
+
+.w-60 {
+  width: 60% !important;
+}
+
+.break {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.readonly {
+  background-color: #f1f5f9;
+  opacity: 1;
+}
+
+.footer {
+  border-top: 1px solid #e2e8f0;
+}
+
+.hand,
+[jhisortby] {
+  cursor: pointer;
+}
+
+/* ==========================================================================
+Custom alerts for notification
+========================================================================== */
+.alerts {
+  .alert {
+    text-overflow: ellipsis;
+    pre {
+      background: none;
+      border: none;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+      margin: 0;
+    }
+    .popover pre {
+      font-size: 10px;
+    }
+  }
+  .jhi-toast {
+    position: fixed;
+    width: 100%;
+    &.left {
+      left: 5px;
+    }
+    &.right {
+      right: 5px;
+    }
+    &.top {
+      top: 55px;
+    }
+    &.bottom {
+      bottom: 55px;
+    }
+  }
+}
+
+@media screen and (min-width: 480px) {
+  .alerts .jhi-toast {
+    width: 50%;
+  }
+}
+
+/* ==========================================================================
+entity list page css
+========================================================================== */
+
+.table-entities thead th .d-flex > * {
+  margin: auto 0;
+}
+
+/* ==========================================================================
+entity detail page css
+========================================================================== */
+.row-md.jh-entity-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  line-height: 1.5;
+}
+
+@media screen and (min-width: 768px) {
+  .row-md.jh-entity-details > {
+    dt {
+      float: left;
+      overflow: hidden;
+      clear: left;
+      text-align: right;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0.5em 0;
+    }
+    dd {
+      border-bottom: 1px solid #eee;
+      padding: 0.5em 0;
+      margin-left: 0;
+    }
+  }
+}
+
+/* ==========================================================================
+ui bootstrap tweaks
+========================================================================== */
+.nav,
+.pagination,
+.carousel,
+.panel-title a {
+  cursor: pointer;
+}
+
+.thread-dump-modal-lock {
+  max-width: 450px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-menu {
+  padding-left: 0;
+}
+
+/* ==========================================================================
+angular-cli removes postcss-rtl processed inline css, processed rules must be added here instead
+========================================================================== */
+/* page-ribbon.scss */
+.ribbon {
+  left: -3.5em;
+  -moz-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  -o-transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+}
+
+/* navbar.scss */
+.navbar {
+  ul.navbar-nav {
+    .nav-item {
+      margin-left: 0.5em;
+    }
+  }
+}
+/* jhipster-needle-scss-add-main JHipster will add new css style */

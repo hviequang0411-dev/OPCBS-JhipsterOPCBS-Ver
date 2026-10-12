@@ -1,0 +1,210 @@
+<div class="treatment-packages-container container-fluid py-4">
+  <div class="page-header d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+    <div>
+      <h2 class="h3 fw-bold text-primary mb-1">
+        <i class="bi bi-box-seam me-2"></i>Quản Lý Gói Trị Liệu & Phác Đồ
+      </h2>
+      <p class="text-muted mb-0">Xây dựng lộ trình trị liệu cá nhân hóa hoặc gói chăm sóc tâm lý cho bệnh nhân</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="loadPackages()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal(packageModal)">
+        <i class="bi bi-plus-circle me-1"></i>Tạo Gói Trị Liệu Mới
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted fw-semibold">Lọc theo trạng thái:</span>
+        <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedStatusFilter">
+          <option value="ALL">Tất cả trạng thái ({{ packages.length }})</option>
+          <option value="CREATED">Bản nháp / Mới tạo</option>
+          <option value="PROPOSED">Đã đề xuất</option>
+          <option value="ACTIVE">Đang hoạt động</option>
+          <option value="COMPLETED">Đã hoàn thành</option>
+          <option value="REJECTED">Bị từ chối</option>
+          <option value="CANCELLED">Đã hủy</option>
+        </select>
+      </div>
+      <div class="text-muted small">
+        Tổng số: <strong>{{ filteredPackages.length }}</strong> gói
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+    <p class="text-muted mt-2">Đang tải danh sách gói trị liệu...</p>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!isLoading && filteredPackages.length === 0" class="text-center py-5 card border-0 shadow-sm">
+    <div class="card-body py-5">
+      <i class="bi bi-box-seam display-1 text-muted opacity-50 mb-3 d-block"></i>
+      <h5 class="text-muted">Chưa có gói trị liệu nào</h5>
+      <p class="text-muted small">Bác sĩ có thể bấm nút "Tạo Gói Trị Liệu Mới" để thiết kế phác đồ hoặc gói dịch vụ mới.</p>
+      <button class="btn btn-primary btn-sm mt-2" (click)="openCreateModal(packageModal)">
+        <i class="bi bi-plus-lg me-1"></i>Tạo gói ngay
+      </button>
+    </div>
+  </div>
+
+  <!-- Package Cards Grid -->
+  <div *ngIf="!isLoading && filteredPackages.length > 0" class="row g-4">
+    <div *ngFor="let pkg of filteredPackages" class="col-12 col-md-6 col-xl-4">
+      <div class="card h-100 border-0 shadow-sm package-card">
+        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
+          <span [class]="getStatusBadgeClass(pkg.status)">{{ getStatusLabel(pkg.status) }}</span>
+          <div class="dropdown" ngbDropdown>
+            <button class="btn btn-sm btn-light rounded-circle" ngbDropdownToggle>
+              <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <div ngbDropdownMenu class="dropdown-menu-end shadow border-0">
+              <button ngbDropdownItem (click)="openEditModal(packageModal, pkg)">
+                <i class="bi bi-pencil me-2 text-primary"></i>Chỉnh sửa
+              </button>
+              <button *ngIf="pkg.status === 'CREATED' || pkg.status === 'REJECTED'" ngbDropdownItem class="text-danger" (click)="deletePackage(pkg)">
+                <i class="bi bi-trash me-2"></i>Xóa gói
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title fw-bold text-dark mb-2">{{ pkg.name }}</h5>
+          <p class="card-text text-muted small mb-3 description-clamp">{{ pkg.description || 'Chưa có mô tả chi tiết' }}</p>
+
+          <div class="package-meta bg-light rounded p-3 mb-3">
+            <div class="row g-2 text-sm">
+              <div class="col-6">
+                <span class="text-muted d-block small">Số buổi:</span>
+                <strong class="text-primary">{{ pkg.sessionQuantity }} buổi</strong>
+                <span *ngIf="pkg.status === 'ACTIVE'" class="text-success small ms-1">(còn {{ pkg.remainingSessions }})</span>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block small">Thời hạn:</span>
+                <strong>{{ pkg.validityDays }} ngày</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block small">Tần suất khuyến nghị:</span>
+                <span>{{ pkg.recommendedSessionsPerWeek }} buổi/tuần</span>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block small">Chi phí tham khảo:</span>
+                <strong class="text-warning-emphasis">{{ (pkg.price || 0) | currency:'VND':'symbol':'1.0-0' }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="pkg.patient" class="patient-assigned mb-3 p-2 border rounded bg-white">
+            <div class="d-flex align-items-center">
+              <div class="avatar-sm bg-primary-subtle text-primary rounded-circle me-2 d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px;">
+                {{ ((pkg.patient?.fullName || pkg.patient?.user?.login) || 'B')[0] }}
+              </div>
+              <div class="flex-grow-1 overflow-hidden">
+                <div class="small fw-semibold text-truncate">{{ pkg.patient?.fullName || pkg.patient?.user?.login }}</div>
+                <div class="text-muted small" style="font-size: 0.75rem;">{{ pkg.patient?.phone || 'Bệnh nhân đã gán' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="pkg.targetOutcome" class="mb-2">
+            <span class="badge bg-light text-dark border me-1"><i class="bi bi-bullseye text-danger me-1"></i>Mục tiêu:</span>
+            <span class="small text-muted text-truncate d-inline-block" style="max-width: 75%;">{{ pkg.targetOutcome }}</span>
+          </div>
+
+          <div *ngIf="pkg.rejectionReason" class="alert alert-danger py-1 px-2 small mb-0">
+            <strong>Lý do từ chối:</strong> {{ pkg.rejectionReason }}
+          </div>
+        </div>
+        <div class="card-footer bg-white border-0 pt-0 pb-3">
+          <button class="btn btn-outline-primary btn-sm w-100" (click)="openEditModal(packageModal, pkg)">
+            <i class="bi bi-eye me-1"></i>Xem Chi Tiết & Chỉnh Sửa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create / Edit Package -->
+<ng-template #packageModal let-modal>
+  <div class="modal-header bg-light">
+    <h5 class="modal-title fw-bold text-primary">
+      <i class="bi bi-box-seam me-2"></i>{{ isEditMode ? 'Chỉnh Sửa Gói Trị Liệu' : 'Tạo Gói Trị Liệu Mới' }}
+    </h5>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Tên gói trị liệu <span class="text-danger">*</span></label>
+      <input type="text" class="form-control" [(ngModel)]="editingPackage.name" placeholder="Ví dụ: Lộ trình Giảm Lo Âu & Căng Thẳng 8 Buổi" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Gán cho bệnh nhân (Tùy chọn)</label>
+      <select class="form-select" [(ngModel)]="editingPackage.patient">
+        <option [ngValue]="null">-- Không gán (Tạo gói mẫu) --</option>
+        <option *ngFor="let p of patients" [ngValue]="p">
+          {{ p.fullName || p.user?.login }} ({{ p.phone || 'Chưa có SĐT' }})
+        </option>
+      </select>
+      <small class="text-muted">Nếu chọn bệnh nhân, gói sẽ chuyển sang trạng thái "Đã đề xuất" gửi tới bệnh nhân để họ xác nhận.</small>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Số buổi tư vấn</label>
+        <input type="number" class="form-control" min="1" max="100" [(ngModel)]="editingPackage.sessionQuantity" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Thời hạn (ngày)</label>
+        <input type="number" class="form-control" min="7" max="365" [(ngModel)]="editingPackage.validityDays" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Tần suất (buổi/tuần)</label>
+        <input type="number" class="form-control" min="1" max="7" [(ngModel)]="editingPackage.recommendedSessionsPerWeek" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Chi phí (VNĐ)</label>
+        <input type="number" class="form-control" min="0" step="50000" [(ngModel)]="editingPackage.price" />
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Mục tiêu trị liệu (Target Outcome)</label>
+      <textarea class="form-control" rows="2" [(ngModel)]="editingPackage.targetOutcome" placeholder="Mục tiêu cần đạt được sau lộ trình..."></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Bài tập / Hoạt động khuyến nghị</label>
+      <textarea class="form-control" rows="2" [(ngModel)]="editingPackage.recommendedExercises" placeholder="Bài tập thở, nhật ký cảm xúc, kỹ thuật chánh niệm..."></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Hướng dẫn & Lưu ý dành cho bệnh nhân</label>
+      <textarea class="form-control" rows="2" [(ngModel)]="editingPackage.instructions" placeholder="Hướng dẫn chuẩn bị trước mỗi buổi tư vấn..."></textarea>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Mô tả tổng quan</label>
+      <textarea class="form-control" rows="3" [(ngModel)]="editingPackage.description" placeholder="Thông tin chi tiết về gói trị liệu..."></textarea>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Hủy</button>
+    <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="savePackage(modal)">
+      <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1"></span>
+      {{ isEditMode ? 'Lưu Thay Đổi' : 'Tạo Gói Mới' }}
+    </button>
+  </div>
+</ng-template>

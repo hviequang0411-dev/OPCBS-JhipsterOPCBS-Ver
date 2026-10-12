@@ -1,0 +1,89 @@
+{
+  "annotations": {
+    "changelogDate": "20260928102429"
+  },
+  "applications": ["opcbs"],
+  "documentation": "Lịch hẹn khám chữa bệnh giữa Bệnh nhân và Bác sĩ",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "bookingCode",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique", "maxlength"],
+      "fieldValidateRulesMaxlength": "32"
+    },
+    {
+      "fieldName": "scheduledStart",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "scheduledEnd",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "consultationMode",
+      "fieldType": "ConsultationMode",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "ONLINE,IN_PERSON,BOTH"
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "AppointmentStatus",
+      "fieldValidateRules": ["required"],
+      "fieldValues": "PENDING,ACCEPTED,REJECTED,COMPLETED,CANCELLED"
+    },
+    {
+      "fieldName": "reason",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "1000"
+    },
+    {
+      "fieldName": "cancellationReason",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "500"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "jpaMetamodelFiltering": true,
+  "name": "Appointment",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "fullName",
+      "otherEntityName": "patientProfile",
+      "relationshipName": "patient",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": "required"
+    },
+    {
+      "otherEntityField": "fullName",
+      "otherEntityName": "doctorProfile",
+      "relationshipName": "doctor",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": "required"
+    },
+    {
+      "otherEntityName": "availabilitySlot",
+      "relationshipName": "slot",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": "required"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}
