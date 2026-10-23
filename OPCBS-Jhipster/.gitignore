@@ -8,3 +8,15 @@ dist/
 **/.angular/
 *.log
 **/*.log
+
+# Secrets & Keys
+*.pem
+**/*.pem
+*.key
+**/*.key
+*.pkcs8
+**/*.pkcs8
+docker/secrets/jwt/*
+!docker/secrets/jwt/.gitkeep
+docker/.env
+.env

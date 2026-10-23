@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <property name="now" value="now()" dbms="mysql"/>
+    <property name="floatType" value="float" dbms="mysql"/>
+    <property name="clobType" value="clob" dbms="mysql"/>
+    <property name="blobType" value="longblob" dbms="mysql"/>
+    <property name="uuidType" value="varchar(36)" dbms="mysql"/>
+    <property name="datetimeType" value="datetime(6)" dbms="mysql"/>
+    <property name="timeType" value="time(6)" dbms="mysql"/>
+
+    <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102425_added_entity_Specialization.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102426_added_entity_DoctorProfile.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102427_added_entity_PatientProfile.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102428_added_entity_AvailabilitySlot.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102429_added_entity_Appointment.xml" relativeToChangelogFile="false"/>
+    <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20260928102426_added_entity_constraints_DoctorProfile.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102427_added_entity_constraints_PatientProfile.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102428_added_entity_constraints_AvailabilitySlot.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260928102429_added_entity_constraints_Appointment.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260929110000_seed_demo_data.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20260929153000_extend_patient_and_appointment_for_consultation_notes.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261001120000_added_entity_TreatmentPackage.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261001121000_added_entity_EmotionJournal.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261001122000_added_entity_Psychometrics.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261015160000_added_entity_BlogPost_and_BlogComment.xml" relativeToChangelogFile="false"/>
+    <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
+    <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+</databaseChangeLog>

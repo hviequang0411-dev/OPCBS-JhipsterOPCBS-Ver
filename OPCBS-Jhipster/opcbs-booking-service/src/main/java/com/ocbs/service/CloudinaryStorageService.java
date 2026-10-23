@@ -26,23 +26,31 @@ public class CloudinaryStorageService {
     private final Cloudinary cloudinary;
 
     public CloudinaryStorageService(
-        @Value("${application.cloudinary.cloud-name:jqhp5g23}") String cloudName,
-        @Value("${application.cloudinary.api-key:136888838371782}") String apiKey,
-        @Value("${application.cloudinary.api-secret:utJ16iRSPhJE3xaHVsDDmvExZ9E}") String apiSecret
+        @Value("${application.cloudinary.cloud-name:}") String cloudName,
+        @Value("${application.cloudinary.api-key:}") String apiKey,
+        @Value("${application.cloudinary.api-secret:}") String apiSecret
     ) {
-        this.cloudinary = new Cloudinary(ObjectUtils.asMap(
-            "cloud_name", cloudName,
-            "api_key", apiKey,
-            "api_secret", apiSecret,
-            "secure", true
-        ));
-        LOG.info("☁️ [Cloudinary Storage] Initialized Cloudinary client with Cloud Name: '{}'", cloudName);
+        if (cloudName != null && !cloudName.isBlank() && apiKey != null && !apiKey.isBlank() && apiSecret != null && !apiSecret.isBlank()) {
+            this.cloudinary = new Cloudinary(ObjectUtils.asMap(
+                "cloud_name", cloudName,
+                "api_key", apiKey,
+                "api_secret", apiSecret,
+                "secure", true
+            ));
+            LOG.info("☁️ [Cloudinary Storage] Initialized Cloudinary client with Cloud Name: '{}'", cloudName);
+        } else {
+            this.cloudinary = null;
+            LOG.warn("⚠️ [Cloudinary Storage] Cloudinary credentials are not configured. Cloud upload is disabled until CLOUDINARY_* environment variables are set.");
+        }
     }
 
     /**
      * Upload MultipartFile to Cloudinary Cloud Storage.
      */
     public StoredFileMetadata uploadFileToCloud(MultipartFile file, Long doctorId, String documentType) {
+        if (cloudinary == null) {
+            throw new BadRequestAlertException("Dịch vụ lưu trữ Cloudinary chưa được cấu hình biến môi trường", "cloudinaryStorage", "notconfigured");
+        }
         if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("File upload không được để trống", "cloudinaryStorage", "filenotfound");
         }
@@ -104,6 +112,9 @@ public class CloudinaryStorageService {
         Long doctorId,
         String documentType
     ) {
+        if (cloudinary == null) {
+            throw new BadRequestAlertException("Dịch vụ lưu trữ Cloudinary chưa được cấu hình biến môi trường", "cloudinaryStorage", "notconfigured");
+        }
         if (fileBytes == null || fileBytes.length == 0) {
             throw new BadRequestAlertException("Dữ liệu byte không được để trống", "cloudinaryStorage", "emptybytes");
         }
@@ -151,6 +162,9 @@ public class CloudinaryStorageService {
      * Upload Avatar image directly to Cloudinary Cloud Storage folder 'opcbs/avatars'.
      */
     public String uploadAvatarToCloud(MultipartFile file, String userLogin) {
+        if (cloudinary == null) {
+            throw new BadRequestAlertException("Dịch vụ lưu trữ Cloudinary chưa được cấu hình biến môi trường", "cloudinaryStorage", "notconfigured");
+        }
         if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("File ảnh đại diện không được để trống", "cloudinaryStorage", "filenotfound");
         }

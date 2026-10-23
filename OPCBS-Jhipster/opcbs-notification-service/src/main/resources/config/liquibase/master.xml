@@ -29,4 +29,6 @@
     <include file="config/liquibase/changelog/20261001122000_added_entity_Psychometrics.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20261016141000_added_channel_status_to_notification.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261020161000_added_notification_inbox.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -18,12 +17,9 @@ class TokenAuthenticationIT {
     @Autowired
     private MockMvc mvc;
 
-    @Value("${jhipster.security.authentication.jwt.base64-secret}")
-    private String jwtKey;
-
     @Test
     void testLoginWithValidToken() throws Exception {
-        expectOk(createValidToken(jwtKey));
+        expectOk(createValidToken());
     }
 
     @Test
@@ -33,12 +29,22 @@ class TokenAuthenticationIT {
 
     @Test
     void testReturnFalseWhenJWTisMalformed() throws Exception {
-        expectUnauthorized(createSignedInvalidJwt(jwtKey));
+        expectUnauthorized("header.invalid-payload.signature");
     }
 
     @Test
     void testReturnFalseWhenJWTisExpired() throws Exception {
-        expectUnauthorized(createExpiredToken(jwtKey));
+        expectUnauthorized(createExpiredToken());
+    }
+
+    @Test
+    void testRejectHs512Token() throws Exception {
+        expectUnauthorized(createHs512Token());
+    }
+
+    @Test
+    void testRejectNoneAlgToken() throws Exception {
+        expectUnauthorized(createNoneAlgToken());
     }
 
     private void expectOk(String token) throws Exception {

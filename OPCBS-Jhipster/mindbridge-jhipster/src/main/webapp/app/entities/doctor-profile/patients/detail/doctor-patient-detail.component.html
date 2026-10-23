@@ -13,6 +13,17 @@
     </div>
 
     <div class="d-flex align-items-center gap-2" *ngIf="patientRecord() as rec">
+      <button
+        type="button"
+        class="btn btn-teal-primary btn-sm d-flex align-items-center gap-2 px-3 py-1.5 rounded-3 fw-semibold shadow-sm text-white"
+        style="background-color: #0d9488; border-color: #0d9488;"
+        (click)="openCreatePackageModal()"
+        title="Tạo và gán gói trị liệu cho bệnh nhân này"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span>Gán Gói Trị Liệu</span>
+      </button>
+
       <a
         [routerLink]="['/messages']"
         [queryParams]="{ patientId: rec.patient.id, patientName: rec.patient.fullName }"
@@ -88,6 +99,10 @@
           </span>
         </div>
         <div class="pd-meta">
+          <span class="badge rounded-pill fw-bold" style="background-color: #ccfbf1; color: #0f766e; font-size: 0.8rem; padding: 5px 11px;">
+            <fa-icon icon="calendar-check" class="me-1"></fa-icon>
+            Số buổi đã khám: <strong>{{ rec.completedAppointments || 0 }}</strong> / {{ rec.totalAppointments || 0 }} buổi
+          </span>
           <span *ngIf="rec.patient.phone">
             <fa-icon icon="phone" class="me-1 text-teal"></fa-icon>
             {{ rec.patient.phone }}
@@ -108,6 +123,43 @@
             <fa-icon icon="phone-volume" class="me-1 text-warning"></fa-icon>
             Khẩn cấp: {{ rec.patient.emergencyContactPhone }}
           </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ CRITICAL RISK WARNING BANNER (When patient has negative test results and negative emotion) ════ -->
+    <div class="pd-danger-warning-banner p-3 mb-3 rounded-4 shadow-sm" *ngIf="rec.hasNegativeRisk" style="background-color: #fef2f2; border: 2px solid #ef4444; border-left: 8px solid #dc2626 !important;">
+      <div class="d-flex align-items-start gap-3">
+        <div class="text-danger fs-2 lh-1 mt-1">
+          <fa-icon icon="exclamation-circle"></fa-icon>
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+            <h5 class="text-danger fw-bold mb-0 d-flex align-items-center gap-2">
+              <span>CẢNH BÁO NGUY CƠ LÂM SÀNG TÂM LÝ CAO (CRITICAL PSYCHOLOGICAL RISK)</span>
+              <span class="badge bg-danger text-white px-2 py-0.5 rounded-pill small">Mức độ cảnh báo ĐỎ</span>
+            </h5>
+            <button type="button" class="btn btn-sm btn-danger px-3 py-1 rounded-pill fw-bold shadow-sm" (click)="setActiveTab('ANALYTICS')">
+              <fa-icon icon="tachometer-alt" class="me-1"></fa-icon> Xem Trực Quan Thống Kê &rarr;
+            </button>
+          </div>
+          <p class="text-danger-emphasis mb-2 fw-semibold" style="color: #991b1b !important;">
+            {{ rec.warningMessage }}
+          </p>
+          <div class="d-flex align-items-center gap-4 text-danger small flex-wrap">
+            <span *ngIf="rec.psychometricSubmissions?.length">
+              <fa-icon icon="clipboard-list" class="me-1"></fa-icon>
+              <strong>{{ rec.psychometricSubmissions.length }}</strong> bài test đã thực hiện
+            </span>
+            <span *ngIf="rec.sharedJournals?.length">
+              <fa-icon icon="book" class="me-1"></fa-icon>
+              <strong>{{ rec.sharedJournals.length }}</strong> nhật ký cảm xúc đã chia sẻ
+            </span>
+            <span>
+              <fa-icon icon="heartbeat" class="me-1"></fa-icon>
+              Khuyến nghị can thiệp: Bác sĩ cần ưu tiên can thiệp tâm lý khẩn cấp, đánh giá suy nghĩ tự hại hoặc lên kế hoạch trị liệu tăng cường.
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -143,7 +195,43 @@
         (click)="setActiveTab('CLINICAL')"
       >
         <fa-icon icon="notes-medical" class="me-1.5"></fa-icon>
-        Lịch Sử Khám &amp; Ghi Chú Lâm Sàng ({{ rec.appointments.length }})
+        Lịch Sử Khám &amp; Ghi Chú ({{ rec.appointments.length }})
+      </button>
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'ANALYTICS'"
+        (click)="setActiveTab('ANALYTICS')"
+      >
+        <fa-icon icon="tachometer-alt" class="me-1.5 text-primary"></fa-icon>
+        Thống Kê &amp; Trực Quan Hóa
+      </button>
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'TESTS'"
+        (click)="setActiveTab('TESTS')"
+      >
+        <fa-icon icon="clipboard-check" class="me-1.5 text-info"></fa-icon>
+        Kết Quả Bài Test ({{ rec.psychometricSubmissions?.length || 0 }})
+      </button>
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'JOURNALS'"
+        (click)="setActiveTab('JOURNALS')"
+      >
+        <fa-icon icon="book" class="me-1.5 text-warning"></fa-icon>
+        Nhật Ký Cảm Xúc ({{ rec.sharedJournals?.length || 0 }})
+      </button>
+      <button
+        type="button"
+        class="nav-tab-btn"
+        [class.active]="activeTab() === 'PACKAGES'"
+        (click)="setActiveTab('PACKAGES')"
+      >
+        <fa-icon icon="box-open" class="me-1.5 text-teal"></fa-icon>
+        Gói Trị Liệu ({{ rec.treatmentPackages?.length || 0 }})
       </button>
       <button
         type="button"
@@ -459,6 +547,406 @@
         </div>
       </div>
     </div>
+
+    <!-- ════ TAB 2: ANALYTICS & VISUALIZATION (Thống Kê & Trực Quan Hóa) ════ -->
+    <div *ngIf="activeTab() === 'ANALYTICS'" class="analytics-pane">
+      <!-- 4 Metric KPI Cards -->
+      <div class="row g-3 mb-4">
+        <!-- KPI 1: Số buổi đã khám -->
+        <div class="col-sm-6 col-xl-3">
+          <div class="kpi-card shadow-sm border-0 rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="kpi-label text-muted small fw-bold text-uppercase">Số Buổi Đã Khám</span>
+              <div class="kpi-icon-box bg-teal-subtle text-teal rounded-3 p-2">
+                <fa-icon icon="calendar-check"></fa-icon>
+              </div>
+            </div>
+            <div class="kpi-value text-dark fw-bold fs-3">
+              {{ rec.completedAppointments || 0 }} <span class="text-muted fs-6 fw-normal">/ {{ rec.totalAppointments || 0 }} buổi</span>
+            </div>
+            <div class="kpi-sub mt-2">
+              <div class="progress" style="height: 6px;">
+                <div
+                  class="progress-bar bg-teal"
+                  role="progressbar"
+                  [style.width.%]="rec.totalAppointments ? ((rec.completedAppointments / rec.totalAppointments) * 100) : 0"
+                ></div>
+              </div>
+              <span class="text-muted small mt-1 d-block">Tỷ lệ hoàn thành: {{ rec.totalAppointments ? Math.round((rec.completedAppointments / rec.totalAppointments) * 100) : 0 }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2: Điểm cảm xúc trung bình -->
+        <div class="col-sm-6 col-xl-3">
+          <div class="kpi-card shadow-sm border-0 rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="kpi-label text-muted small fw-bold text-uppercase">Cảm Xúc Trung Bình</span>
+              <div class="kpi-icon-box bg-warning-subtle text-warning rounded-3 p-2">
+                <fa-icon icon="heartbeat"></fa-icon>
+              </div>
+            </div>
+            <div class="kpi-value text-dark fw-bold fs-3">
+              {{ getAverageMood() }} <span class="text-muted fs-6 fw-normal">/ 5.0 ⭐</span>
+            </div>
+            <div class="kpi-sub mt-2">
+              <span
+                class="badge rounded-pill fw-semibold"
+                [ngClass]="{
+                  'bg-danger text-white': getAverageMood() > 0 && getAverageMood() < 2.5,
+                  'bg-warning text-dark': getAverageMood() >= 2.5 && getAverageMood() < 3.5,
+                  'bg-success text-white': getAverageMood() >= 3.5,
+                  'bg-secondary text-white': getAverageMood() === 0
+                }"
+              >
+                {{ getAverageMood() === 0 ? 'Chưa có nhật ký' : (getAverageMood() < 2.5 ? 'Tiêu cực / Lo âu' : (getAverageMood() < 3.5 ? 'Ổn định / Trung tính' : 'Tích cực')) }}
+              </span>
+              <span class="text-muted small ms-1">({{ rec.sharedJournals?.length || 0 }} nhật ký)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 3: Đánh giá bài test tâm lý -->
+        <div class="col-sm-6 col-xl-3">
+          <div class="kpi-card shadow-sm border-0 rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="kpi-label text-muted small fw-bold text-uppercase">Bài Test Tâm Lý</span>
+              <div class="kpi-icon-box bg-info-subtle text-info rounded-3 p-2">
+                <fa-icon icon="clipboard-list"></fa-icon>
+              </div>
+            </div>
+            <div class="kpi-value text-dark fw-bold fs-3">
+              {{ rec.psychometricSubmissions?.length || 0 }} <span class="text-muted fs-6 fw-normal">bài test</span>
+            </div>
+            <div class="kpi-sub mt-2">
+              <span
+                class="badge rounded-pill fw-semibold"
+                [ngClass]="rec.hasNegativeRisk ? 'bg-danger text-white' : 'bg-success text-white'"
+              >
+                {{ rec.hasNegativeRisk ? 'Cảnh báo rủi ro cao' : 'Mức độ bình thường' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 4: Gói trị liệu đang gán -->
+        <div class="col-sm-6 col-xl-3">
+          <div class="kpi-card shadow-sm border-0 rounded-4 p-3 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="kpi-label text-muted small fw-bold text-uppercase">Gói Trị Liệu</span>
+              <div class="kpi-icon-box bg-primary-subtle text-primary rounded-3 p-2">
+                <fa-icon icon="box-open"></fa-icon>
+              </div>
+            </div>
+            <div class="kpi-value text-dark fw-bold fs-3">
+              {{ rec.treatmentPackages?.length || 0 }} <span class="text-muted fs-6 fw-normal">gói gán</span>
+            </div>
+            <div class="kpi-sub mt-2">
+              <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 fw-semibold" (click)="openCreatePackageModal()">
+                + Tạo gói mới
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts & Visualizations Row -->
+      <div class="row g-4 mb-4">
+        <!-- Biểu Đồ Cảm Xúc Bệnh Nhân (Emotion / Mood Distribution) -->
+        <div class="col-lg-6">
+          <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="fw-bold mb-0 text-dark">
+                <fa-icon icon="heartbeat" class="me-2 text-warning"></fa-icon>
+                Biểu Đồ Cảm Xúc Bệnh Nhân
+              </h5>
+              <span class="badge bg-light text-muted border">Nhật ký cảm xúc</span>
+            </div>
+            <p class="text-muted small mb-3">
+              Phân bổ các trạng thái cảm xúc theo nhật ký bệnh nhân đã chia sẻ qua các mốc thời gian:
+            </p>
+
+            <div *ngIf="getMoodDistributionEntries().length === 0" class="text-center py-4 text-muted">
+              <fa-icon icon="heart" class="fs-1 text-muted mb-2"></fa-icon>
+              <p>Bệnh nhân chưa chia sẻ nhật ký cảm xúc nào.</p>
+            </div>
+
+            <div *ngIf="getMoodDistributionEntries().length > 0" class="mood-chart-bars">
+              <div *ngFor="let item of getMoodDistributionEntries()" class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-semibold small text-dark">{{ item.label }}</span>
+                  <span class="small text-muted fw-bold">{{ item.count }} lần ({{ item.percentage }}%)</span>
+                </div>
+                <div class="progress rounded-pill" style="height: 10px; background-color: #f1f5f9;">
+                  <div
+                    class="progress-bar rounded-pill"
+                    role="progressbar"
+                    [style.width.%]="item.percentage"
+                    [style.backgroundColor]="item.color"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Emotion timeline preview -->
+            <div class="mt-4 pt-3 border-top" *ngIf="rec.sharedJournals?.length">
+              <h6 class="fw-bold text-dark small text-uppercase mb-2">Nhật ký gần đây nhất:</h6>
+              <div class="recent-journal-pill p-2.5 rounded-3 bg-light border">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold text-dark small">
+                    Đánh giá: {{ rec.sharedJournals[0].moodScale }}/5 ⭐
+                    <span *ngIf="rec.sharedJournals[0].moodTag" class="badge bg-secondary-subtle text-dark ms-1">
+                      {{ rec.sharedJournals[0].moodTag }}
+                    </span>
+                  </span>
+                  <span class="text-muted small">
+                    {{ rec.sharedJournals[0].entryDate | formatMediumDate }}
+                  </span>
+                </div>
+                <p class="mb-0 text-muted small text-truncate" [title]="rec.sharedJournals[0].notes || ''">
+                  {{ rec.sharedJournals[0].notes || 'Không có ghi chú thêm.' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biểu Đồ Tỷ Lệ Kết Quả Các Bài Test (Test Results Severity Distribution) -->
+        <div class="col-lg-6">
+          <div class="card shadow-sm border-0 rounded-4 p-4 bg-white h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="fw-bold mb-0 text-dark">
+                <fa-icon icon="clipboard-check" class="me-2 text-info"></fa-icon>
+                Tỷ Lệ Kết Quả Các Bài Test
+              </h5>
+              <span class="badge bg-light text-muted border">Trắc nghiệm tâm lý</span>
+            </div>
+            <p class="text-muted small mb-3">
+              Phân bổ mức độ nghiêm trọng từ các bài kiểm tra tâm lý (GAD-7, PHQ-9, DASS-21,...):
+            </p>
+
+            <div *ngIf="getTestSeverityEntries().length === 0" class="text-center py-4 text-muted">
+              <fa-icon icon="clipboard-list" class="fs-1 text-muted mb-2"></fa-icon>
+              <p>Bệnh nhân chưa thực hiện bài trắc nghiệm tâm lý nào.</p>
+            </div>
+
+            <div *ngIf="getTestSeverityEntries().length > 0" class="test-chart-bars">
+              <div *ngFor="let item of getTestSeverityEntries()" class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-semibold small text-dark">{{ item.label }}</span>
+                  <span class="small text-muted fw-bold">{{ item.count }} bài ({{ item.percentage }}%)</span>
+                </div>
+                <div class="progress rounded-pill" style="height: 10px; background-color: #f1f5f9;">
+                  <div
+                    class="progress-bar rounded-pill"
+                    role="progressbar"
+                    [style.width.%]="item.percentage"
+                    [style.backgroundColor]="item.color"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk notification box inside card -->
+            <div class="mt-4 pt-3 border-top" *ngIf="rec.hasNegativeRisk">
+              <div class="p-2.5 rounded-3 bg-danger-subtle border border-danger text-danger small">
+                <div class="fw-bold mb-1">
+                  <fa-icon icon="exclamation-triangle" class="me-1"></fa-icon> Phát hiện rủi ro mức độ cao!
+                </div>
+                <div>Có bài test đạt mức độ nghiêm trọng kết hợp trạng thái cảm xúc tiêu cực. Đề xuất phác đồ can thiệp tích cực.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ TAB 3: PSYCHOMETRIC TESTS ════ -->
+    <div *ngIf="activeTab() === 'TESTS'" class="tests-pane">
+      <div *ngIf="!rec.psychometricSubmissions || rec.psychometricSubmissions.length === 0" class="empty-timeline-card">
+        <fa-icon icon="clipboard-list" class="empty-icon"></fa-icon>
+        <h5>Chưa có kết quả bài test nào</h5>
+        <p class="text-muted">Bệnh nhân chưa thực hiện bài đánh giá trắc nghiệm tâm lý nào trong hệ thống.</p>
+      </div>
+
+      <div *ngIf="rec.psychometricSubmissions && rec.psychometricSubmissions.length > 0" class="row g-3">
+        <div *ngFor="let test of rec.psychometricSubmissions" class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0 rounded-4 p-3 bg-white">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="badge bg-teal-subtle text-teal fw-bold px-2 py-1 rounded-pill small">
+                {{ test.testCode || 'TEST' }}
+              </span>
+              <span
+                class="badge rounded-pill px-2.5 py-1 small fw-bold"
+                [ngClass]="{
+                  'bg-success-subtle text-success': (test.severityLevel || test.resultClassification) === 'NORMAL',
+                  'bg-info-subtle text-info': (test.severityLevel || test.resultClassification) === 'MILD',
+                  'bg-warning-subtle text-warning': (test.severityLevel || test.resultClassification) === 'MODERATE',
+                  'bg-danger text-white': (test.severityLevel || test.resultClassification) === 'SEVERE' || (test.severityLevel || test.resultClassification) === 'EXTREMELY_SEVERE'
+                }"
+              >
+                {{ test.severityLevel || test.resultClassification || 'Đã chấm điểm' }}
+              </span>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">{{ test.testName || 'Bài Trắc Nghiệm Tâm Lý' }}</h5>
+            <p class="text-muted small mb-2">
+              <fa-icon icon="calendar-alt" class="me-1 text-teal"></fa-icon>
+              {{ test.submittedAt | formatMediumDatetime }}
+            </p>
+            <div class="p-2.5 rounded-3 bg-light border mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted small">Tổng điểm:</span>
+                <span class="fw-bold text-dark">{{ test.totalScore }} điểm</span>
+              </div>
+              <div class="d-flex justify-content-between" *ngIf="test.resultClassification">
+                <span class="text-muted small">Phân loại:</span>
+                <span class="fw-semibold text-teal">{{ test.resultClassification }}</span>
+              </div>
+            </div>
+            <p class="text-muted small mb-0 mt-auto" *ngIf="test.interpretation">
+              <strong>Khuyến nghị:</strong> {{ test.interpretation }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ TAB 4: EMOTION JOURNALS ════ -->
+    <div *ngIf="activeTab() === 'JOURNALS'" class="journals-pane">
+      <div *ngIf="!rec.sharedJournals || rec.sharedJournals.length === 0" class="empty-timeline-card">
+        <fa-icon icon="book" class="empty-icon"></fa-icon>
+        <h5>Chưa có nhật ký cảm xúc chia sẻ</h5>
+        <p class="text-muted">Bệnh nhân chưa bật chia sẻ nhật ký cảm xúc hoặc chưa ghi nhận tâm sự nào.</p>
+      </div>
+
+      <div *ngIf="rec.sharedJournals && rec.sharedJournals.length > 0" class="row g-3">
+        <div *ngFor="let journal of rec.sharedJournals" class="col-md-6">
+          <div
+            class="card h-100 shadow-sm rounded-4 p-3 bg-white"
+            [ngClass]="{
+              'border-danger border-2': journal.moodScale <= 2,
+              'border-0': journal.moodScale > 2
+            }"
+          >
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fs-4">{{ journal.moodScale <= 1 ? '😞' : journal.moodScale === 2 ? '🙁' : journal.moodScale === 3 ? '😐' : journal.moodScale === 4 ? '🙂' : '😊' }}</span>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">
+                    Đánh giá cảm xúc: {{ journal.moodScale }}/5 ⭐
+                  </h6>
+                  <span class="text-muted small">{{ journal.entryDate | formatMediumDate }}</span>
+                </div>
+              </div>
+              <span
+                class="badge rounded-pill px-2.5 py-1 small fw-bold"
+                [ngClass]="journal.moodScale <= 2 ? 'bg-danger text-white' : 'bg-success-subtle text-success'"
+              >
+                {{ journal.moodScale <= 2 ? 'Tiêu cực / Cần can thiệp' : 'Bình thường / Tốt' }}
+              </span>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap mb-2">
+              <span *ngIf="journal.moodTag" class="badge bg-light text-dark border">
+                🏷️ {{ journal.moodTag }}
+              </span>
+              <span *ngIf="journal.stressLevel" class="badge bg-warning-subtle text-warning">
+                ⚡ Căng thẳng: {{ journal.stressLevel }}/10
+              </span>
+              <span *ngIf="journal.sleepHours" class="badge bg-info-subtle text-info">
+                🌙 Giấc ngủ: {{ journal.sleepHours }}h
+              </span>
+            </div>
+
+            <div class="p-2.5 rounded-3 bg-light border mt-2">
+              <p class="mb-0 text-dark small" style="white-space: pre-line;">
+                {{ journal.notes || 'Không có ghi chú chi tiết.' }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ TAB 5: TREATMENT PACKAGES ════ -->
+    <div *ngIf="activeTab() === 'PACKAGES'" class="packages-pane">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0 text-dark">
+          <fa-icon icon="box-open" class="me-2 text-teal"></fa-icon>
+          Gói Trị Liệu Của Bệnh Nhân
+        </h5>
+        <button type="button" class="btn btn-teal-primary btn-sm px-3 py-1.5 rounded-3 fw-bold shadow-sm text-white" style="background-color: #0d9488;" (click)="openCreatePackageModal()">
+          <fa-icon icon="plus" class="me-1"></fa-icon> Tạo &amp; Gán Gói Mới
+        </button>
+      </div>
+
+      <div *ngIf="!rec.treatmentPackages || rec.treatmentPackages.length === 0" class="empty-timeline-card">
+        <fa-icon icon="box-open" class="empty-icon"></fa-icon>
+        <h5>Chưa gán gói trị liệu nào</h5>
+        <p class="text-muted">Bệnh nhân này chưa có gói trị liệu nào được kích hoạt. Hãy tạo gói trị liệu để hỗ trợ bệnh nhân tốt hơn.</p>
+        <button type="button" class="btn btn-teal-primary px-3 py-2 rounded-3 text-white" style="background-color: #0d9488;" (click)="openCreatePackageModal()">
+          <fa-icon icon="plus" class="me-1"></fa-icon> Tạo Gói Đầu Tiên
+        </button>
+      </div>
+
+      <div *ngIf="rec.treatmentPackages && rec.treatmentPackages.length > 0" class="row g-3">
+        <div *ngFor="let pkg of rec.treatmentPackages" class="col-md-6">
+          <div class="card h-100 shadow-sm border-0 rounded-4 p-4 bg-white">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="fw-bold text-dark mb-0">{{ pkg.name }}</h5>
+              <span class="badge bg-teal-subtle text-teal fw-bold px-2.5 py-1 rounded-pill small">
+                {{ pkg.packageCode || 'PKG' }}
+              </span>
+            </div>
+            <p class="text-muted small mb-3">{{ pkg.description || 'Gói trị liệu cá nhân hóa' }}</p>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="p-2 rounded-3 bg-light border">
+                  <div class="text-muted small">Số buổi trị liệu:</div>
+                  <div class="fw-bold text-dark fs-5">{{ pkg.sessionQuantity }} buổi</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-2 rounded-3 bg-light border">
+                  <div class="text-muted small">Thời hạn:</div>
+                  <div class="fw-bold text-teal fs-5">{{ pkg.validityDays }} ngày</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-3 bg-light border mb-3">
+              <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>Tiến độ số buổi:</span>
+                <span class="fw-bold text-dark">
+                  Còn lại: {{ pkg.remainingSessions ?? pkg.sessionQuantity }} / {{ pkg.sessionQuantity }} buổi
+                </span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div
+                  class="progress-bar bg-teal"
+                  role="progressbar"
+                  [style.width.%]="pkg.sessionQuantity ? (((pkg.sessionQuantity - (pkg.remainingSessions ?? pkg.sessionQuantity)) / pkg.sessionQuantity) * 100) : 0"
+                ></div>
+              </div>
+            </div>
+
+            <div class="mt-auto">
+              <div *ngIf="pkg.targetOutcome" class="small text-muted mb-1">
+                <strong>Mục tiêu:</strong> {{ pkg.targetOutcome }}
+              </div>
+              <div *ngIf="pkg.recommendedExercises" class="small text-muted mb-2">
+                <strong>Bài tập:</strong> {{ pkg.recommendedExercises }}
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <span class="fw-bold text-teal fs-5">{{ pkg.price | number }} đ</span>
+                <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill">Đang hiệu lực</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ════ 5. MODAL / FLOATING EDITOR FOR CONSULTATION NOTES ════ -->
@@ -591,6 +1079,149 @@
               <span *ngIf="isSavingNote()" class="spinner-border spinner-border-sm me-1"></span>
               <fa-icon *ngIf="!isSavingNote()" icon="save" class="me-1"></fa-icon>
               Lưu Hồ Sơ Ghi Chú Khám
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 6. MODAL FOR CREATING TREATMENT PACKAGE ════ -->
+  <div class="modal-backdrop-custom" *ngIf="isCreatingPackage()">
+    <div class="modal-dialog-custom">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <div class="modal-title-group">
+            <h3 class="modal-title">
+              <fa-icon icon="box-open" class="me-2 text-teal"></fa-icon>
+              Tạo &amp; Gán Gói Trị Liệu Cho Bệnh Nhân
+            </h3>
+            <p class="modal-subtitle" *ngIf="patientRecord() as rec">
+              Bệnh nhân: <strong>{{ rec.patient.fullName }}</strong> (Mã HS: #{{ rec.patient.id }})
+            </p>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeCreatePackageModal()">
+            <fa-icon icon="times"></fa-icon>
+          </button>
+        </div>
+
+        <form (ngSubmit)="saveTreatmentPackage()" class="modal-body-custom">
+          <!-- Package Name -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">
+              Tên Gói Trị Liệu <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control form-control-teal"
+              [(ngModel)]="packageForm.name"
+              name="pkgName"
+              placeholder="VD: Gói Trị Liệu Tâm Lý Chuyên Sâu 6 Buổi..."
+              required
+            />
+          </div>
+
+          <!-- Description -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold">Mô Tả Gói Trị Liệu</label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="packageForm.description"
+              name="pkgDescription"
+              placeholder="Mô tả nội dung, quy trình và định hướng hỗ trợ trong suốt gói..."
+            ></textarea>
+          </div>
+
+          <!-- 3-Column: Sessions, Validity, Price -->
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">Số Buổi Khám <span class="text-danger">*</span></label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                class="form-control"
+                [(ngModel)]="packageForm.sessionQuantity"
+                name="pkgSessions"
+                required
+              />
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">Thời Hạn (Ngày) <span class="text-danger">*</span></label>
+              <input
+                type="number"
+                min="7"
+                max="365"
+                class="form-control"
+                [(ngModel)]="packageForm.validityDays"
+                name="pkgValidityDays"
+                required
+              />
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label fw-bold">Giá Gói (VNĐ)</label>
+              <input
+                type="number"
+                min="0"
+                step="50000"
+                class="form-control"
+                [(ngModel)]="packageForm.price"
+                name="pkgPrice"
+              />
+            </div>
+          </div>
+
+          <!-- Target Outcome -->
+          <div class="form-group mb-3">
+            <label class="form-label fw-bold text-teal">Mục Tiêu Trị Liệu Dự Kiến</label>
+            <textarea
+              class="form-control"
+              rows="2"
+              [(ngModel)]="packageForm.targetOutcome"
+              name="pkgOutcome"
+              placeholder="VD: Giảm thang đo lo âu từ 15 về dưới 7, cải thiện giấc ngủ..."
+            ></textarea>
+          </div>
+
+          <!-- Exercises & Instructions -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-success">Bài Tập Đề Xuất Thực Hành</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                [(ngModel)]="packageForm.recommendedExercises"
+                name="pkgExercises"
+                placeholder="Ghi nhật ký cảm xúc, thiền định 15 phút, bài tập thở..."
+              ></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold text-info">Hướng Dẫn Cho Bệnh Nhân</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                [(ngModel)]="packageForm.instructions"
+                name="pkgInstructions"
+                placeholder="Chuẩn bị ghi chép các sự kiện trong tuần trước mỗi buổi tham vấn..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="modal-footer-custom">
+            <button type="button" class="btn btn-light" (click)="closeCreatePackageModal()" [disabled]="isSavingPackage()">
+              Hủy
+            </button>
+            <button
+              type="submit"
+              class="btn btn-teal-primary text-white"
+              style="background-color: #0d9488; border-color: #0d9488;"
+              [disabled]="isSavingPackage() || !packageForm.name || !packageForm.sessionQuantity"
+            >
+              <span *ngIf="isSavingPackage()" class="spinner-border spinner-border-sm me-1"></span>
+              <fa-icon *ngIf="!isSavingPackage()" icon="save" class="me-1"></fa-icon>
+              Tạo &amp; Kích Hoạt Gói
             </button>
           </div>
         </form>

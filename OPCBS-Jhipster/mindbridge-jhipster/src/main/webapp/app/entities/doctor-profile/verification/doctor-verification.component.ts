@@ -87,6 +87,8 @@ export class DoctorVerificationComponent implements OnInit {
       case 'PENDING':
       case 'SUBMITTED':
         return { bg: '#fffbeb', text: '#92400e', border: '#fde68a', label: 'Đang Chờ Phê Duyệt (Pending Review)' };
+      case 'REQUIRES_ADDITIONAL_INFO':
+        return { bg: '#e0f2fe', text: '#0369a1', border: '#bae6fd', label: 'Cần Bổ Sung Thông Tin' };
       case 'REJECTED':
         return { bg: '#fef2f2', text: '#991b1b', border: '#fecaca', label: 'Bị Từ Chối (Rejected)' };
       default:

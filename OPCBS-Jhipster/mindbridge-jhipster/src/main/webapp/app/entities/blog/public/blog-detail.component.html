@@ -1,0 +1,134 @@
+<div class="blog-detail-container container py-4" style="max-width: 860px;">
+  <!-- Back Link -->
+  <div class="mb-4">
+    <a routerLink="/blogs" class="text-teal text-decoration-none small fw-semibold d-inline-flex align-items-center gap-1">
+      <i class="bi bi-arrow-left"></i>
+      <span>Quay lại danh sách bài viết</span>
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-teal" role="status"></div>
+    <p class="text-muted mt-2 small">Đang tải nội dung bài viết...</p>
+  </div>
+
+  <!-- Blog Article Content -->
+  <article *ngIf="!isLoading && blog">
+    <!-- Header -->
+    <header class="mb-4">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="badge bg-teal text-white px-3 py-1.5 rounded-pill">Y Khoa Tâm Lý</span>
+        <span class="text-muted small">&bull;</span>
+        <span class="text-muted small">{{ blog.publishedAt | date:'dd/MM/yyyy' }}</span>
+        <span class="text-muted small">&bull;</span>
+        <span class="text-muted small d-flex align-items-center gap-1">
+          <i class="bi bi-eye"></i> {{ blog.viewCount || 0 }} lượt xem
+        </span>
+      </div>
+
+      <h1 class="display-6 fw-bold text-dark mb-3" style="line-height: 1.3;">
+        {{ blog.title }}
+      </h1>
+
+      <!-- Doctor Author Info Bar -->
+      <div class="d-flex align-items-center gap-3 p-3 rounded-3 bg-light border">
+        <div class="avatar rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold" style="width: 44px; height: 44px; font-size: 1.1rem;">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+          <div class="text-xs text-muted">Tác giả chuyên môn:</div>
+          <div class="fw-bold text-dark">{{ blog.doctor?.fullName || 'Bác sĩ chuyên khoa Tâm lý' }}</div>
+          <div class="text-xs text-teal">{{ blog.doctor?.title || 'Bác sĩ tham vấn tâm lý' }} &bull; MindBridge Healthcare</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Featured Thumbnail -->
+    <div *ngIf="blog.thumbnailUrl" class="mb-4 rounded-4 overflow-hidden border shadow-sm" style="max-height: 420px;">
+      <img [src]="blog.thumbnailUrl" class="w-100 h-100 object-fit-cover" alt="{{ blog.title }}" />
+    </div>
+
+    <!-- Excerpt / Callout -->
+    <div *ngIf="blog.excerpt" class="p-3 mb-4 rounded-3 border-start border-4 border-teal" style="background:#f0fdfa;">
+      <p class="mb-0 fst-italic text-secondary" style="font-size: 1rem; line-height: 1.6;">
+        "{{ blog.excerpt }}"
+      </p>
+    </div>
+
+    <!-- Main Content Body -->
+    <div class="blog-body mb-5 text-dark" style="font-size: 1.05rem; line-height: 1.8;" [innerHTML]="blog.content">
+    </div>
+
+    <!-- Author Bio Card -->
+    <div class="card border p-4 mb-5 rounded-4" style="background:#f8fafc;">
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <div class="avatar rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold" style="width: 48px; height: 48px;">
+          <i class="bi bi-person-badge"></i>
+        </div>
+        <div>
+          <h6 class="fw-bold text-dark mb-0">BS. {{ blog.doctor?.fullName }}</h6>
+          <span class="text-muted small">Chuyên gia tâm lý trị liệu tại Nền tảng MindBridge</span>
+        </div>
+      </div>
+      <p class="text-secondary small mb-0">
+        Bài viết được thẩm định chuyên môn bởi Hội đồng Y khoa. Người đọc cần tham vấn trực tiếp bác sĩ chuyên khoa trước khi áp dụng các can thiệp lâm sàng.
+      </p>
+    </div>
+
+    <!-- Comments Section (Clone C# Gốc) -->
+    <section class="comments-section border-top pt-4">
+      <h4 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+        <i class="bi bi-chat-left-text text-teal"></i>
+        <span>Bình Luận &amp; Thảo Luận ({{ comments.length }})</span>
+      </h4>
+
+      <!-- Flash messages -->
+      <div *ngIf="commentSuccessMessage" class="alert alert-success small p-2.5 mb-3 rounded-3">
+        {{ commentSuccessMessage }}
+      </div>
+      <div *ngIf="commentErrorMessage" class="alert alert-danger small p-2.5 mb-3 rounded-3">
+        {{ commentErrorMessage }}
+      </div>
+
+      <!-- Add Comment Form -->
+      <div class="card border p-3.5 mb-4 rounded-4" style="background:#ffffff;">
+        <h6 class="fw-bold text-dark mb-3">Để lại bình luận hoặc câu hỏi của bạn</h6>
+        <div class="row g-2.5 mb-2.5">
+          <div class="col-md-6">
+            <input type="text" class="form-control form-control-sm" placeholder="Họ và tên của bạn *" [(ngModel)]="newComment.authorName" />
+          </div>
+          <div class="col-md-6">
+            <input type="email" class="form-control form-control-sm" placeholder="Địa chỉ email (được bảo mật)" [(ngModel)]="newComment.authorEmail" />
+          </div>
+          <div class="col-12">
+            <textarea rows="3" class="form-control form-control-sm" placeholder="Chia sẻ suy nghĩ hoặc đặt câu hỏi cho bác sĩ..." [(ngModel)]="newComment.content"></textarea>
+          </div>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-sm btn-teal text-white px-4 py-1.5 fw-semibold" (click)="submitComment()" [disabled]="isSubmittingComment">
+            <i class="bi bi-send me-1"></i>Gửi bình luận
+          </button>
+        </div>
+      </div>
+
+      <!-- Comments List -->
+      <div *ngIf="comments.length === 0" class="text-center py-4 text-muted small">
+        Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ góc nhìn của bạn!
+      </div>
+
+      <div *ngFor="let c of comments" class="card border mb-3 p-3 rounded-3">
+        <div class="d-flex justify-content-between align-items-center mb-1.5">
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar-xs rounded-circle bg-light border d-flex align-items-center justify-content-center text-teal fw-bold" style="width: 28px; height: 28px; font-size: 0.75rem;">
+              <i class="bi bi-chat-quote"></i>
+            </div>
+            <strong class="text-dark small">{{ c.authorName || c.patient?.fullName || 'Độc giả' }}</strong>
+          </div>
+          <span class="text-muted" style="font-size: 0.75rem;">{{ c.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <p class="text-secondary small mb-0 ps-4">{{ c.content }}</p>
+      </div>
+    </section>
+  </article>
+</div>

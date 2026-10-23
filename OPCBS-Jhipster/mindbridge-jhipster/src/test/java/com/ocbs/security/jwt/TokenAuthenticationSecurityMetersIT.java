@@ -9,7 +9,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Collection;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -23,9 +22,6 @@ class TokenAuthenticationSecurityMetersIT {
     @Autowired
     private MockMvc mvc;
 
-    @Value("${jhipster.security.authentication.jwt.base64-secret}")
-    private String jwtKey;
-
     @Autowired
     private MeterRegistry meterRegistry;
 
@@ -35,7 +31,7 @@ class TokenAuthenticationSecurityMetersIT {
 
         var count = aggregate(counters);
 
-        tryToAuthenticate(createValidToken(jwtKey));
+        tryToAuthenticate(createValidToken());
 
         assertThat(aggregate(counters)).isEqualTo(count);
     }
@@ -44,7 +40,7 @@ class TokenAuthenticationSecurityMetersIT {
     void testTokenExpiredCount() throws Exception {
         var count = meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "expired").counter().count();
 
-        tryToAuthenticate(createExpiredToken(jwtKey));
+        tryToAuthenticate(createExpiredToken());
 
         assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "expired").counter().count()).isEqualTo(count + 1);
     }
@@ -64,7 +60,7 @@ class TokenAuthenticationSecurityMetersIT {
     void testTokenMalformedCount() throws Exception {
         var count = meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "malformed").counter().count();
 
-        tryToAuthenticate(createSignedInvalidJwt(jwtKey));
+        tryToAuthenticate("invalid-jwt-token-string");
 
         assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "malformed").counter().count()).isEqualTo(count + 1);
     }
@@ -73,7 +69,7 @@ class TokenAuthenticationSecurityMetersIT {
     void testTokenInvalidCount() throws Exception {
         var count = meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "malformed").counter().count();
 
-        tryToAuthenticate(createInvalidToken(jwtKey));
+        tryToAuthenticate(createInvalidToken());
 
         assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME).tag("cause", "malformed").counter().count()).isEqualTo(count + 1);
     }

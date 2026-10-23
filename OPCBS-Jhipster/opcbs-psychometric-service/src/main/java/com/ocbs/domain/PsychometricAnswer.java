@@ -1,5 +1,6 @@
 package com.ocbs.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,7 @@ public class PsychometricAnswer extends AbstractAuditingEntity<Long> implements 
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnoreProperties(value = { "answers" }, allowSetters = true)
+    @JsonIgnore
     private PsychometricSubmission submission;
 
     @ManyToOne(fetch = FetchType.LAZY)

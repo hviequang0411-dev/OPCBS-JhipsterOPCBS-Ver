@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * REST controller for managing the current user's account.
@@ -48,45 +49,79 @@ public class AccountResource {
     private final MailService mailService;
 
     private final PasswordEncoder passwordEncoder;
+    private final com.ocbs.security.TokenBlacklistService tokenBlacklistService;
+    private final com.ocbs.event.UserEventProducer userEventProducer;
 
     public AccountResource(
         UserRepository userRepository,
         UserService userService,
         MailService mailService,
-        PasswordEncoder passwordEncoder
+        PasswordEncoder passwordEncoder,
+        com.ocbs.security.TokenBlacklistService tokenBlacklistService,
+        com.ocbs.event.UserEventProducer userEventProducer
     ) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.userEventProducer = userEventProducer;
     }
 
     /**
      * {@code POST  /register} : register the user.
      */
     @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void registerAccount(@Valid @RequestBody ManagedUserVM managedUserVM) {
+    @Transactional
+    public ResponseEntity<java.util.Map<String, String>> registerAccount(@Valid @RequestBody ManagedUserVM managedUserVM) {
         LOG.debug("REST request to register account");
         if (isPasswordLengthInvalid(managedUserVM.getPassword())) {
             throw new InvalidPasswordException();
         }
         User user = userService.registerUser(managedUserVM, managedUserVM.getPassword());
         mailService.sendActivationOtpEmail(user, user.getActivationKey());
+        userEventProducer.publishUserEvent(new com.ocbs.event.UserEvent(
+            user.getId(),
+            user.getLogin(),
+            user.getEmail(),
+            (user.getFirstName() != null ? user.getFirstName() : "") + " " + (user.getLastName() != null ? user.getLastName() : ""),
+            "ROLE_PATIENT",
+            "USER_REGISTERED"
+        ));
+        return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of(
+            "status", "CREATED",
+            "message", "Đăng ký thành công! Mã OTP đã được gửi đến email của bạn.",
+            "email", user.getEmail(),
+            "otp", user.getActivationKey() != null ? user.getActivationKey() : ""
+        ));
     }
 
     /**
      * {@code POST  /register-doctor} : register a doctor account with professional profile.
      */
     @PostMapping("/register-doctor")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void registerDoctorAccount(@Valid @RequestBody com.ocbs.web.rest.vm.ManagedDoctorVM managedDoctorVM) {
+    @Transactional
+    public ResponseEntity<java.util.Map<String, String>> registerDoctorAccount(@Valid @RequestBody com.ocbs.web.rest.vm.ManagedDoctorVM managedDoctorVM) {
         LOG.debug("REST request to register doctor account");
         if (isPasswordLengthInvalid(managedDoctorVM.getPassword())) {
             throw new InvalidPasswordException();
         }
         User user = userService.registerDoctor(managedDoctorVM);
         mailService.sendActivationOtpEmail(user, user.getActivationKey());
+        userEventProducer.publishUserEvent(new com.ocbs.event.UserEvent(
+            user.getId(),
+            user.getLogin(),
+            user.getEmail(),
+            (user.getFirstName() != null ? user.getFirstName() : "") + " " + (user.getLastName() != null ? user.getLastName() : ""),
+            "ROLE_DOCTOR",
+            "USER_REGISTERED"
+        ));
+        return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of(
+            "status", "CREATED",
+            "message", "Đăng ký tài khoản Bác sĩ thành công! Mã OTP đã được gửi đến email của bạn.",
+            "email", user.getEmail(),
+            "otp", user.getActivationKey() != null ? user.getActivationKey() : ""
+        ));
     }
 
     public static class VerifyOtpVM {
@@ -110,12 +145,21 @@ public class AccountResource {
      * {@code POST  /account/verify-otp} : verify 6-digit OTP code to activate account.
      */
     @PostMapping("/account/verify-otp")
+    @Transactional
     public ResponseEntity<java.util.Map<String, String>> verifyOtp(@RequestBody VerifyOtpVM vm) {
         LOG.debug("REST request to verify OTP for: {}", vm.getEmailOrLogin());
         com.ocbs.service.UserService.OtpVerificationResult result = userService.verifyOtpStatus(vm.getEmailOrLogin(), vm.getOtp());
         
         switch (result) {
             case SUCCESS -> {
+                userRepository.findOneByLogin(vm.getEmailOrLogin().toLowerCase())
+                    .or(() -> userRepository.findOneByEmailIgnoreCase(vm.getEmailOrLogin()))
+                    .ifPresent(u -> userEventProducer.publishUserEvent(new com.ocbs.event.UserEvent(
+                        u.getId(), u.getLogin(), u.getEmail(),
+                        (u.getFirstName() != null ? u.getFirstName() : "") + " " + (u.getLastName() != null ? u.getLastName() : ""),
+                        u.getAuthorities().stream().map(com.ocbs.domain.Authority::getName).sorted().findFirst().orElse("ROLE_USER"),
+                        "USER_ACTIVATED"
+                    )));
                 return ResponseEntity.ok(java.util.Map.of("status", "SUCCESS", "message", "Kích hoạt tài khoản thành công!"));
             }
             case OTP_EXPIRED -> {
@@ -143,7 +187,13 @@ public class AccountResource {
         if (user.isEmpty()) {
             throw new BadRequestAlertException("Không tìm thấy tài khoản với email hoặc username này, hoặc tài khoản đã kích hoạt.", "userManagement", "userNotFound");
         }
-        return ResponseEntity.ok(java.util.Map.of("status", "SUCCESS", "message", "Mã OTP mới đã được gửi lại vào email của bạn."));
+        User foundUser = user.get();
+        return ResponseEntity.ok(java.util.Map.of(
+            "status", "SUCCESS",
+            "message", "Mã OTP mới đã được gửi lại vào email của bạn.",
+            "email", foundUser.getEmail() != null ? foundUser.getEmail() : "",
+            "otp", foundUser.getActivationKey() != null ? foundUser.getActivationKey() : ""
+        ));
     }
 
     /**
@@ -241,6 +291,16 @@ public class AccountResource {
             throw new InvalidPasswordException();
         }
         userService.changePassword(passwordChangeDto.getCurrentPassword(), passwordChangeDto.getNewPassword());
+
+        // =========================================================================
+        // [ENTERPRISE SECURITY - REDIS TOKEN BLACKLIST]:
+        // Khi người dùng đổi mật khẩu thành công, lập tức vô hiệu hóa toàn bộ token
+        // được cấp trước thời điểm này trên Redis, buộc đăng nhập lại bằng mật khẩu mới.
+        // =========================================================================
+        com.ocbs.security.SecurityUtils.getCurrentUserLogin().ifPresent(login -> {
+            tokenBlacklistService.blacklistUserTokens(login);
+            LOG.info(">>> [REDIS BLACKLIST] Đã hủy toàn bộ phiên làm việc cũ sau khi user '{}' đổi mật khẩu.", login);
+        });
     }
 
     /**

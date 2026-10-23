@@ -61,6 +61,11 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
       if (this.emailOrLogin) {
         this.startCountdown();
       }
+
+      const devOtp = params['devOtp'] || sessionStorage.getItem('mb_dev_otp_hint');
+      if (devOtp && typeof devOtp === 'string' && devOtp.length === 6) {
+        this.successMessage = `Mã OTP xác thực đã được gửi về email! (Gợi ý test nhanh: ${devOtp})`;
+      }
     });
   }
 
@@ -224,11 +229,17 @@ export class VerifyOtpComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     this.otpService.resendOtp({ emailOrLogin: this.emailOrLogin }).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.isResending = false;
         this.otpDigits = ['', '', '', '', '', ''];
         this.startCountdown();
-        this.successMessage = 'Mã OTP 6 số mới đã được gửi về email của bạn!';
+        const devOtp = res?.otp;
+        if (devOtp) {
+          sessionStorage.setItem('mb_dev_otp_hint', devOtp);
+          this.successMessage = `Mã OTP 6 số mới đã được gửi về email của bạn! (Gợi ý test nhanh: ${devOtp})`;
+        } else {
+          this.successMessage = 'Mã OTP 6 số mới đã được gửi về email của bạn!';
+        }
         setTimeout(() => {
           this.digit0Ref?.nativeElement.focus();
         }, 300);

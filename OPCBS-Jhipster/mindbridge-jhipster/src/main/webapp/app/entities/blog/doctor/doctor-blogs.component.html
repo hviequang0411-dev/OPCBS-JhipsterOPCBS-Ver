@@ -1,0 +1,194 @@
+<div class="doctor-blogs-container container-fluid py-4" style="max-width: 1200px;">
+  <!-- Page Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1.5">
+        <span class="badge bg-teal-subtle text-teal text-uppercase" style="font-size: 0.75rem;">
+          <i class="bi bi-journal-check me-1"></i>BÁC SĨ TÂM LÝ &bull; XUẤT BẢN Y KHOA
+        </span>
+      </div>
+      <h1 class="h2 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-pencil-square text-teal"></i>
+        <span>Quản Lý Bài Viết Blog Y Khoa</span>
+      </h1>
+      <p class="text-secondary mb-0 small">
+        Chia sẻ kiến thức chuyên môn, các phương pháp can thiệp tâm lý lâm sàng và gửi Ban kiểm duyệt phê duyệt xuất bản.
+      </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-2" (click)="loadBlogs()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+      </button>
+      <button type="button" class="btn btn-teal text-white btn-sm px-4 py-2 fw-semibold" (click)="openCreateModal(blogModal)">
+        <i class="bi bi-plus-circle me-1.5"></i>Viết Bài Mới
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border p-3 shadow-sm rounded-3">
+        <div class="text-muted small mb-1">Tổng bài viết</div>
+        <div class="h3 fw-bold text-dark mb-0">{{ totalCount }}</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border p-3 shadow-sm rounded-3">
+        <div class="text-muted small mb-1">Đã xuất bản</div>
+        <div class="h3 fw-bold text-success mb-0">{{ publishedCount }}</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border p-3 shadow-sm rounded-3">
+        <div class="text-muted small mb-1">Đang chờ duyệt</div>
+        <div class="h3 fw-bold text-warning mb-0">{{ pendingCount }}</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+      <div class="card border p-3 shadow-sm rounded-3">
+        <div class="text-muted small mb-1">Bản nháp</div>
+        <div class="h3 fw-bold text-secondary mb-0">{{ draftCount }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div class="btn-group btn-group-sm">
+      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'ALL'" (click)="selectedFilter = 'ALL'">Tất cả ({{ totalCount }})</button>
+      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'PUBLISHED'" (click)="selectedFilter = 'PUBLISHED'">Đã xuất bản ({{ publishedCount }})</button>
+      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'SUBMITTED'" (click)="selectedFilter = 'SUBMITTED'">Chờ duyệt ({{ pendingCount }})</button>
+      <button class="btn btn-outline-secondary" [class.active]="selectedFilter === 'DRAFT'" (click)="selectedFilter = 'DRAFT'">Bản nháp ({{ draftCount }})</button>
+    </div>
+    <input type="text" class="form-control form-control-sm" style="max-width: 280px;" placeholder="Tìm kiếm bài viết..." [(ngModel)]="searchKeyword" />
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-teal" role="status"></div>
+    <p class="text-muted mt-2 small">Đang tải danh sách bài viết...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && filteredBlogs.length === 0" class="text-center py-5 card border-0 shadow-sm rounded-4">
+    <div class="card-body py-5">
+      <i class="bi bi-journal-text d-block mb-3" style="font-size: 3.5rem; color: #cbd5e1;"></i>
+      <h5 class="fw-bold text-dark mb-1">Chưa có bài viết nào</h5>
+      <p class="text-muted small mb-3">Bác sĩ hãy bắt đầu chia sẻ các bài viết y khoa hữu ích cho cộng đồng.</p>
+      <button class="btn btn-sm btn-teal text-white px-4 py-2" (click)="openCreateModal(blogModal)">
+        <i class="bi bi-pencil-square me-1"></i>Viết bài đầu tiên
+      </button>
+    </div>
+  </div>
+
+  <!-- Blog Table List (Clone C# Gốc) -->
+  <div *ngIf="!isLoading && filteredBlogs.length > 0" class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Bài viết &amp; Tiêu đề</th>
+            <th>Trạng thái</th>
+            <th>Lượt xem</th>
+            <th>Ngày tạo</th>
+            <th class="text-end pe-4">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let blog of filteredBlogs">
+            <td class="ps-4">
+              <div class="d-flex align-items-center gap-3">
+                <div class="thumb rounded-3 overflow-hidden bg-light" style="width: 54px; height: 54px; min-width: 54px;">
+                  <img [src]="blog.thumbnailUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=150&q=80'" class="w-100 h-100 object-fit-cover" />
+                </div>
+                <div>
+                  <h6 class="fw-bold text-dark mb-0.5">{{ blog.title }}</h6>
+                  <p class="text-muted small mb-0 text-truncate" style="max-width: 420px;">{{ blog.excerpt || blog.content }}</p>
+                  <!-- Rejection Alert if rejected -->
+                  <div *ngIf="blog.status === 'REJECTED' && blog.rejectionReason" class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-circle-fill me-1"></i>Lý do từ chối: {{ blog.rejectionReason }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span [class]="getStatusBadgeClass(blog.status)">
+                {{ getStatusLabel(blog.status) }}
+              </span>
+            </td>
+            <td>
+              <span class="small text-muted"><i class="bi bi-eye me-1"></i>{{ blog.viewCount || 0 }}</span>
+            </td>
+            <td>
+              <span class="small text-muted">{{ blog.createdDate | date:'dd/MM/yyyy' }}</span>
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-inline-flex gap-1.5">
+                <!-- Submit button if DRAFT or REJECTED -->
+                <button *ngIf="blog.status === 'DRAFT' || blog.status === 'REJECTED'" class="btn btn-sm btn-outline-warning" (click)="submitBlog(blog.id)" title="Gửi duyệt">
+                  <i class="bi bi-send"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(blogModal, blog)" title="Chỉnh sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteBlog(blog.id)" title="Xóa">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL SOẠN THẢO / CHỈNH SỬA BÀI VIẾT (BLOG MODAL)                         -->
+<!-- ========================================================================= -->
+<ng-template #blogModal let-modal>
+  <div class="modal-header bg-teal text-white px-4 py-3">
+    <h5 class="modal-title fw-bold">
+      <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-plus-circle-fill'"></i>
+      <span>{{ isEditMode ? 'Chỉnh Sửa Bài Viết' : 'Soạn Thảo Bài Viết Mới' }}</span>
+    </h5>
+    <button type="button" class="btn-close btn-close-white" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body p-4">
+    <div *ngIf="errorMessage" class="alert alert-danger small p-2.5 mb-3">{{ errorMessage }}</div>
+
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label small fw-semibold text-muted mb-1">Tiêu đề bài viết <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" [(ngModel)]="editingBlog.title" placeholder="VD: Nhận diện và vượt qua hội chứng kiệt sức nghề nghiệp (Burnout)" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold text-muted mb-1">URL Ảnh thu nhỏ (Thumbnail)</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="editingBlog.thumbnailUrl" placeholder="https://example.com/image.jpg" />
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold text-muted mb-1">Tóm tắt ngắn (Excerpt)</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="editingBlog.excerpt" placeholder="Tóm tắt 1-2 câu hiển thị ở trang danh sách..." />
+      </div>
+
+      <div class="col-12">
+        <label class="form-label small fw-semibold text-muted mb-1">Nội dung bài viết (Hỗ trợ HTML / Văn bản chuyên sâu) <span class="text-danger">*</span></label>
+        <textarea rows="10" class="form-control" [(ngModel)]="editingBlog.content" placeholder="Soạn thảo nội dung bài viết chuyên môn y khoa..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer bg-light px-4 py-2.5 d-flex justify-content-between">
+    <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="modal.dismiss()">Hủy</button>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-teal px-3" (click)="saveBlog(modal, false)" [disabled]="isSaving">
+        <i class="bi bi-save me-1"></i>Lưu Bản Nháp
+      </button>
+      <button type="button" class="btn btn-sm btn-teal text-white px-4" (click)="saveBlog(modal, true)" [disabled]="isSaving">
+        <i class="bi bi-send me-1"></i>Lưu &amp; Gửi Duyệt Ngay
+      </button>
+    </div>
+  </div>
+</ng-template>

@@ -67,8 +67,8 @@ spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}
+    password: ${SPRING_MAIL_PASSWORD:pjhq xpdx sxil qbcs}
     protocol: smtp
     properties:
       mail:
@@ -144,3 +144,8 @@ application:
     api-key: ${CLOUDINARY_API_KEY:136888838371782}
     api-secret: ${CLOUDINARY_API_SECRET:utJ16iRSPhJE3xaHVsDDmvExZ9E}
 
+opcbs:
+  jwt:
+    jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8081/.well-known/jwks.json}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+    public-key: ${JWT_PUBLIC_KEY:}

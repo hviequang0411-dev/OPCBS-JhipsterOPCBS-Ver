@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, finalize, map, of } from 'rxjs';
 
 import { serverApiUrl } from 'app/config';
 
@@ -28,10 +28,38 @@ export class AuthServerProvider {
   }
 
   logout(): Observable<void> {
-    return new Observable(observer => {
-      this.stateStorageService.clearAuthenticationToken();
-      observer.complete();
-    });
+    // =========================================================================
+    // [CƠ CHẾ CŨ TRƯỚC ĐÂY]:
+    // Chỉ dọn dẹp local storage ở trình duyệt:
+    //   this.stateStorageService.clearAuthenticationToken();
+    //   observer.complete();
+    //
+    // [CƠ CHẾ MỚI - ENTERPRISE LOGOUT WITH REDIS BLACKLIST]:
+    // 1. Trích xuất token hiện tại và xóa sạch Client Storage (localStorage, sessionStorage, cookie) NGAY LẬP TỨC.
+    // 2. Gửi POST /api/logout tới Backend:
+    //    - Backend trích xuất JTI của token và lưu vào Redis Token Blacklist.
+    //    - Backend trả về Header Set-Cookie: max-age=0 để ép trình duyệt xóa sạch HttpOnly Cookie.
+    // 3. finalize(): Dọn sạch lại một lần nữa đảm bảo không còn tàn dư.
+    // =========================================================================
+    const token = this.stateStorageService.getAuthenticationToken();
+    this.stateStorageService.clearAuthenticationToken();
+
+    return this.http
+      .post(
+        `${serverApiUrl}api/logout`,
+        {},
+        {
+          withCredentials: true,
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+        }
+      )
+      .pipe(
+        map(() => undefined),
+        catchError(() => of(undefined)),
+        finalize(() => {
+          this.stateStorageService.clearAuthenticationToken();
+        })
+      );
   }
 
   private authenticateSuccess(response: JwtToken, rememberMe: boolean): void {

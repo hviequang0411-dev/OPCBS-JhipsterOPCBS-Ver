@@ -66,7 +66,7 @@ public class PsychometricSubmission extends AbstractAuditingEntity<Long> impleme
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "submission")
     @JsonIgnoreProperties(value = { "submission" }, allowSetters = true)
     private List<PsychometricAnswer> answers = new ArrayList<>();
 

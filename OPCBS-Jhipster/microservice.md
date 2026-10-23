@@ -2,9 +2,10 @@
 ## Phân Tầng Cấp Bậc Hệ Thống: DÙNG GÌ - TẠI SAO - HỌC ĐƯỢC GÌ
 
 > **Dự án**: MindBridge OPCBS - Online Patient Care & Booking System  
-> **Mô hình**: Granular Microservices Architecture (6 Phân Tầng Cấp Bậc) with Netflix Eureka, Apache Kafka & Redis  
-> **Cập nhật mới nhất**: 2026-10-06  
-> **Trạng thái**: 🟢 8 Microservices + Eureka Server + Kafka Broker + Redis Cache + Proxy Gateway sẵn sàng 100%
+> **Mô hình**: Granular Microservices Architecture (Phân Tầng Cấp Bậc) with Nginx BFF Gateway & Docker Compose Internal DNS, Redis Cache, Standalone In-Memory/Kafka Events  
+> **Cập nhật mới nhất**: 2026-10-16  
+> **Trạng thái**: 🟢 9 Microservices + Nginx Gateway + Redis Cache + MySQL Database sẵn sàng 100% (Đã tối ưu: Dọn dẹp Eureka Server dư thừa, bảo mật hóa secret, phân quyền hội thoại, đồng bộ Payment Schema)  
+> **Tài liệu bổ sung**: [docs/data-ownership.md](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/data-ownership.md) | [docs/conversation-security.md](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/conversation-security.md) | [docs/kafka-eureka-decision.md](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/kafka-eureka-decision.md)
 
 ---
 
@@ -152,14 +153,15 @@ eureka:
     prefer-ip-address: true
 ```
 
-### 5.2. Cấu hình Khóa Bí Mật JWT Phân Tán
-Cả 5 Microservices sử dụng chung khóa 256-bit trong `application.yml`:
+### 5.2. Cấu hình Chữ Ký JWT Bất Đối Xứng (RS256 & JWKS)
+Hệ thống sử dụng cơ chế bảo mật **RS256** (RSA-SHA256) bất đối xứng: Auth Service giữ RSA Private Key để ký, các service xác minh sử dụng RSA Public Key nạp qua JWKS (`/.well-known/jwks.json`).
 ```yaml
 jhipster:
   security:
     authentication:
       jwt:
-        base64-secret: Y2I5OWMzM2ZlMTY3NWU3NzQzNDVhYmZiMGVmOTQ2YzE2N2NmZjgzNDVjNDI2MDYwYTI0MTcyZjdhYmQ4ZDAyYTBiNzg3ZWIxMzJjNjFkMzc5ZjFkOGY5Y2QyZTYzNTU4NDYyMDQzYWYwNGYwZThlMjFlZjY3MWYzOGNkMjI1Y2M=
+        # Verifying services use JWKS endpoint or public key (no private key needed):
+        jwk-set-uri: http://opcbs-auth-service:8081/.well-known/jwks.json
 ```
 
 ---
@@ -351,3 +353,159 @@ The following code has been modified to include a line number before every line,
   {
     "userId": 55,
     "login": "patient_lan",
+
+### 4.3. Sự Kiện & Tính Toàn Vẹn Trong Hệ Sinh Thái (Event Integrity)
+* **Kafka Dependency Model**:
+  - Chỉ 3 microservices giữ thư viện `spring-kafka` và class cấu hình: `opcbs-booking-service` (phát sự kiện đặt/hoàn thành/hủy lịch), `opcbs-treatment-service` (nhận sự kiện hoàn tất ca khám để trừ buổi), `opcbs-notification-service` (nhận sự kiện để gửi thông báo).
+  - 5 microservices còn lại (`auth`, `blog`, `clinical`, `message`, `payment`) hoàn toàn không cài đặt Kafka dependency để tối ưu kích thước build JAR và thời gian khởi động.
+* **Quy Trình Trừ Buổi Trị Liệu Chuẩn Xác**:
+  - Chỉ trừ buổi khi sự kiện nhận được mang `eventType = APPOINTMENT_COMPLETED`.
+  - Khắc phục triệt để lỗi trừ buổi sớm khi lịch hẹn vừa được tạo (`APPOINTMENT_BOOKED`).
+  - Ghi nhận `appointmentId` vào lịch sử trừ buổi và kiểm tra `existsByAppointmentId` để bảo vệ tính Idempotent tuyệt đối.
+
+---
+
+## 5. Hướng Dẫn Cấu Hình Chi Tiết Từng Dịch Vụ & Bảo Mật
+
+### 5.1. Cơ Chế Thu Hồi Token Fail-Closed (Redis Blacklist)
+- **Cấu hình**: `application.security.jwt.blacklist-fail-closed`
+  - Môi trường Dev/Local (`application.yml`): `false` (cho phép in-memory fallback khi Redis chưa khởi chạy).
+  - Môi trường Production (`application-prod.yml`): `true` (từ chối ngay lập tức token nếu Redis không khả dụng, không chấp nhận rủi ro dùng lại token đã đăng xuất).
+- **Redis Cache Policy**: Container Redis trong `docker-compose.prod.yml` sử dụng `--maxmemory-policy noeviction` để đảm bảo danh sách đen token không bị thu hồi sớm do áp lực bộ nhớ.
+
+### 5.2. Chống Race Condition & Idempotency Tại Booking Service
+- **Pessimistic Write Lock**: Sử dụng `findByIdWithLock(slotId)` trên bảng `AvailabilitySlot` với `LockModeType.PESSIMISTIC_WRITE` nhằm giải quyết triệt để vấn đề 2 bệnh nhân đặt cùng 1 ca khám tại cùng một thời điểm.
+- **Idempotency Key Header**: Header `Idempotency-Key` trên API `POST /api/appointments/book` cho phép client thử lại khi rớt mạng mà không sợ phát sinh trùng lặp cuốc hẹn.
+- **Transactional Outbox**: Booking, Auth và Payment ghi event vào outbox cùng transaction nghiệp vụ; relay chờ Kafka ACK rồi mới đánh dấu đã gửi. Không dựa vào callback `afterCommit` best-effort.
+
+### 5.3. Xác Thực Thanh Toán & An Toàn Webhook VNPay
+- **HMAC-SHA512 Signature Verification**: Mọi callback webhook từ VNPay (`GET /api/payments/vnpay/callback`) bắt buộc phải vượt qua bước kiểm tra chữ ký băm bí mật.
+- **Amount & Merchant Matching**: Đối chiếu chặt chẽ `vnp_Amount / 100 == txn.getAmount()` và `vnp_TmnCode == configuredMerchantCode` để ngăn chặn gian lận sửa đổi số tiền.
+- **Mock Checkout Block**: Chặn hoàn toàn endpoint `mock-checkout` trên môi trường production (`prod` profile).
+
+### 5.4. Chống Tấn Công XSS & Bảo Vệ Quy Trình Bài Viết (Blog Service)
+- **HTML Sanitization**: Áp dụng `HtmlSanitizerUtil` bóc tách toàn bộ thẻ script, iframe, object, form, các thuộc tính onclick/onload/onerror, và các giao thức javascript:/data:.
+- **Workflow State Guard**: Bác sĩ chỉ được sửa bài ở trạng thái `DRAFT` hoặc `REJECTED`. Admin chỉ được duyệt/từ chối bài ở trạng thái `SUBMITTED` và bắt buộc ghi rõ lý do khi từ chối.
+
+---
+
+## 6. Lộ Trình Chuyển Đổi Quản Lý Khóa & OIDC
+
+Chi tiết lộ trình chuyển đổi từ khóa đối xứng HMAC-SHA sang cặp khóa bất đối xứng RS256/JWKS và tích hợp Keycloak OIDC Provider tập trung được mô tả đầy đủ tại:
+👉 [docs/auth-key-rotation-and-oidc-roadmap.md](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/auth-key-rotation-and-oidc-roadmap.md)
+
+---
+
+## 7. Kiến Trúc Phân Bổ Message Broker & Event Toàn Bộ Hệ Thống Microservices
+
+### 7.1. Sơ Đồ Kiến Trúc Luồng Sự Kiện & Tác Vụ Bất Đồng Bộ
+
+```mermaid
+graph TD
+    subgraph "Domain Event Log: Apache Kafka (KRaft :9092)"
+        KafkaAppt["📌 opcbs-appointment-events<br/>(Key: appointmentId)"]
+        KafkaPay["📌 opcbs-payment-events<br/>(Key: subscriptionId)"]
+        KafkaUser["📌 opcbs-user-events<br/>(Key: userId)"]
+    end
+
+    subgraph "Task / Worker Queue: RabbitMQ (AMQP :5672)"
+        RabbitExchange["🔀 opcbs.direct.exchange"]
+        RabbitQueue["📥 opcbs.email.dispatch.queue<br/>(Prefetch=10)"]
+        RabbitDLX["⚠️ opcbs.dlx.exchange"]
+        RabbitDLQ["☠️ opcbs.email.dlq"]
+        RabbitExchange -->|opcbs.email.dispatch| RabbitQueue
+        RabbitQueue -. "Dead Letter (Max 3 Retries)" .-> RabbitDLX
+        RabbitDLX -->|opcbs.email.dlq| RabbitDLQ
+    end
+
+    subgraph "Microservices Hệ Thống"
+        Auth["🔐 opcbs-auth-service (:8081)"]
+        Booking["📅 opcbs-booking-service (:8082)"]
+        Clinical["🩺 opcbs-clinical-service (:8083)"]
+        Treatment["💊 opcbs-treatment-service (:8084)"]
+        Psychometric["🧠 opcbs-psychometric-service (:8085)"]
+        Notification["🔔 opcbs-notification-service (:8086)"]
+        Payment["💳 opcbs-payment-service (:8087)"]
+        Message["💬 opcbs-message-service (:8088)"]
+        Blog["📰 opcbs-blog-service (:8089)"]
+    end
+
+    %% Kafka Event Publishing
+    Booking -- "Transactional Outbox<br/>(BOOKED, CONFIRMED, CANCELLED, COMPLETED)" --> KafkaAppt
+    Payment -- "Transactional Outbox<br/>(PAYMENT_SUCCESS, PAYMENT_FAILED)" --> KafkaPay
+    Auth -- "Transactional Outbox<br/>(USER_REGISTERED, USER_ACTIVATED)" --> KafkaUser
+
+    %% Kafka Event Consuming
+    KafkaAppt -. "Group: treatment-package-group<br/>(Trừ buổi khi COMPLETED)" .-> Treatment
+    KafkaAppt -. "Group: notification-service-group<br/>(Tạo thông báo in-app)" .-> Notification
+    KafkaPay -. "Group: notification-payment-group<br/>(Thông báo thanh toán)" .-> Notification
+    KafkaUser -. "Group: notification-user-group<br/>(Chào mừng thành viên)" .-> Notification
+
+    %% RabbitMQ Task Dispatching
+    Notification -- "Dispatch Email Task<br/>(Idempotency Key, Recipient, Body)" --> RabbitExchange
+    RabbitQueue -. "Worker Execution<br/>(JavaMailSender SMTP)" .-> Notification
+
+    %% Sensitive Flows kept Synchronous
+    Psychometric -- "🚨 Synchronous HTTP (POST /api/clinical/psychometrics-alert)<br/>[PHI Protected, Instant Intake ACK]" --> Clinical
+    Message -- "💬 WebSocket STOMP (Direct 2-Party Chat & MySQL)" --> Message
+```
+
+---
+
+### 7.2. Bảng Phân Bổ Message Broker & Event Chi Tiết (Toàn Bộ 9 Microservices)
+
+| Service phát | Sự kiện/lệnh | Service nhận | Kafka hay RabbitMQ | Topic/Exchange/Queue | Lý do chọn | Độ bền và thứ tự | Retry/DLQ-DLT | Idempotency | Dữ liệu nhạy cảm | Mức ưu tiên |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Booking** (:8082) | `APPOINTMENT_BOOKED`<br/>`APPOINTMENT_CONFIRMED`<br/>`APPOINTMENT_CANCELLED`<br/>`APPOINTMENT_COMPLETED` | `Treatment` (:8084),<br/>`Notification` (:8086) | **Kafka** | Topic: `opcbs-appointment-events`<br/>DLT: `opcbs-appointment-events.DLT` | Domain event cốt lõi, nhiều consumer độc lập, cần log bất biến để audit/replay, thông lượng cao vào khung giờ cao điểm. | Bền vững (KRaft Log). Thứ tự bảo đảm tuyệt đối theo từng lịch khám nhờ partition key `appointmentId`. | 3 lần retry có exponential backoff, chuyển vào Dead-Letter Topic (DLT). | Idempotency key `event-{uuid}`. Treatment kiểm tra `existsByAppointmentId`; Notification kiểm tra `notification_inbox`. | Không chứa chẩn đoán lâm sàng hay ghi chú bệnh án. Chỉ truyền ID, trạng thái, thời gian. | **P0 (Tối cao)** |
+| **Payment** (:8087) | `PAYMENT_SUCCESS`<br/>`PAYMENT_FAILED`<br/>`PAYMENT_REFUNDED` (chưa phát, chưa có luồng hoàn tiền) | `Notification` (:8086) | **Kafka** | Topic: `opcbs-payment-events`<br/>DLT: `opcbs-payment-events.DLT` | Domain event quan trọng về doanh thu và quyền lợi gói bác sĩ, fan-out cho in-app notification và email. | Bền vững trên đĩa. Thứ tự theo `subscriptionId`. | Retry 3 lần exponential backoff, định tuyến DLT. | `notification_inbox` chống lặp; `transactionCode` duy nhất ở Payment. | Tuyệt đối không gửi số thẻ, OTP, secret key hay chuỗi callback hash thô. | **P0 (Tối cao)** |
+| **Auth** (:8081) | `USER_REGISTERED`<br/>`USER_ACTIVATED` | `Notification` (:8086) | **Kafka** | Topic: `opcbs-user-events`<br/>DLT: `opcbs-user-events.DLT` | Domain event vòng đời người dùng, cần pub-sub để mở rộng cho các service thành viên tương lai (loyalty, CRM). | Bền vững. Thứ tự theo `userId`. | Retry 3 lần, chuyển DLT. | `userId` + `eventType` unique check trong `notification_inbox`. | Tuyệt đối không truyền password hash, JWT token, hay OTP. Chỉ truyền `userId`, `login`, `email`, `role`. | **P1 (Cao)** |
+| **Notification** (:8086) | `EmailTaskDTO`<br/>(Task gửi email xác nhận đặt lịch, hủy lịch, thanh toán, kích hoạt) | `Notification` Worker (:8086) | **RabbitMQ** | Direct Exchange: `opcbs.direct.exchange`<br/>Queue: `opcbs.email.dispatch.queue`<br/>DLX: `opcbs.dlx.exchange`<br/>DLQ: `opcbs.email.dlq` | Task/Command queue dạng worker. SMTP có thể chậm/lỗi; prefetch giới hạn ở 10 để điều tiết tải và tách lỗi khỏi Kafka stream. | Bền vững (`durable=true`). Không cần thứ tự toàn cục giữa email khác người nhận. | Retry tối đa 3 lần exponential backoff; lỗi cuối chuyển `opcbs.email.dlq`. | `notification_inbox` chống lặp theo worker group và idempotency key. | Chỉ truyền email nhận và nội dung an toàn. Không truyền OTP hoặc PHI. | **P1 (Cao)** |
+| **Psychometric** (:8085) | `PsychometricAlert`<br/>(Cảnh báo trầm cảm/lo âu nặng DASS-21, PHQ-9, GAD-7) | `Clinical` (:8083) | **Đồng Bộ (HTTP REST)** *(Không dùng broker)* | Endpoint: `POST /api/clinical/psychometrics-alert` | Cảnh báo y tế khẩn cấp đe dọa an toàn người bệnh cần xác nhận tiếp nhận tức thì (Intake ACK). Đồng thời dữ liệu điểm số/triệu chứng tâm thần là PHI tuyệt mật, không được broadcast lên broker. | Đồng bộ HTTP qua mạng nội bộ Docker. Mã phản hồi 200/400 tức thì. | Circuit Breaker & Retry ở tầng RestTemplate với timeout 3s. | Trùng lặp chặn bởi `submissionId` tại Clinical Service. | **Rất nhạy cảm (PHI)**: Mã hóa kênh truyền mạng nội bộ, chỉ gửi giữa 2 service có JWT. | **P0 (Tối cao)** |
+| **Message** (:8088) | Gửi nhận tin nhắn khám trực tuyến | Web Client / App | **Đồng Bộ (WebSocket STOMP)** *(Không dùng broker)* | STOMP Destination: `/topic/conversations/{id}` | Tin nhắn trò chuyện giữa bác sĩ và bệnh nhân diễn ra trực tiếp qua phiên STOMP 2 chiều với kiểm tra quyền Participant Access Control (PAC) và lưu MySQL. Không có nhu cầu pub-sub đa service. | Giao thức STOMP thời gian thực, lưu trữ bền vững tại MySQL. | Reconnect tự động ở tầng client STOMP. | `messageId` unique. | **Rất nhạy cảm (PHI)**: Nội dung tâm sự bệnh nhân, bảo vệ bằng PAC. | **P1 (Cao)** |
+| **Clinical** (:8083) | Bệnh án điện tử, chẩn đoán, y lệnh | Bác sĩ / Bệnh nhân | **Đồng Bộ (REST API)** *(Không dùng broker)* | Endpoints: `/api/clinical-records/**` | Thao tác ghi nhận bệnh án tuân thủ nghiêm ngặt tính toàn vẹn y khoa và phân quyền bác sĩ điều trị. Không phát sinh event cho bên thứ 3. | ACID Transaction trên MySQL. | N/A (Đồng bộ). | Khóa phiên khám `appointmentId`. | **Tối mật (PHI)**: Chỉ truy cập qua JWT có quyền `ROLE_DOCTOR` hoặc bệnh nhân sở hữu. | **P0 (Tối cao)** |
+| **Treatment** (:8084) | Mục tiêu điều trị, bảo lưu gói, nhật ký cảm xúc | Bác sĩ / Bệnh nhân | **Đồng Bộ (REST API)** *(Không dùng broker)* | Endpoints: `/api/treatment-packages/**` | Nghiệp vụ bảo lưu và theo dõi tiến độ là tương tác trực tiếp của bác sĩ và bệnh nhân. Không cần broker ngoài việc tiêu thụ event từ Kafka. | ACID Transaction trên MySQL. | N/A. | N/A. | **Nhạy cảm**: Đánh giá tâm trạng `mood_before`/`mood_after`. | **P1 (Cao)** |
+| **Blog** (:8089) | Soạn thảo, gửi duyệt, xuất bản bài viết | Admin / Độc giả | **Đồng Bộ (REST API)** *(Không dùng broker)* | Endpoints: `/api/blogs/**` | Quy trình biên tập bài viết có lượng dữ liệu tĩnh lớn (HTML), thao tác bởi con người với tần suất thấp, không có nhu cầu event-driven. | ACID Transaction trên MySQL. | N/A. | N/A. | Công khai (bài viết đã duyệt) / Nội bộ (bản nháp). | **P2 (Trung bình)** |
+
+---
+
+### 7.3. Hướng Dẫn Vận Hành & Khởi Chạy Broker Trong Môi Trường Production Docker Compose
+
+1. **Khởi Động Hạ Tầng Message Broker**:
+   ```bash
+   cd docker
+   # Khởi động cụm CSDL, Redis, Kafka KRaft và RabbitMQ
+   docker compose -f docker-compose.prod.yml up -d mysql redis redis-cache kafka rabbitmq
+   ```
+
+2. **Kiểm Tra Trạng Thái Sức Khỏe (Healthcheck)**:
+   ```bash
+   # Kiểm tra Kafka KRaft Broker
+   docker compose -f docker-compose.prod.yml exec kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+   
+   # Kiểm tra RabbitMQ Management & Diagnostics
+   docker compose -f docker-compose.prod.yml exec rabbitmq rabbitmq-diagnostics -q ping
+   ```
+
+3. **Truy Cập Giao Diện Quản Trị RabbitMQ**:
+   - URL: `http://localhost:15672` (hoặc qua VPN nội bộ)
+   - Cấu hình `RABBITMQ_DEFAULT_USER` và `RABBITMQ_DEFAULT_PASS` trong `docker/.env`; Compose từ chối khởi động nếu thiếu credential.
+   - Kiểm tra hàng đợi `opcbs.email.dispatch.queue` và hàng đợi lỗi `opcbs.email.dlq`.
+
+4. **Khởi Động Toàn Bộ 9 Microservices**:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d
+   ```
+
+### 7.4. Trạng Thái Triển Khai Thực Tế Sau Khi Hoàn Thiện Luồng MQ
+
+Sơ đồ và bảng tại mục 7.2 là bảng phân bổ đã chốt. Các lưu ý sau mô tả phần triển khai hiện tại và thay thế các mô tả `AfterCommit` best-effort trong các mục cũ:
+
+- **Kafka appointment**: `opcbs-booking-service` ghi outbox cùng transaction; relay chờ broker ACK. Không nuốt lỗi ghi outbox. `opcbs-notification-service` và `opcbs-treatment-service` dùng consumer group riêng; Treatment chỉ trừ buổi ở `APPOINTMENT_COMPLETED`.
+- **Kafka payment/user**: `opcbs-payment-service` và `opcbs-auth-service` ghi outbox cùng transaction. Notification có consumer factory JSON riêng và DLT riêng cho `opcbs-payment-events` và `opcbs-user-events`, ngoài appointment stream.
+- **Event name compatibility**: Tên mới là `APPOINTMENT_CONFIRMED` và `PAYMENT_SUCCESS`; consumer còn đọc alias cũ `APPOINTMENT_ACCEPTED` và `PAYMENT_COMPLETED` trong giai đoạn chuyển đổi.
+- **Rabbit email worker**: Notification gửi email task qua RabbitMQ; publisher chờ confirm. Worker chờ SMTP đồng bộ trước khi xác nhận, retry tối đa ba lần với backoff, rồi định tuyến qua DLX đến `opcbs.email.dlq`. Email đặt lịch, xác nhận/hủy, thanh toán thành công và kích hoạt tài khoản dùng nội dung tối thiểu, không chứa OTP hoặc dữ liệu bệnh án.
+- **Cấu hình production**: đặt `RABBITMQ_DEFAULT_USER` và `RABBITMQ_DEFAULT_PASS` riêng trong `docker/.env`; Compose không còn fallback sang mật khẩu mặc định.
+- **Các luồng giữ ngoài broker**: Psychometric high-risk → Clinical dùng HTTP nội bộ theo quyết định vì dữ liệu PHI và cần phản hồi tiếp nhận; Message dùng STOMP + MySQL trong cấu hình một instance; REST Clinical/Treatment và Blog không phát domain event nếu chưa có consumer có nghiệp vụ cụ thể. Payment chưa có workflow refund nên `PAYMENT_REFUNDED` chưa được phát.
+- **Giới hạn vận hành**: Compose chạy một Kafka broker và một RabbitMQ node. Hai broker có volume và healthcheck, nhưng chưa có HA; khi broker ngừng, Kafka outbox chờ phát lại, còn email cần theo dõi queue/DLQ.
+
+

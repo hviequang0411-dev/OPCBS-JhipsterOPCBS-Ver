@@ -1,0 +1,271 @@
+<div class="psy-admin-container">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge bg-dark text-white text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px; padding: 4px 8px;">Role: Quản Trị Viên</span>
+        <span class="text-muted" style="font-size: 0.8rem;">&bull;</span>
+        <span class="text-muted" style="font-size: 0.8rem;">Đánh Giá Tâm Lý Học Lâm Sàng</span>
+      </div>
+      <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-clipboard2-pulse-fill" style="color: #0f766e;"></i>
+        <span>Ngân Hàng Đề Trắc Nghiệm Tâm Lý (Psychometric Questionnaires)</span>
+      </h1>
+      <p class="text-muted mb-0" style="font-size: 0.88rem;">
+        Quản lý các bộ câu hỏi sàng lọc tiêu chuẩn y khoa (DASS-21, GAD-7, PHQ-9) và nhập đề tự động từ File / Link
+      </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5" (click)="loadData()" title="Làm mới">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Làm mới</span>
+      </button>
+      <a routerLink="/admin/psychometrics/new" class="btn btn-primary btn-sm d-flex align-items-center gap-1.5" style="background: #0f766e; border-color: #0f766e; font-weight: 600;">
+        <i class="bi bi-plus-lg"></i>
+        <span>Thêm Đề Mới (File / Link / Mẫu)</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-check-circle-fill fs-5"></i>
+      <div>{{ successMessage() }}</div>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+  }
+
+  <!-- KPIs Metric Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(15, 118, 110, 0.1); color: #0f766e;">
+          <i class="bi bi-journal-medical"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Tổng Số Đề Khảo Sát</div>
+          <div class="kpi-value">{{ stats().totalTests || tests().length }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+          <i class="bi bi-check2-circle"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Đang Mở Sử Dụng</div>
+          <div class="kpi-value text-success">{{ stats().activeTests }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+          <i class="bi bi-list-check"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Tổng Số Câu Hỏi</div>
+          <div class="kpi-value text-primary">{{ stats().totalQuestions }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">
+          <i class="bi bi-people"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Lượt Bệnh Nhân Hoàn Thành</div>
+          <div class="kpi-value text-dark">{{ stats().totalSubmissions }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Panel -->
+  <div class="data-panel">
+    <!-- Header with Search & Filter -->
+    <div class="panel-header">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="fw-bold text-dark small text-uppercase" style="letter-spacing: 0.5px;">
+          <i class="bi bi-funnel me-1 text-teal"></i>Phân Loại Thang Đo:
+        </div>
+        <button type="button" class="filter-chip" [class.active]="typeFilter === 'ALL'" (click)="onTypeFilterChange('ALL')">
+          Tất cả ({{ tests().length }})
+        </button>
+        <button type="button" class="filter-chip" [class.active]="typeFilter === 'DASS21'" (click)="onTypeFilterChange('DASS21')">
+          DASS-21
+        </button>
+        <button type="button" class="filter-chip" [class.active]="typeFilter === 'GAD7'" (click)="onTypeFilterChange('GAD7')">
+          GAD-7
+        </button>
+        <button type="button" class="filter-chip" [class.active]="typeFilter === 'PHQ9'" (click)="onTypeFilterChange('PHQ9')">
+          PHQ-9
+        </button>
+        <button type="button" class="filter-chip" [class.active]="typeFilter === 'CUSTOM'" (click)="onTypeFilterChange('CUSTOM')">
+          Khác / Tùy Biến
+        </button>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width: 280px;">
+          <span class="input-group-text bg-white text-muted border-end-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0 ps-0"
+            placeholder="Tìm theo tiêu đề, mã thang đo..."
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 table-psy">
+        <thead>
+          <tr>
+            <th style="width: 50px;" class="text-center">#</th>
+            <th>Bộ Trắc Nghiệm &amp; Mục Đích</th>
+            <th>Mã Loại</th>
+            <th>Chuyên Mục</th>
+            <th>Số Lượng Câu Hỏi</th>
+            <th>Trạng Thái</th>
+            <th class="text-end pe-3" style="width: 180px;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <div class="spinner-border text-teal spinner-border-sm me-2" role="status"></div>
+                <span>Đang tải danh sách bài trắc nghiệm tâm lý...</span>
+              </td>
+            </tr>
+          } @else if (filteredTests().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <i class="bi bi-clipboard2-x text-muted d-block mb-2" style="font-size: 2.5rem;"></i>
+                <div class="fw-semibold text-dark">Chưa có đề trắc nghiệm tâm lý nào</div>
+                <small class="text-muted">Bấm "Thêm Đề Mới" để tạo đề hoặc nhập tự động từ File / Link</small>
+              </td>
+            </tr>
+          } @else {
+            @for (test of filteredTests(); track test.id; let idx = $index) {
+              <tr>
+                <td class="text-center text-muted fw-semibold">{{ test.id || idx + 1 }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: rgba(15, 118, 110, 0.08); color: #0f766e;">
+                      <i class="bi bi-clipboard2-pulse fs-6"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold text-dark">{{ test.title }}</div>
+                      <div class="text-muted small text-truncate" style="max-width: 320px;">
+                        {{ test.description || test.purpose || 'Không có mô tả bổ sung' }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size: 0.76rem;">
+                    {{ test.testType }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border" style="font-size: 0.74rem;">
+                    {{ test.category || 'Tâm lý chung' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-info bg-opacity-10 text-info fw-bold" style="font-size: 0.78rem;">
+                    <i class="bi bi-question-circle me-1"></i>{{ getQuestionCount(test) }} câu hỏi
+                  </span>
+                </td>
+                <td>
+                  <div class="form-check form-switch d-inline-block">
+                    <input
+                      class="form-check-input cursor-pointer"
+                      type="checkbox"
+                      role="switch"
+                      [checked]="test.isActive"
+                      (change)="toggleActive(test)"
+                      title="Bấm để bật/tắt kích hoạt đề thi"
+                    />
+                    <span class="ms-1 small fw-semibold" [class.text-success]="test.isActive" [class.text-muted]="!test.isActive">
+                      {{ test.isActive ? 'Kích hoạt' : 'Tạm dừng' }}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-end pe-3">
+                  <div class="btn-group btn-group-sm">
+                    <a [routerLink]="['/admin/psychometrics', test.id, 'view']" class="btn btn-outline-secondary" title="Xem danh sách câu hỏi & thang điểm">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a [routerLink]="['/admin/psychometrics', test.id, 'edit']" class="btn btn-outline-primary" title="Chỉnh sửa đề">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" (click)="confirmDelete(test)" title="Xóa đề trắc nghiệm">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Delete Modal Backdrop -->
+  @if (testToDelete) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-dialog modal-dialog-centered" style="width: 100%; max-width: 440px; margin: 1rem;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+          <div class="modal-header bg-danger text-white py-3">
+            <h5 class="modal-title fs-6 fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>Xác Nhận Xóa Đề Trắc Nghiệm</span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="cancelDelete()"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <i class="bi bi-trash3 text-danger d-block mb-3" style="font-size: 2.8rem;"></i>
+            <p class="mb-2 text-dark">
+              Bạn có chắc chắn muốn xóa bài trắc nghiệm <strong>"{{ testToDelete.title }}"</strong>?
+            </p>
+            <p class="text-muted small mb-0">
+              Hành động này sẽ xóa toàn bộ câu hỏi liên kết. Nếu đã có dữ liệu làm bài của bệnh nhân, hệ thống sẽ từ chối để bảo vệ lịch sử bệnh án.
+            </p>
+          </div>
+          <div class="modal-footer bg-light py-2.5 px-3 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="cancelDelete()" [disabled]="isDeleting">
+              Hủy bỏ
+            </button>
+            <button type="button" class="btn btn-sm btn-danger px-3 d-flex align-items-center gap-1.5" (click)="executeDelete()" [disabled]="isDeleting">
+              @if (isDeleting) {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+              }
+              <span>Xác nhận xóa</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

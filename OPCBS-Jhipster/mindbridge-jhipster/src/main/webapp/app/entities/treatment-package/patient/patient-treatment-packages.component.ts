@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NgbModal, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { TreatmentPackageService } from '../service/treatment-package.service';
-import { ITreatmentPackage, TreatmentPackageStatus } from '../treatment-package.model';
+import { ITreatmentGoal, ITreatmentPackage, ITreatmentProgressSummary, ITreatmentSession, TreatmentPackageStatus } from '../treatment-package.model';
 
 @Component({
   selector: 'jhi-patient-treatment-packages',
@@ -28,6 +28,17 @@ export class PatientTreatmentPackagesComponent implements OnInit {
   isProcessing = false;
   successMessage = '';
   errorMessage = '';
+
+  // Hold State
+  holdDurationDays = 30;
+  holdReason = 'Bận việc gia đình / công tác cá nhân';
+  isProcessingHold = false;
+
+  // Clinical Details View
+  sessions: ITreatmentSession[] = [];
+  goals: ITreatmentGoal[] = [];
+  progressSummary: ITreatmentProgressSummary | null = null;
+  activeTab: 'overview' | 'sessions' | 'goals' = 'overview';
 
   ngOnInit(): void {
     this.loadPackages();
@@ -53,10 +64,14 @@ export class PatientTreatmentPackagesComponent implements OnInit {
     return this.packages.filter(p => p.status === 'PROPOSED').length;
   }
 
+  get onHoldCount(): number {
+    return this.packages.filter(p => p.status === 'ON_HOLD' || p.isHoldRequested).length;
+  }
+
   get activePackages(): ITreatmentPackage[] {
     return this.packages.filter(p => {
       const status = p.status;
-      const matches = status === 'ACTIVE' || status === 'PROPOSED' || status === 'CREATED';
+      const matches = status === 'ACTIVE' || status === 'ON_HOLD' || status === 'PROPOSED' || status === 'CREATED';
       if (!matches) return false;
       if (!this.searchTerm.trim()) return true;
       const term = this.searchTerm.toLowerCase();
@@ -102,7 +117,73 @@ export class PatientTreatmentPackagesComponent implements OnInit {
     this.selectedPackage = pkg;
     this.rejectionReason = '';
     this.errorMessage = '';
-    this.modalService.open(content, { size: 'lg', centered: true });
+    this.activeTab = 'overview';
+
+    if (pkg.id) {
+      this.packageService.getSessions(pkg.id).subscribe(s => this.sessions = s || []);
+      this.packageService.getGoals(pkg.id).subscribe(g => this.goals = g || []);
+      this.packageService.getProgressSummary(pkg.id).subscribe(summary => this.progressSummary = summary);
+    }
+
+    this.modalService.open(content, { size: 'lg', centered: true, scrollable: true });
+  }
+
+  // === Nghiệp vụ Bảo lưu (Hold Lifecycle) ===
+  openRequestHoldModal(content: any, pkg: ITreatmentPackage): void {
+    this.selectedPackage = pkg;
+    this.holdDurationDays = 30;
+    this.holdReason = 'Bận việc gia đình / công tác cá nhân';
+    this.modalService.open(content, { size: 'md', centered: true });
+  }
+
+  submitRequestHold(modal: any): void {
+    if (!this.selectedPackage?.id) return;
+    this.isProcessingHold = true;
+    this.packageService.requestHold(this.selectedPackage.id, this.holdDurationDays, this.holdReason).subscribe({
+      next: () => {
+        this.isProcessingHold = false;
+        modal.close();
+        this.successMessage = 'Đã gửi yêu cầu bảo lưu đến bác sĩ điều trị!';
+        this.loadPackages();
+        setTimeout(() => (this.successMessage = ''), 5000);
+      },
+      error: err => {
+        this.isProcessingHold = false;
+        alert(err.error?.message || 'Không thể gửi yêu cầu bảo lưu!');
+      }
+    });
+  }
+
+  cancelHold(pkgId?: number): void {
+    if (!pkgId) return;
+    if (confirm('Bạn có chắc chắn muốn hủy yêu cầu bảo lưu này không?')) {
+      this.packageService.cancelHoldRequest(pkgId).subscribe({
+        next: () => {
+          this.successMessage = 'Đã hủy yêu cầu bảo lưu thành công.';
+          this.loadPackages();
+          setTimeout(() => (this.successMessage = ''), 4000);
+        },
+        error: err => {
+          alert(err.error?.message || 'Không thể hủy yêu cầu bảo lưu!');
+        }
+      });
+    }
+  }
+
+  resumePackage(pkgId?: number): void {
+    if (!pkgId) return;
+    if (confirm('Bạn có muốn mở lại gói trị liệu trước hạn bảo lưu không?')) {
+      this.packageService.resumePackage(pkgId).subscribe({
+        next: () => {
+          this.successMessage = 'Phác đồ điều trị đã được kích hoạt lại thành công!';
+          this.loadPackages();
+          setTimeout(() => (this.successMessage = ''), 4000);
+        },
+        error: err => {
+          alert(err.error?.message || 'Không thể kích hoạt lại gói!');
+        }
+      });
+    }
   }
 
   acceptPackage(modal: any, pkg: ITreatmentPackage): void {
@@ -141,10 +222,15 @@ export class PatientTreatmentPackagesComponent implements OnInit {
     });
   }
 
-  getStatusBadgeClass(status?: TreatmentPackageStatus | null): string {
+  getStatusBadgeClass(status?: TreatmentPackageStatus | null, isHoldRequested?: boolean | null): string {
+    if (isHoldRequested) {
+      return 'pp-status pending border border-warning';
+    }
     switch (status) {
       case 'ACTIVE':
         return 'pp-status active';
+      case 'ON_HOLD':
+        return 'pp-status pending';
       case 'PROPOSED':
         return 'pp-status pending';
       case 'COMPLETED':
@@ -160,10 +246,15 @@ export class PatientTreatmentPackagesComponent implements OnInit {
     }
   }
 
-  getStatusLabel(status?: TreatmentPackageStatus | null): string {
+  getStatusLabel(status?: TreatmentPackageStatus | null, isHoldRequested?: boolean | null): string {
+    if (isHoldRequested) {
+      return 'Đang chờ duyệt bảo lưu';
+    }
     switch (status) {
       case 'ACTIVE':
-        return 'Đang hoạt động';
+        return 'Đang điều trị';
+      case 'ON_HOLD':
+        return 'Tạm dừng / Bảo lưu';
       case 'PROPOSED':
         return 'Chờ bạn phản hồi';
       case 'COMPLETED':

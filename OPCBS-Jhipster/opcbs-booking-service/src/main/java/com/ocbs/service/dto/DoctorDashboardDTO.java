@@ -23,15 +23,16 @@ public class DoctorDashboardDTO implements Serializable {
 
     // 2. Filter Period
     private String period; // today, week, month
+    private String periodLabel; // nhãn thời gian hiển thị
 
-    // 3. KPI Metrics
+    // 3. KPI Metrics theo kỳ
     private int todaySessionsCount;
     private int todayCompletedCount;
     private int todayUpcomingCount;
     private int upcomingSessionsCount;
-    
-    private int appointmentsThisMonth;
-    private double appointmentsGrowthPercent;
+
+    private int appointmentsThisMonth; // số ca khám trong kỳ được chọn
+    private Double appointmentsGrowthPercent; // nullable: null khi không có dữ liệu kỳ trước
     private boolean isAppointmentsGrowthPositive;
 
     private int newPatientsThisMonth;
@@ -39,9 +40,10 @@ public class DoctorDashboardDTO implements Serializable {
     private int returningPatientsCount;
     private double returningPatientRate;
 
-    private BigDecimal revenueThisMonth;
-    private double revenueGrowthPercent;
+    private BigDecimal revenueThisMonth; // doanh thu ước tính theo ca hoàn tất trong kỳ
+    private Double revenueGrowthPercent; // nullable: null khi không có dữ liệu kỳ trước
     private boolean isRevenueGrowthPositive;
+    private String revenueNote; // giải thích cách tính doanh thu ước tính
 
     // 4. Action Center (Cần xử lý ngay)
     private int pendingApprovalsCount;
@@ -57,6 +59,7 @@ public class DoctorDashboardDTO implements Serializable {
     private int singleVisitPercent;
     private int repeat2To3Percent;
     private int loyal4PlusPercent;
+    private String retentionNote; // giải thích quy tắc phân loại thân chủ
 
     // 7. Redis Cache Metadata
     private boolean cacheHit;
@@ -101,7 +104,7 @@ public class DoctorDashboardDTO implements Serializable {
 
     public static class WeeklyChartPointDTO implements Serializable {
         private static final long serialVersionUID = 1L;
-        private String dayOfWeek; // Thứ 2, Thứ 3, ...
+        private String dayOfWeek;
         private int sessionsCount;
         private BigDecimal revenue;
 
@@ -140,6 +143,8 @@ public class DoctorDashboardDTO implements Serializable {
     public void setGreeting(String greeting) { this.greeting = greeting; }
     public String getPeriod() { return period; }
     public void setPeriod(String period) { this.period = period; }
+    public String getPeriodLabel() { return periodLabel; }
+    public void setPeriodLabel(String periodLabel) { this.periodLabel = periodLabel; }
     public int getTodaySessionsCount() { return todaySessionsCount; }
     public void setTodaySessionsCount(int todaySessionsCount) { this.todaySessionsCount = todaySessionsCount; }
     public int getTodayCompletedCount() { return todayCompletedCount; }
@@ -150,8 +155,8 @@ public class DoctorDashboardDTO implements Serializable {
     public void setUpcomingSessionsCount(int upcomingSessionsCount) { this.upcomingSessionsCount = upcomingSessionsCount; }
     public int getAppointmentsThisMonth() { return appointmentsThisMonth; }
     public void setAppointmentsThisMonth(int appointmentsThisMonth) { this.appointmentsThisMonth = appointmentsThisMonth; }
-    public double getAppointmentsGrowthPercent() { return appointmentsGrowthPercent; }
-    public void setAppointmentsGrowthPercent(double appointmentsGrowthPercent) { this.appointmentsGrowthPercent = appointmentsGrowthPercent; }
+    public Double getAppointmentsGrowthPercent() { return appointmentsGrowthPercent; }
+    public void setAppointmentsGrowthPercent(Double appointmentsGrowthPercent) { this.appointmentsGrowthPercent = appointmentsGrowthPercent; }
     public boolean isAppointmentsGrowthPositive() { return isAppointmentsGrowthPositive; }
     public void setAppointmentsGrowthPositive(boolean appointmentsGrowthPositive) { isAppointmentsGrowthPositive = appointmentsGrowthPositive; }
     public int getNewPatientsThisMonth() { return newPatientsThisMonth; }
@@ -164,10 +169,12 @@ public class DoctorDashboardDTO implements Serializable {
     public void setReturningPatientRate(double returningPatientRate) { this.returningPatientRate = returningPatientRate; }
     public BigDecimal getRevenueThisMonth() { return revenueThisMonth; }
     public void setRevenueThisMonth(BigDecimal revenueThisMonth) { this.revenueThisMonth = revenueThisMonth; }
-    public double getRevenueGrowthPercent() { return revenueGrowthPercent; }
-    public void setRevenueGrowthPercent(double revenueGrowthPercent) { this.revenueGrowthPercent = revenueGrowthPercent; }
+    public Double getRevenueGrowthPercent() { return revenueGrowthPercent; }
+    public void setRevenueGrowthPercent(Double revenueGrowthPercent) { this.revenueGrowthPercent = revenueGrowthPercent; }
     public boolean isRevenueGrowthPositive() { return isRevenueGrowthPositive; }
     public void setRevenueGrowthPositive(boolean revenueGrowthPositive) { isRevenueGrowthPositive = revenueGrowthPositive; }
+    public String getRevenueNote() { return revenueNote; }
+    public void setRevenueNote(String revenueNote) { this.revenueNote = revenueNote; }
     public int getPendingApprovalsCount() { return pendingApprovalsCount; }
     public void setPendingApprovalsCount(int pendingApprovalsCount) { this.pendingApprovalsCount = pendingApprovalsCount; }
     public int getPendingNotesCount() { return pendingNotesCount; }
@@ -186,6 +193,8 @@ public class DoctorDashboardDTO implements Serializable {
     public void setRepeat2To3Percent(int repeat2To3Percent) { this.repeat2To3Percent = repeat2To3Percent; }
     public int getLoyal4PlusPercent() { return loyal4PlusPercent; }
     public void setLoyal4PlusPercent(int loyal4PlusPercent) { this.loyal4PlusPercent = loyal4PlusPercent; }
+    public String getRetentionNote() { return retentionNote; }
+    public void setRetentionNote(String retentionNote) { this.retentionNote = retentionNote; }
     public boolean isCacheHit() { return cacheHit; }
     public void setCacheHit(boolean cacheHit) { this.cacheHit = cacheHit; }
     public String getCacheKey() { return cacheKey; }

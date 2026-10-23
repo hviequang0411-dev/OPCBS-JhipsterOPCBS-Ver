@@ -16,8 +16,12 @@ export class MessageService {
     return this.http.get<IConversation>(`${this.resourceUrl}/${id}`);
   }
 
-  getMessages(conversationId: number): Observable<IChatMessage[]> {
-    return this.http.get<IChatMessage[]>(`${this.resourceUrl}/${conversationId}/messages`);
+  getMessages(conversationId: number, sinceId?: number): Observable<IChatMessage[]> {
+    let url = `${this.resourceUrl}/${conversationId}/messages`;
+    if (sinceId != null && sinceId > 0) {
+      url += `?sinceId=${sinceId}`;
+    }
+    return this.http.get<IChatMessage[]>(url);
   }
 
   sendMessage(conversationId: number, message: Partial<IChatMessage>): Observable<IChatMessage> {

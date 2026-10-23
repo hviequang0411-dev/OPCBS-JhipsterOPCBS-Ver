@@ -27,6 +27,10 @@ export class DoctorPsychometricsComponent implements OnInit {
   selectedPatientId: number | null = null;
   isLoading = false;
 
+  // Library toolbar state (Matching C# Razor layout)
+  libraryTab: 'all' | 'system' | 'my' = 'all';
+  librarySearch = '';
+
   // Assign modal state
   selectedTestId: number | null = null;
   assignPatientId: number | null = null;
@@ -34,6 +38,10 @@ export class DoctorPsychometricsComponent implements OnInit {
   doctorNotes: string = '';
   isSaving = false;
   errorMessage = '';
+
+  // Detail modals
+  selectedTestForDetails: IPsychometricTest | null = null;
+  selectedSubmissionForDetails: IPsychometricSubmission | null = null;
 
   ngOnInit(): void {
     this.loadTests();
@@ -44,7 +52,7 @@ export class DoctorPsychometricsComponent implements OnInit {
     this.psychometricsService.getAllActiveTests().subscribe({
       next: res => {
         this.tests = res || [];
-        if (this.tests.length > 0) {
+        if (this.tests.length > 0 && !this.selectedTestId) {
           this.selectedTestId = this.tests[0].id || null;
         }
         this.cdr.markForCheck();
@@ -66,6 +74,42 @@ export class DoctorPsychometricsComponent implements OnInit {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  isSystemTest(t: IPsychometricTest): boolean {
+    return t.isSystemTemplate === true || (!t.doctor && !t.createdByDoctor);
+  }
+
+  get systemTemplateCount(): number {
+    return this.tests.filter(t => this.isSystemTest(t)).length;
+  }
+
+  get myAssessmentCount(): number {
+    return this.tests.filter(t => !this.isSystemTest(t)).length;
+  }
+
+  get filteredLibrary(): IPsychometricTest[] {
+    let list = this.tests;
+    if (this.libraryTab === 'system') {
+      list = list.filter(t => this.isSystemTest(t));
+    } else if (this.libraryTab === 'my') {
+      list = list.filter(t => !this.isSystemTest(t));
+    }
+
+    if (this.librarySearch && this.librarySearch.trim()) {
+      const q = this.librarySearch.trim().toLowerCase();
+      list = list.filter(t => 
+        (t.title && t.title.toLowerCase().includes(q)) ||
+        (t.category && t.category.toLowerCase().includes(q)) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        (t.testType && t.testType.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }
+
+  setLibraryTab(tab: 'all' | 'system' | 'my'): void {
+    this.libraryTab = tab;
   }
 
   onPatientChange(): void {
@@ -94,7 +138,26 @@ export class DoctorPsychometricsComponent implements OnInit {
     this.dueDate = '';
     this.doctorNotes = '';
     this.errorMessage = '';
-    this.modalService.open(content, { size: 'lg' });
+    this.modalService.open(content, { size: 'lg', backdrop: 'static' });
+  }
+
+  openAssignModalForTest(content: any, test: IPsychometricTest): void {
+    this.selectedTestId = test.id || null;
+    this.assignPatientId = this.selectedPatientId;
+    this.dueDate = '';
+    this.doctorNotes = '';
+    this.errorMessage = '';
+    this.modalService.open(content, { size: 'lg', backdrop: 'static' });
+  }
+
+  openTestDetailsModal(content: any, test: IPsychometricTest): void {
+    this.selectedTestForDetails = test;
+    this.modalService.open(content, { size: 'lg', backdrop: 'static' });
+  }
+
+  openSubmissionReportModal(content: any, sub: IPsychometricSubmission): void {
+    this.selectedSubmissionForDetails = sub;
+    this.modalService.open(content, { size: 'lg', backdrop: 'static' });
   }
 
   assignTest(modal: any): void {
@@ -124,5 +187,31 @@ export class DoctorPsychometricsComponent implements OnInit {
         this.errorMessage = err.error?.message || 'Có lỗi xảy ra khi chỉ định bài test!';
       }
     });
+  }
+
+  getEffectiveSeverity(sub: IPsychometricSubmission): { label: string; bg: string; text: string; border: string; isHighRisk: boolean } {
+    const text = (sub.interpretation || '').toLowerCase();
+    if (text.includes('rất nặng') || text.includes('extremely severe')) {
+      return { label: 'Rất Nặng (Nguy Cơ Cao)', bg: '#fee2e2', text: '#991b1b', border: '#fca5a5', isHighRisk: true };
+    }
+    if (text.includes('nặng') || text.includes('severe')) {
+      return { label: 'Mức Độ Nặng', bg: '#ffedd5', text: '#c2410c', border: '#fdba74', isHighRisk: true };
+    }
+    if (text.includes('vừa') || text.includes('moderate')) {
+      return { label: 'Mức Độ Vừa', bg: '#fef3c7', text: '#854d0e', border: '#fcd34d', isHighRisk: false };
+    }
+    if (text.includes('nhẹ') || text.includes('mild')) {
+      return { label: 'Mức Độ Nhẹ', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', isHighRisk: false };
+    }
+    return { label: 'Bình Thường', bg: '#ecfdf5', text: '#047857', border: '#a7f3d0', isHighRisk: false };
+  }
+
+  getParsedScoreData(jsonStr?: string | null): any {
+    if (!jsonStr) return null;
+    try {
+      return JSON.parse(jsonStr);
+    } catch {
+      return null;
+    }
   }
 }

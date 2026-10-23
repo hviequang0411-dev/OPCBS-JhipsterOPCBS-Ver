@@ -114,6 +114,17 @@ spring:
     jpa:
       repositories:
         bootstrap-mode: deferred
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
   jpa:
     open-in-view: false
     properties:
@@ -162,6 +173,24 @@ spring:
         size: 2
   thymeleaf:
     mode: HTML
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}
+    password: ${SPRING_MAIL_PASSWORD:pjhq xpdx sxil qbcs}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
   output:
     ansi:
       console-available: true
@@ -198,7 +227,7 @@ jhipster:
   #   allow-credentials: true
   #   max-age: 1800
   mail:
-    from: opcbs@localhost
+    from: ${SPRING_MAIL_FROM:${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}}
   api-docs:
     default-include-pattern: /api/**
     management-include-pattern: /management/**
@@ -233,3 +262,13 @@ application:
     google:
       client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
       client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+  kafka:
+    enabled: ${APPLICATION_KAFKA_ENABLED:false}
+    topic: opcbs-appointment-events
+    dlt-topic: opcbs-appointment-events.DLT
+    payment-topic: opcbs-payment-events
+    user-topic: opcbs-user-events
+  rabbitmq:
+    enabled: ${APPLICATION_RABBITMQ_ENABLED:false}
+    email-queue: opcbs.email.dispatch.queue
+    email-dlq: opcbs.email.dlq

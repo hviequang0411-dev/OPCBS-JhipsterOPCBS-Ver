@@ -1,0 +1,370 @@
+<div class="admin-verification-detail-container">
+  <!-- BACK NAVIGATION -->
+  <div class="mb-3">
+    <a routerLink="/admin/doctor-verifications" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-xs d-inline-flex align-items-center gap-1">
+      <i class="bi bi-arrow-left"></i>Quay Lại Hàng Đợi Duyệt
+    </a>
+  </div>
+
+  <!-- ALERTS -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 py-3 px-4 mb-4 d-flex align-items-center">
+      <i class="bi bi-check-circle-fill fs-4 text-success me-3"></i>
+      <div class="flex-grow-1">
+        <div class="fw-bold">Thao Tác Thành Công!</div>
+        <div class="small">{{ successMessage() }}</div>
+      </div>
+      <button type="button" class="btn-close" (click)="successMessage.set(null)"></button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 py-3 px-4 mb-4 d-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill fs-4 text-danger me-3"></i>
+      <div class="flex-grow-1">
+        <div class="fw-bold">Có Lỗi Xảy Ra!</div>
+        <div class="small">{{ errorMessage() }}</div>
+      </div>
+      <button type="button" class="btn-close" (click)="errorMessage.set(null)"></button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary me-2" role="status"></div>
+      <div class="text-muted small mt-2">Đang tải hồ sơ bác sĩ...</div>
+    </div>
+  } @else if (verification(); as v) {
+    @let badge = getStatusBadge(v.status);
+
+    <!-- PROFILE HERO CARD -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 text-center p-4 hero-profile-card">
+      <div class="d-flex justify-content-center mb-3">
+        @if (v.avatarUrl) {
+          <img [src]="v.avatarUrl" [alt]="v.doctorName" class="rounded-circle border shadow hero-avatar" />
+        } @else {
+          <div class="rounded-circle hero-avatar-placeholder d-flex align-items-center justify-content-center fw-bold text-white shadow">
+            {{ getInitials(v.doctorName) }}
+          </div>
+        }
+      </div>
+      <h2 class="fw-bold text-dark mb-1 hero-name">{{ v.doctorName || 'Bác Sĩ Ứng Tuyển' }}</h2>
+      <p class="text-muted small mb-2">
+        {{ v.specialization || 'Chuyên Gia Tâm Lý' }} • {{ v.experienceYears || 0 }} năm kinh nghiệm lâm sàng
+      </p>
+      <div>
+        <span class="status-badge-lg" [ngClass]="badge.class">
+          <i class="bi me-1" [ngClass]="badge.icon"></i>{{ badge.label }}
+        </span>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- LEFT COLUMN: PRACTITIONER INFO & CERTIFICATE VIEWER -->
+      <div class="col-lg-8">
+        <!-- Practitioner Info Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden detail-section-card">
+          <div class="card-header bg-light border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold text-dark small text-uppercase">
+              <i class="bi bi-person-vcard text-primary me-2"></i>Thông Tin Chuyên Môn & Giấy Phép
+            </h6>
+            <span class="badge bg-white text-dark border px-2 py-1 rounded small">
+              Mã Hồ Sơ: #{{ v.id }}
+            </span>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <div class="text-muted small">Họ và Tên Bác Sĩ</div>
+                <div class="fw-bold text-dark">{{ v.doctorName || '—' }}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Chuyên Khoa / Chức Danh</div>
+                <div class="fw-bold text-dark">{{ v.specialization || '—' }}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Số Chứng Chỉ Hành Nghề (CCHN)</div>
+                <div>
+                  <code class="px-2 py-1 bg-light rounded text-dark fw-bold border">
+                    {{ v.licenseNumber || '—' }}
+                  </code>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Kinh Nghiệm Thực Hành</div>
+                <div class="fw-semibold text-dark">{{ v.experienceYears || 0 }} Năm</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Học Vị & Đơn Vị Đào Tạo</div>
+                <div class="fw-semibold text-dark">{{ v.education || '—' }}</div>
+              </div>
+              <div class="col-sm-6">
+                <div class="text-muted small">Thời Điểm Gửi Hồ Sơ</div>
+                <div class="fw-semibold text-dark">
+                  {{ v.submittedAt ? (v.submittedAt | date:'dd/MM/yyyy HH:mm') : '—' }}
+                </div>
+              </div>
+              @if (v.notes) {
+                <div class="col-12 pt-2 border-top">
+                  <div class="text-muted small mb-1">Mục Tiêu & Giới Thiệu Chuyên Môn</div>
+                  <p class="text-secondary small mb-0 bg-light p-3 rounded-3">{{ v.notes }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Certificate Evidence Card -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden detail-section-card">
+          <div class="card-header bg-light border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold text-dark small text-uppercase">
+              <i class="bi bi-file-earmark-medical text-primary me-2"></i>Minh Chứng Chứng Chỉ Y Khoa
+            </h6>
+            @if (v.certificateUploadedAt) {
+              <span class="text-muted small">
+                <i class="bi bi-clock me-1"></i>Tải lên: {{ v.certificateUploadedAt | date:'dd/MM/yyyy HH:mm' }}
+              </span>
+            }
+          </div>
+          <div class="card-body p-4">
+            @if (v.certificateUrl) {
+              <!-- Image Preview Mode -->
+              @if (isCertificateImage()) {
+                <div class="text-center mb-4 cert-image-wrapper p-3 bg-light rounded-3">
+                  <img
+                    [src]="v.certificateUrl"
+                    [alt]="v.certificateFileName || 'Chứng Chỉ Bác Sĩ'"
+                    class="img-fluid rounded border shadow-sm cert-preview-img"
+                    title="Nhấp để mở ảnh kích thước gốc"
+                  />
+                  <div class="text-muted small mt-2">
+                    <i class="bi bi-zoom-in me-1"></i>Bản scan chứng chỉ hành nghề y tế
+                  </div>
+                </div>
+              }
+
+              <!-- PDF Viewer Mode -->
+              @if (isCertificatePdf() && safePdfUrl()) {
+                <div class="ratio ratio-16x9 mb-4 rounded-3 overflow-hidden border shadow-sm">
+                  <iframe [src]="safePdfUrl()!" title="Bản scan PDF chứng chỉ" class="border-0"></iframe>
+                </div>
+              }
+
+              <!-- Certificate File Info Pill & Actions -->
+              <div class="p-3 bg-light rounded-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="cert-icon-box bg-white rounded-circle shadow-xs d-flex align-items-center justify-content-center">
+                    <i class="bi fs-4" [ngClass]="isCertificatePdf() ? 'bi-file-earmark-pdf-fill text-danger' : 'bi-file-earmark-image-fill text-primary'"></i>
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark small">{{ v.certificateFileName || 'Chung_Chi_Hanh_Nghe_Y_Te.pdf' }}</div>
+                    <div class="text-muted text-xs">
+                      Tệp đính kèm chính thức phục vụ đối chiếu của Hội đồng Y khoa
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <a [href]="v.certificateUrl" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold">
+                    <i class="bi bi-eye me-1"></i>Xem Toàn Màn Hình
+                  </a>
+                  <a [href]="v.certificateUrl" [download]="v.certificateFileName || 'chung_chi_bac_si.pdf'" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-download me-1"></i>Tải Về
+                  </a>
+                </div>
+              </div>
+            } @else {
+              <div class="text-center py-5 text-muted">
+                <i class="bi bi-file-earmark-x fs-1 d-block mb-2 text-warning"></i>
+                <div class="fw-bold text-dark">Chưa Có Tệp Chứng Chỉ Nào Được Tải Lên</div>
+                <div class="small">Bác sĩ chưa đính kèm bản scan giấy phép hành nghề trong hồ sơ này.</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Reviewer Note / Rejection Reason History Card -->
+        @if (v.rejectionReason) {
+          <div class="card border-0 shadow-sm rounded-4 mb-4 border-start border-warning border-4 bg-warning-subtle">
+            <div class="card-body p-4">
+              <h6 class="fw-bold text-warning-emphasis mb-2 small text-uppercase">
+                <i class="bi bi-chat-left-dots-fill me-2"></i>Ý Kiến & Yêu Cầu Của Người Thẩm Định
+              </h6>
+              <p class="mb-0 text-dark small">{{ v.rejectionReason }}</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- RIGHT COLUMN: REVIEW ACTIONS & TIMELINE -->
+      <div class="col-lg-4">
+        <!-- Review Action Panel -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4 detail-section-card">
+          <div class="card-header bg-light border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold text-dark small text-uppercase">
+              <i class="bi bi-clipboard-check text-primary me-2"></i>Thực Hiện Thẩm Định
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            @if (isPending()) {
+              <!-- Action 1: Approve Button -->
+              <div class="mb-4">
+                <button
+                  type="button"
+                  class="btn btn-success w-100 py-2 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 approve-btn"
+                  (click)="approve()"
+                  [disabled]="isSubmitting()"
+                >
+                  <i class="bi bi-check-circle-fill fs-5"></i>
+                  <span>Phê Duyệt & Kích Hoạt Bác Sĩ</span>
+                </button>
+                <div class="text-muted text-xs text-center mt-2">
+                  Xác nhận bác sĩ đủ điều kiện chuyên môn để nhận lịch khám
+                </div>
+              </div>
+
+              <hr class="my-4 text-muted" />
+
+              <!-- Action 2: Request Additional Info Form -->
+              <div class="mb-4">
+                <label class="form-label small fw-bold text-dark mb-1">
+                  <i class="bi bi-question-circle text-info me-1"></i>Yêu Cầu Bổ Sung Thông Tin
+                </label>
+                <textarea
+                  class="form-control form-control-sm rounded-3 mb-2"
+                  rows="3"
+                  placeholder="Mô tả cụ thể tài liệu cần bác sĩ nộp lại (scan mờ, thiếu dấu công chứng, v.v.)..."
+                  [(ngModel)]="additionalInfoReason"
+                  [disabled]="isSubmitting()"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-outline-info btn-sm w-100 rounded-pill fw-semibold"
+                  (click)="requestAdditionalInfo()"
+                  [disabled]="isSubmitting() || !additionalInfoReason().trim()"
+                >
+                  <i class="bi bi-send me-1"></i>Gửi Yêu Cầu Bổ Sung
+                </button>
+              </div>
+
+              <hr class="my-4 text-muted" />
+
+              <!-- Action 3: Reject Application Form -->
+              <div>
+                <label class="form-label small fw-bold text-dark mb-1">
+                  <i class="bi bi-x-circle text-danger me-1"></i>Từ Chối Hồ Sơ
+                </label>
+                <textarea
+                  class="form-control form-control-sm rounded-3 mb-2"
+                  rows="3"
+                  placeholder="Nhập lý do từ chối hồ sơ không đạt chuẩn y khoa..."
+                  [(ngModel)]="rejectionReason"
+                  [disabled]="isSubmitting()"
+                ></textarea>
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm w-100 rounded-pill fw-semibold"
+                  (click)="reject()"
+                  [disabled]="isSubmitting() || !rejectionReason().trim()"
+                >
+                  <i class="bi bi-x-octagon me-1"></i>Từ Chối Hồ Sơ
+                </button>
+              </div>
+            } @else {
+              <!-- Completed Review State -->
+              <div class="text-center py-4">
+                @if (v.status === 'APPROVED') {
+                  <div class="completed-icon bg-success-subtle text-success rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-check2-circle fs-1"></i>
+                  </div>
+                  <h6 class="fw-bold text-success mb-1">Hồ Sơ Đã Được Phê Duyệt</h6>
+                  <p class="text-muted small mb-3">Tài khoản bác sĩ đã được kích hoạt và có thể mở lịch tư vấn trên nền tảng.</p>
+                } @else if (v.status === 'REJECTED') {
+                  <div class="completed-icon bg-danger-subtle text-danger rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-x-circle fs-1"></i>
+                  </div>
+                  <h6 class="fw-bold text-danger mb-1">Hồ Sơ Đã Bị Từ Chối</h6>
+                  <p class="text-muted small mb-3">Hồ sơ không đáp ứng điều kiện y khoa của MindBridge.</p>
+                }
+
+                <div class="p-3 bg-light rounded-3 text-start small">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Người Thẩm Định:</span>
+                    <span class="fw-bold text-dark">{{ v.reviewedByName || v.reviewedBy || 'Hội Đồng Y Khoa (Admin)' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted">Thời Gian Duyệt:</span>
+                    <span class="fw-semibold text-dark">{{ v.reviewedAt ? (v.reviewedAt | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill w-100" (click)="loadVerification(v.id!)">
+                    <i class="bi bi-arrow-repeat me-1"></i>Tải Lại Dữ Liệu
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Verification Timeline Card -->
+        <div class="card border-0 shadow-sm rounded-4 detail-section-card">
+          <div class="card-header bg-light border-bottom py-3 px-4">
+            <h6 class="mb-0 fw-bold text-dark small text-uppercase">
+              <i class="bi bi-clock-history text-primary me-2"></i>Tiến Trình Thẩm Định
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="timeline">
+              <!-- Step 1: Submission -->
+              <div class="timeline-item pb-3">
+                <div class="timeline-marker bg-primary text-white">
+                  <i class="bi bi-send-fill"></i>
+                </div>
+                <div class="timeline-content">
+                  <div class="fw-bold text-dark small">Hồ Sơ Được Nộp Lên</div>
+                  <div class="text-muted text-xs">
+                    {{ v.submittedAt ? (v.submittedAt | date:'dd/MM/yyyy HH:mm') : 'Đã nộp' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2: Review Result -->
+              @if (v.reviewedAt) {
+                <div class="timeline-item">
+                  <div class="timeline-marker" [ngClass]="{
+                    'bg-success text-white': v.status === 'APPROVED',
+                    'bg-danger text-white': v.status === 'REJECTED',
+                    'bg-info text-white': v.status === 'REQUIRES_ADDITIONAL_INFO'
+                  }">
+                    <i class="bi" [ngClass]="{
+                      'bi-check-lg': v.status === 'APPROVED',
+                      'bi-x-lg': v.status === 'REJECTED',
+                      'bi-question-lg': v.status === 'REQUIRES_ADDITIONAL_INFO'
+                    }"></i>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="fw-bold text-dark small">{{ badge.label }}</div>
+                    <div class="text-muted text-xs">
+                      {{ v.reviewedAt | date:'dd/MM/yyyy HH:mm' }} • Bởi {{ v.reviewedByName || v.reviewedBy || 'Admin' }}
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="timeline-item opacity-50">
+                  <div class="timeline-marker bg-secondary text-white">
+                    <i class="bi bi-hourglass"></i>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="fw-semibold text-muted small">Đang Chờ Quản Trị Viên Xem Xét</div>
+                    <div class="text-muted text-xs">Đang trong hàng đợi thẩm định</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

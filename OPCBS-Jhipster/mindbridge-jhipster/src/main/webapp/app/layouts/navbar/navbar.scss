@@ -1,166 +1,380 @@
 /* ==========================================================================
-   MindBridge Main Navbar Styles
+   MindBridge Clinical Healthcare Main Navbar Styles
+   Theme: Deep Clinical Teal & Hospital Slate Premium Medical Aesthetic
    ========================================================================== */
 
+:host {
+  display: block;
+}
+
 .mb-main-navbar {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
-  padding: 0.65rem 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.85);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 118, 110, 0.04);
+  padding: 0.5rem 0;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 1030;
 
-  .container {
-    max-width: 1240px;
+  /* Top Clinical Accent Bar */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0f766e 0%, #0d9488 25%, #0284c7 60%, #10b981 100%);
+    z-index: 1031;
   }
 
-  /* Brand */
-  .mb-brand-logo {
-    max-height: 38px;
-    width: auto;
-    object-fit: contain;
-    transition: transform 0.2s ease;
+  .container,
+  .container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding-left: clamp(1rem, 2.5vw, 2.5rem);
+    padding-right: clamp(1rem, 2.5vw, 2.5rem);
   }
 
-  .mb-brand-text {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    font-weight: 800;
-    font-size: 1.32rem;
-    letter-spacing: -0.03em;
-    color: #0f172a;
+  /* Brand Styling */
+  .navbar-brand {
     text-decoration: none;
+    outline: none;
+    flex-shrink: 0;
 
-    span {
-      color: var(--mb-primary, #3e8e7e);
+    .mb-brand-emblem {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+      i {
+        transition: transform 0.25s ease;
+      }
+    }
+
+    &:hover .mb-brand-emblem {
+      transform: scale(1.05);
+      box-shadow: 0 6px 14px rgba(15, 118, 110, 0.35);
+
+      i {
+        transform: scale(1.1);
+      }
+    }
+
+    .mb-brand-text {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+      color: #0f172a;
+      line-height: 1.15;
+
+      span {
+        color: #0f766e;
+      }
+    }
+
+    .mb-brand-subtext {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #0d9488;
+      display: block;
+      margin-top: -1px;
     }
   }
 
-  &:hover .mb-brand-logo {
-    transform: scale(1.02);
-  }
-
-  /* Nav Links */
+  /* Navigation Links */
   .navbar-nav {
+    gap: 0.2rem;
+    flex-wrap: nowrap;
+
     .nav-item {
-      margin: 0 0.15rem;
+      flex-shrink: 0;
 
       .nav-link {
-        font-size: 0.92rem;
+        font-family: 'Inter', system-ui, sans-serif;
+        font-size: 0.84rem;
         font-weight: 600;
-        color: #475569;
-        padding: 0.5rem 0.9rem;
+        color: #334155;
+        padding: 0.38rem 0.62rem;
         border-radius: 8px;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: inline-flex;
         align-items: center;
+        gap: 0.35rem;
+        position: relative;
+        white-space: nowrap;
 
-        i {
-          font-size: 1rem;
+        .nav-icon-badge {
+          width: 22px;
+          height: 22px;
+          border-radius: 6px;
+          background: #f1f5f9;
+          color: #64748b;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+          transition: all 0.2s ease;
         }
 
         &:hover {
-          color: var(--mb-primary, #3e8e7e);
-          background-color: rgba(62, 142, 126, 0.06);
+          color: #0f766e;
+          background-color: #f0fdfa;
+
+          .nav-icon-badge {
+            background: #ccfbf1;
+            color: #0f766e;
+            transform: scale(1.06);
+          }
         }
 
         &.active {
-          color: var(--mb-primary, #3e8e7e);
-          background-color: rgba(62, 142, 126, 0.1);
+          color: #0f766e;
+          background: linear-gradient(135deg, rgba(15, 118, 110, 0.08) 0%, rgba(13, 148, 136, 0.12) 100%);
+          border: 1px solid rgba(13, 148, 136, 0.22);
           font-weight: 700;
+
+          .nav-icon-badge {
+            background: #0f766e;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(15, 118, 110, 0.25);
+          }
         }
       }
     }
   }
 
-  /* Right action buttons */
+  /* Right Action Elements */
   .mb-navbar-actions {
+    gap: 0.4rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+
+    /* Doctor Dedicated CTA */
     .mb-btn-for-doctor {
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.8rem;
+      font-weight: 700;
       color: #0f766e;
       background: #f0fdfa;
-      border: 1px solid #ccfbf1;
-      padding: 0.45rem 0.9rem;
+      border: 1px solid #99f6e4;
+      padding: 0.38rem 0.72rem;
       border-radius: 8px;
       transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      box-shadow: 0 1px 3px rgba(15, 118, 110, 0.08);
+      white-space: nowrap;
+
+      i {
+        font-size: 0.95rem;
+        color: #0d9488;
+      }
 
       &:hover {
         background: #ccfbf1;
         color: #115e59;
-        border-color: #99f6e4;
+        border-color: #5eead4;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(15, 118, 110, 0.16);
       }
     }
 
+    /* Guest Login Button */
     .mb-btn-login {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 600;
       color: #334155;
-      padding: 0.45rem 1rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 0.38rem 0.8rem;
       border-radius: 8px;
       transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+
+      i {
+        color: #64748b;
+      }
 
       &:hover {
-        color: var(--mb-primary, #3e8e7e);
-        background: #f1f5f9;
+        color: #0f766e;
+        border-color: #cbd5e1;
+        background: #f8fafc;
+
+        i {
+          color: #0f766e;
+        }
       }
     }
 
+    /* Guest Get Started Button */
     .mb-btn-get-started {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #ffffff;
-      background: linear-gradient(135deg, var(--mb-primary, #3e8e7e) 0%, #2f6f62 100%);
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
       border: none;
-      padding: 0.5rem 1.15rem;
-      border-radius: 9px;
+      padding: 0.4rem 0.95rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.28);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
 
       &:hover {
-        background: linear-gradient(135deg, #357a6c 0%, #26594e 100%);
+        background: linear-gradient(135deg, #115e59 0%, #0f766e 100%);
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px -2px rgba(62, 142, 126, 0.38) !important;
+        box-shadow: 0 6px 18px rgba(15, 118, 110, 0.38);
+        color: #ffffff;
       }
     }
 
-    /* User Pill */
-    .mb-user-pill {
-      background: #f8fafc;
+    /* Notification Bell Action Button */
+    .mb-nav-bell {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #ffffff;
       border: 1px solid #e2e8f0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      font-size: 1.05rem;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
       cursor: pointer;
-      transition: all 0.2s ease;
+      text-decoration: none;
+
+      &:hover,
+      &.active {
+        color: #0f766e;
+        background: #f0fdfa;
+        border-color: #99f6e4;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(15, 118, 110, 0.15);
+      }
+
+      .mb-bell-dot {
+        position: absolute;
+        top: 6px;
+        right: 7px;
+        width: 8px;
+        height: 8px;
+        background-color: #ef4444;
+        border: 1.5px solid #ffffff;
+        border-radius: 50%;
+        display: block;
+
+        .mb-bell-ping {
+          position: absolute;
+          top: -1.5px;
+          left: -1.5px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background-color: #ef4444;
+          opacity: 0.75;
+          animation: bell-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+      }
+    }
+
+    @keyframes bell-ping {
+      75%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    /* Logged In User Pill */
+    .mb-user-pill {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 0.35rem 0.75rem;
+      border-radius: 50rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
 
       &:hover,
       &[aria-expanded='true'] {
-        background: #ffffff;
+        background: #f8fafc;
         border-color: #cbd5e1;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
       }
 
-      .mb-nav-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #3e8e7e 0%, #2c6e61 100%);
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+      .avatar-wrapper {
+        position: relative;
+        display: inline-block;
 
-      .mb-nav-avatar-img {
-        width: 32px;
-        height: 32px;
-        object-fit: cover;
+        .mb-nav-avatar {
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 6px rgba(15, 118, 110, 0.2);
+        }
+
+        .mb-nav-avatar-img {
+          width: 34px;
+          height: 34px;
+          object-fit: cover;
+          border-radius: 50%;
+          border: 2px solid #ffffff;
+        }
+
+        .online-pulse-indicator {
+          position: absolute;
+          bottom: -1px;
+          right: -1px;
+          width: 10px;
+          height: 10px;
+          background: #10b981;
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+        }
       }
 
       .mb-user-name {
-        font-size: 0.82rem;
+        font-size: 0.84rem;
         font-weight: 700;
-        color: #1e293b;
+        color: #0f172a;
         max-width: 140px;
         white-space: nowrap;
         overflow: hidden;
@@ -173,43 +387,141 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        padding: 0.15rem 0.4rem;
+        padding: 0.15rem 0.45rem;
         border-radius: 4px;
-        align-self: flex-start;
       }
     }
   }
 
-  /* Glass Dropdown */
+  /* Glassmorphism Medical Dropdown */
   .mb-glass-dropdown {
     background: #ffffff;
-    border-radius: 12px;
-    padding: 0.5rem;
-    min-width: 210px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.12) !important;
-    margin-top: 0.4rem;
+    border-radius: 14px;
+    padding: 0.5rem 0.5rem;
+    min-width: 270px;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 118, 110, 0.04) !important;
+    margin-top: 0.5rem;
+    animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 
+    /* Section Category Headers */
+    .dropdown-section-title {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      padding: 0.5rem 0.85rem 0.25rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      i {
+        font-size: 0.75rem;
+        color: #0f766e;
+      }
+    }
+
+    /* Menu Items */
     .dropdown-item {
       font-size: 0.88rem;
       font-weight: 600;
       color: #334155;
-      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      border-radius: 9px;
       transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .item-content {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .clinical-icon-box {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: #f1f5f9;
+        color: #0f766e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+        transition: all 0.15s ease;
+      }
+
+      .item-arrow {
+        font-size: 0.75rem;
+        color: #cbd5e1;
+        opacity: 0;
+        transform: translateX(-4px);
+        transition: all 0.15s ease;
+      }
 
       &:hover {
-        background-color: #f1f5f9;
-        color: #0f172a;
+        background-color: #f0fdfa;
+        color: #0f766e;
+
+        .clinical-icon-box {
+          background: #ccfbf1;
+          color: #0f766e;
+          transform: scale(1.05);
+        }
+
+        .item-arrow {
+          opacity: 1;
+          transform: translateX(0);
+          color: #0f766e;
+        }
       }
 
       &.active {
-        background-color: rgba(62, 142, 126, 0.1);
-        color: var(--mb-primary, #3e8e7e);
+        background-color: #ccfbf1;
+        color: #0f766e;
+        font-weight: 700;
+
+        .clinical-icon-box {
+          background: #0f766e;
+          color: #ffffff;
+        }
       }
+
+      &.text-danger:hover {
+        background-color: #fef2f2;
+        color: #dc2626;
+
+        .clinical-icon-box {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .item-arrow {
+          color: #dc2626;
+        }
+      }
+    }
+
+    .dropdown-divider {
+      margin: 0.4rem 0.4rem;
+      border-color: #f1f5f9;
     }
   }
 
   .text-teal {
-    color: var(--mb-primary, #3e8e7e) !important;
+    color: #0f766e !important;
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

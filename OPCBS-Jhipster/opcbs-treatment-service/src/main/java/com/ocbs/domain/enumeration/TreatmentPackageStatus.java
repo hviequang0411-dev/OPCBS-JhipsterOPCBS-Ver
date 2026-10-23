@@ -7,7 +7,9 @@ public enum TreatmentPackageStatus {
     CREATED,
     PROPOSED,
     ACTIVE,
+    ON_HOLD,
     COMPLETED,
     CANCELLED,
-    REJECTED
+    REJECTED,
+    EXPIRED
 }

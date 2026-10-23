@@ -1,8 +1,9 @@
 <!-- Hero Section with Cloud Video Background -->
 <section class="mb-hero">
-  <!-- Video Background streamed from Cloud CDN -->
+  <!-- Video Background streamed from Cloud CDN / Local Asset -->
   <video class="hero-video-bg" autoplay loop muted playsinline>
-    <source src="https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4" type="video/mp4" />
+    <source src="content/videos/hero-bg.mp4" type="video/mp4" />
+    <source src="videos/hero-bg.mp4" type="video/mp4" />
   </video>
 
   <!-- Soft Translucent Overlay for High Readability -->
@@ -46,25 +47,15 @@
 
     <!-- Hero CTA Buttons -->
     <div class="d-flex justify-content-center gap-3 flex-wrap">
-      <a routerLink="/doctor-profile" class="btn btn-primary btn-lg px-4 pulse-glow" style="border-radius: 9999px; font-weight: 600">
-        <i class="bi bi-search-heart me-2"></i>Danh Sách Bác Sĩ
+      <a routerLink="/doctor-profile" class="btn-hero-primary pulse-glow">
+        <i class="bi bi-search-heart me-2"></i><span>Danh Sách Bác Sĩ</span>
       </a>
-      @if (!account()) {
-        <a
-          routerLink="/account/register"
-          class="btn btn-outline-dark btn-lg px-4"
-          style="border-radius: 9999px; font-weight: 600; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(8px)"
-        >
-          Đăng Ký Khám Bệnh
-        </a>
-        <a
-          routerLink="/account/register-doctor"
-          class="btn btn-outline-dark btn-lg px-4"
-          style="border-radius: 9999px; font-weight: 600; background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(8px)"
-        >
-          <i class="bi bi-heart-pulse me-1"></i>Hợp Tác Bác Sĩ
-        </a>
-      }
+      <a routerLink="/account/register" class="btn-hero-outline">
+        <i class="bi bi-person-plus-fill me-2 text-teal"></i><span>Đăng Ký Khám Bệnh</span>
+      </a>
+      <a routerLink="/account/register-doctor" class="btn-hero-outline">
+        <i class="bi bi-heart-pulse-fill me-2 text-rose"></i><span>Hợp Tác Bác Sĩ</span>
+      </a>
     </div>
   </div>
 </section>
@@ -130,14 +121,20 @@
       <a routerLink="/doctor-profile" class="landing-section-link"> Xem tất cả bác sĩ <i class="bi bi-arrow-right"></i> </a>
     </div>
 
-    <div class="d-flex flex-wrap gap-3">
-      @for (spec of specializations(); track spec.id) {
-        <button type="button" class="spec-pill-chip" (click)="filterBySpecialization(spec.id)">
-          <i class="bi bi-heart-pulse-fill"></i>
-          <span>{{ spec.name }}</span>
-        </button>
-      }
-    </div>
+    @if (specializations().length === 0) {
+      <div class="text-muted small py-2 fst-italic">
+        <i class="bi bi-info-circle me-1"></i>Đang tải danh mục chuyên khoa từ cơ sở dữ liệu y tế...
+      </div>
+    } @else {
+      <div class="d-flex flex-wrap gap-3">
+        @for (spec of specializations(); track spec.id) {
+          <button type="button" class="spec-pill-chip" (click)="filterBySpecialization(spec.id)">
+            <i class="bi bi-heart-pulse-fill"></i>
+            <span>{{ spec.name }}</span>
+          </button>
+        }
+      </div>
+    }
   </section>
 
   <!-- 3. Featured Therapists Section -->
@@ -150,37 +147,45 @@
       <a routerLink="/doctor-profile" class="landing-section-link"> Xem toàn bộ danh bạ <i class="bi bi-arrow-right"></i> </a>
     </div>
 
-    <div class="row g-4">
-      @for (doc of featuredDoctors(); track doc.id) {
-        <div class="col-sm-6 col-lg-3">
-          <a [routerLink]="['/doctor-profile', doc.id, 'view']" class="doctor-landing-card landing-glass-card">
-            <div class="doctor-avatar-box">
-              <div class="doctor-avatar-placeholder">
-                {{ getInitials(doc.fullName) }}
+    @if (featuredDoctors().length === 0) {
+      <div class="card border-0 shadow-sm rounded-4 p-4 text-center my-3 bg-light">
+        <i class="bi bi-people text-muted fs-2 mb-2"></i>
+        <h6 class="fw-bold text-dark mb-1">Hiện Chưa Có Bác Sĩ Tiêu Biểu Hiển Thị</h6>
+        <p class="text-secondary small mb-0">Các bác sĩ và chuyên gia tâm lý đang hoàn tất thẩm định hồ sơ chuyên môn trên nền tảng.</p>
+      </div>
+    } @else {
+      <div class="row g-4">
+        @for (doc of featuredDoctors(); track doc.id) {
+          <div class="col-sm-6 col-lg-3">
+            <a [routerLink]="['/doctor-profile', doc.id, 'view']" class="doctor-landing-card landing-glass-card">
+              <div class="doctor-avatar-box">
+                <div class="doctor-avatar-placeholder">
+                  {{ getInitials(doc.fullName) }}
+                </div>
+                <span class="doctor-verified-badge" title="Bác Sĩ Đã Xác Thực">
+                  <i class="bi bi-check-circle-fill"></i>
+                </span>
               </div>
-              <span class="doctor-verified-badge" title="Bác Sĩ Đã Xác Thực">
-                <i class="bi bi-check-circle-fill"></i>
-              </span>
-            </div>
-            <h3 class="doctor-landing-name">{{ doc.fullName }}</h3>
-            <div class="doctor-landing-specialty">{{ doc.title || 'Bác Sĩ Trị Liệu Tâm Lý' }}</div>
-            <p class="doctor-landing-bio">{{ doc.bio || 'Chăm sóc tận tâm, lắng nghe và đồng hành cùng người bệnh trong mọi giai đoạn.' }}</p>
+              <h3 class="doctor-landing-name">{{ doc.fullName }}</h3>
+              <div class="doctor-landing-specialty">{{ doc.title || 'Bác Sĩ Trị Liệu Tâm Lý' }}</div>
+              <p class="doctor-landing-bio">{{ doc.bio || 'Chăm sóc tận tâm, lắng nghe và đồng hành cùng người bệnh trong mọi giai đoạn.' }}</p>
 
-            <div class="d-flex justify-content-between align-items-center w-100 border-top pt-2 mt-auto text-muted small">
-              <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ doc.experienceYears || 5 }}+ năm kinh nghiệm</span>
-              @if (doc.consultationFee) {
-                <span class="fw-bold text-primary">{{ doc.consultationFee | number }} đ</span>
-              }
-            </div>
+              <div class="d-flex justify-content-between align-items-center w-100 border-top pt-2 mt-auto text-muted small">
+                <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ doc.experienceYears || 5 }}+ năm kinh nghiệm</span>
+                @if (doc.consultationFee) {
+                  <span class="fw-bold text-primary">{{ doc.consultationFee | number }} đ</span>
+                }
+              </div>
 
-            <div class="doctor-card-btn mt-3">
-              <i class="bi bi-calendar-event"></i>
-              <span>Xem Hồ Sơ & Đặt Hẹn</span>
-            </div>
-          </a>
-        </div>
-      }
-    </div>
+              <div class="doctor-card-btn mt-3">
+                <i class="bi bi-calendar-event"></i>
+                <span>Xem Hồ Sơ & Đặt Hẹn</span>
+              </div>
+            </a>
+          </div>
+        }
+      </div>
+    }
   </section>
 
   <!-- 4. How MindBridge Works -->

@@ -49,10 +49,10 @@ public class DoctorDashboardResource {
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
 
-        dashboardService.evictDoctorDashboardCache(login);
+        boolean success = dashboardService.evictDoctorDashboardCache(login);
         return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "Đã xóa Redis Cache thành công cho bác sĩ: " + login,
+            "success", success,
+            "message", success ? "Đã xóa Redis Cache thành công cho bác sĩ: " + login : "Không tìm thấy khóa cache hoặc Redis tạm thời không phản hồi",
             "doctorLogin", login
         ));
     }

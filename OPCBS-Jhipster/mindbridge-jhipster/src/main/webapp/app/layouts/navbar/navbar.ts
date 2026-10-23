@@ -12,6 +12,7 @@ import { loadNavbarItems } from 'app/core/microfrontend';
 import { ProfileService } from 'app/layouts/profiles/profile.service';
 import { LoginService } from 'app/login/login.service';
 import { HasAnyAuthorityDirective } from 'app/shared/auth';
+import { NotificationService } from 'app/entities/notification/notification.service';
 
 import NavbarItem from './navbar-item.model';
 
@@ -43,6 +44,9 @@ export default class Navbar implements OnInit {
   private readonly accountService = inject(AccountService);
   private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
+  private readonly notificationService = inject(NotificationService);
+
+  readonly unreadNotificationCount = this.notificationService.unreadCount;
 
   constructor() {
     const { VERSION } = environment;
@@ -55,6 +59,7 @@ export default class Navbar implements OnInit {
     effect(() => {
       if (this.accountService.account()) {
         this.loadMicrofrontendsEntities();
+        this.notificationService.loadUnreadCount().subscribe({ error: () => {} });
       }
     });
   }
@@ -76,8 +81,14 @@ export default class Navbar implements OnInit {
 
   logout(): void {
     this.collapseNavbar();
-    this.loginService.logout();
-    this.router.navigate(['']);
+    this.loginService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login'], { queryParams: { loggedOut: 'true' } });
+      },
+      error: () => {
+        this.router.navigate(['/login'], { queryParams: { loggedOut: 'true' } });
+      },
+    });
   }
 
   isDoctor(): boolean {

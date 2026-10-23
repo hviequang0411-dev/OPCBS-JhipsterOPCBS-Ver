@@ -37,6 +37,47 @@
     </div>
   </div>
 
+  <!-- Quota & Subscription Status Banner -->
+  @if (quota(); as q) {
+    @if (!q.hasActiveSubscription) {
+      <div class="alert alert-warning border-0 shadow-sm mt-3 mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-radius: 8px;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+          <div>
+            <strong class="text-dark">Gói dịch vụ chưa kích hoạt hoặc đã hết hạn:</strong>
+            <span class="ms-1 text-muted small">{{ q.message }}</span>
+          </div>
+        </div>
+        <a routerLink="/doctor/subscriptions" class="btn btn-warning btn-sm fw-bold px-3 py-1.5 rounded-pill shadow-sm">
+          <i class="bi bi-arrow-up-circle me-1"></i> Đăng Ký / Gia Hạn Ngay
+        </a>
+      </div>
+    } @else {
+      <div class="alert border border-teal-subtle mt-3 mb-0 p-2.5 px-3 rounded-3 shadow-sm bg-white d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-left: 4px solid #0f766e !important;">
+        <div class="d-flex align-items-center gap-3 flex-wrap small">
+          <span class="badge bg-teal text-white px-2.5 py-1 rounded-pill fw-bold" style="background-color: #0f766e;">
+            <i class="bi bi-award-fill me-1"></i>{{ q.servicePackageName || 'Gói Hội Viên' }}
+          </span>
+          <span class="text-dark">
+            <i class="bi bi-calendar2-check text-teal me-1"></i>Giới hạn ngày:
+            <strong>{{ q.maxDailySlotsCapacity ? q.maxDailySlotsCapacity + ' slot / ngày' : 'Không giới hạn' }}</strong>
+          </span>
+          <span class="text-dark">
+            <i class="bi bi-people-fill text-teal me-1"></i>Hạn mức thân chủ:
+            <strong>{{ q.maxPatientCapacity ? (q.currentPatientCount + ' / ' + q.maxPatientCapacity + ' thân chủ') : 'Không giới hạn' }}</strong>
+          </span>
+          <span class="text-dark">
+            <i class="bi bi-hourglass-split text-warning me-1"></i>Hiệu lực còn:
+            <strong class="text-teal">{{ q.daysRemaining }} ngày</strong>
+          </span>
+        </div>
+        <a routerLink="/doctor/subscriptions" class="btn btn-outline-secondary btn-sm px-2.5 py-1 rounded-pill" style="font-size: 0.75rem;">
+          Quản Lý Gói
+        </a>
+      </div>
+    }
+  }
+
   <!-- Toolbar & Filters -->
   <div class="doctor-schedule-toolbar-wrapper mt-3 mb-3">
     <!-- Row 1: View Mode, Date Range Navigator, Mode Filter -->

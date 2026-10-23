@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20261015160000-1" author="opcbs-core">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="blog_post"/>
+            </not>
+        </preConditions>
+        <createTable tableName="blog_post">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="doctor_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="longtext">
+                <constraints nullable="false"/>
+            </column>
+            <column name="thumbnail_url" type="varchar(1024)"/>
+            <column name="excerpt" type="varchar(1000)"/>
+            <column name="status" type="varchar(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="view_count" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rejection_reason" type="longtext"/>
+            <column name="submitted_at" type="datetime(6)"/>
+            <column name="approved_at" type="datetime(6)"/>
+            <column name="approved_by" type="bigint"/>
+            <column name="published_at" type="datetime(6)"/>
+            <column name="archived_at" type="datetime(6)"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="datetime(6)"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="datetime(6)"/>
+        </createTable>
+
+        <createIndex tableName="blog_post" indexName="idx_blog_post_doctor">
+            <column name="doctor_id"/>
+        </createIndex>
+        <createIndex tableName="blog_post" indexName="idx_blog_post_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="blog_post" indexName="idx_blog_post_published">
+            <column name="published_at"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="blog_post"
+                                 baseColumnNames="doctor_id"
+                                 constraintName="fk_blog_post_doctor_id"
+                                 referencedTableName="doctor_profile"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="20261015160000-2" author="opcbs-core">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="blog_comment"/>
+            </not>
+        </preConditions>
+        <createTable tableName="blog_comment">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="blog_post_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="patient_id" type="bigint"/>
+            <column name="author_name" type="varchar(100)"/>
+            <column name="author_email" type="varchar(100)"/>
+            <column name="content" type="longtext">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_approved" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="datetime(6)"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="datetime(6)"/>
+        </createTable>
+
+        <createIndex tableName="blog_comment" indexName="idx_blog_comment_post">
+            <column name="blog_post_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseTableName="blog_comment"
+                                 baseColumnNames="blog_post_id"
+                                 constraintName="fk_blog_comment_post_id"
+                                 referencedTableName="blog_post"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint baseTableName="blog_comment"
+                                 baseColumnNames="patient_id"
+                                 constraintName="fk_blog_comment_patient_id"
+                                 referencedTableName="patient_profile"
+                                 referencedColumnNames="id"
+                                 onDelete="SET NULL"/>
+    </changeSet>
+
+</databaseChangeLog>

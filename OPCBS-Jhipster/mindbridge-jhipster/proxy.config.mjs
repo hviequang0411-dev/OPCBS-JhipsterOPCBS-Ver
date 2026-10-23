@@ -7,8 +7,14 @@ const backendHost = '127.0.0.1';
  * @type {import('vite').CommonServerOptions['proxy']}
  */
 export default {
-  // 1. Auth Service (8081) - Authentication, OTP, Registration, User Management
-  '^/api/(authenticate|register|register-doctor|account|users|authorities|admin/users)': {
+  // 0. JWKS Public Key Endpoints (8081) - RFC 7517 Key Set
+  '^/(.well-known/jwks.json|api/jwks)': {
+    target: `http://${backendHost}:8081`,
+    xfwd: true,
+  },
+
+  // 1. Auth Service (8081) - Authentication, OTP, Registration, User Management, Logout
+  '^/api/(authenticate|logout|register|register-doctor|account|users|authorities|admin/users)': {
     target: `http://${backendHost}:8081`,
     xfwd: true,
   },
@@ -36,7 +42,7 @@ export default {
   },
 
   // 5. Psychometric Service (8085) - Psychometric Tests (DASS-21, PHQ-9, GAD-7) & Submissions
-  '^/api/(psychometrics|patient/psychometrics|doctor/psychometrics)': {
+  '^/api/(psychometrics|patient/psychometrics|doctor/psychometrics|admin/psychometrics)': {
     target: `http://${backendHost}:8085`,
     xfwd: true,
   },
@@ -48,7 +54,7 @@ export default {
   },
 
   // 7. Payment Service (8087) - Platform Subscriptions, VNPay Sandbox, Transactions
-  '^/api/(payments|service-packages|doctor-subscriptions)': {
+  '^/api/(payments|service-packages|doctor-subscriptions|doctor/subscriptions|doctor/my-subscription|admin/service-packages|admin/dashboard)': {
     target: `http://${backendHost}:8087`,
     xfwd: true,
   },
@@ -60,7 +66,7 @@ export default {
   },
 
   // 9. Booking Service (8082) - Doctor Profiles, Slots, Appointments, Specializations, Doctor Dashboard, Certificate Uploads, Cloud Storage, Verification, Avatar Upload
-  '^/api/(doctor-profiles|specializations|availability-slots|appointments|doctor/my-slots|doctor/slots|doctor/appointments|doctor/dashboard|doctor/upload-avatar|doctor/upload-certificate|doctor/upload-certificate-cloud|doctor/upload-certificate-base64|doctor/certificates|doctor/verification|doctor/submit-verification|patient/appointments|patient/my-appointments)': {
+  '^/api/(doctor-profiles|specializations|availability-slots|appointments|doctor/my-slots|doctor/slots|doctor/subscription-quota|doctor/appointments|doctor/dashboard|doctor/upload-avatar|doctor/upload-certificate|doctor/upload-certificate-cloud|doctor/upload-certificate-base64|doctor/certificates|doctor/verification|doctor/submit-verification|patient/appointments|patient/my-appointments|patient/doctors|admin/doctor-verifications)': {
     target: `http://${backendHost}:8082`,
     xfwd: true,
   },

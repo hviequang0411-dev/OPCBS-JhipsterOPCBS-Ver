@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- 1. Bổ sung các trường Quản lý Bảo lưu (Hold Lifecycle) vào bảng treatment_package -->
+    <changeSet id="20261015150000-1" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="treatment_package" columnName="is_hold_requested"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="treatment_package">
+            <column name="is_hold_requested" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hold_requested_at" type="${datetimeType}"/>
+            <column name="hold_start_date" type="${datetimeType}"/>
+            <column name="hold_end_date" type="${datetimeType}"/>
+            <column name="hold_duration_days" type="int"/>
+            <column name="hold_reason" type="${clobType}"/>
+            <column name="hold_approved_at" type="${datetimeType}"/>
+            <column name="hold_approved_by_doctor_id" type="bigint"/>
+            <column name="hold_rejected_at" type="${datetimeType}"/>
+            <column name="hold_rejection_reason" type="${clobType}"/>
+            <column name="total_hold_days" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 2. Bảng Mục tiêu điều trị chuẩn y khoa (treatment_goal) -->
+    <changeSet id="20261015150000-2" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="treatment_goal"/>
+            </not>
+        </preConditions>
+        <createTable tableName="treatment_goal">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="package_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${clobType}"/>
+            <column name="category" type="varchar(50)" defaultValue="OTHER"/>
+            <column name="priority" type="varchar(20)" defaultValue="MEDIUM"/>
+            <column name="status" type="varchar(30)" defaultValue="NOT_STARTED"/>
+            <column name="progress_percent" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_value" type="decimal(10,2)"/>
+            <column name="current_value" type="decimal(10,2)"/>
+            <column name="unit" type="varchar(50)"/>
+            <column name="target_date" type="${datetimeType}"/>
+            <column name="achieved_date" type="${datetimeType}"/>
+            <column name="doctor_notes" type="${clobType}"/>
+            <column name="created_at" type="${datetimeType}"/>
+            <column name="updated_at" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="treatment_goal"
+            baseColumnNames="package_id"
+            constraintName="fk_treatment_goal_package"
+            referencedTableName="treatment_package"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- 3. Bảng Buổi trị liệu & Diễn biến lâm sàng (treatment_session) -->
+    <changeSet id="20261015150000-3" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="treatment_session"/>
+            </not>
+        </preConditions>
+        <createTable tableName="treatment_session">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="package_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="appointment_id" type="bigint"/>
+            <column name="session_number" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)"/>
+            <column name="session_summary" type="${clobType}"/>
+            <column name="doctor_clinical_assessment" type="${clobType}"/>
+            <column name="patient_friendly_summary" type="${clobType}"/>
+            <column name="mood_before" type="int"/>
+            <column name="mood_after" type="int"/>
+            <column name="status" type="varchar(30)" defaultValue="PLANNED"/>
+            <column name="created_at" type="${datetimeType}"/>
+            <column name="updated_at" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="treatment_session"
+            baseColumnNames="package_id"
+            constraintName="fk_treatment_session_package"
+            referencedTableName="treatment_package"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>

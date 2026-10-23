@@ -1,0 +1,93 @@
+<div class="container py-4" style="max-width: 900px;">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <a routerLink="/admin/service-package" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold text-dark mb-0">Chi Tiết Gói Dịch Vụ Nền Tảng</h1>
+        <p class="text-muted small mb-0">Hồ sơ thông số kỹ thuật và phân bổ hội viên bác sĩ</p>
+      </div>
+    </div>
+    @if (pkg()) {
+      <div class="d-flex gap-2">
+        <a [routerLink]="['/admin/service-package', pkg()!.id, 'edit']" class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1.5" style="background: #0f766e; border-color: #0f766e;">
+          <i class="bi bi-pencil"></i>
+          <span>Chỉnh Sửa Gói</span>
+        </a>
+      </div>
+    }
+  </div>
+
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-teal" role="status"></div>
+      <div class="text-muted mt-2">Đang tải thông tin gói dịch vụ...</div>
+    </div>
+  } @else if (pkg()) {
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+      <div class="card-header bg-white p-4 border-bottom d-flex justify-content-between align-items-start">
+        <div>
+          <span class="badge" [class.bg-success]="pkg()!.isActive" [class.bg-secondary]="!pkg()!.isActive" style="font-size: 0.72rem;">
+            {{ pkg()!.isActive ? 'ĐANG KÍCH HOẠT' : 'TẠM DỪNG' }}
+          </span>
+          <h2 class="h3 fw-bold text-dark mt-2 mb-1">{{ pkg()!.name }}</h2>
+          <p class="text-muted mb-0">{{ pkg()!.description || 'Không có mô tả chi tiết' }}</p>
+        </div>
+        <div class="text-end">
+          <div class="text-muted small">Giá gói niêm yết</div>
+          <div class="h2 fw-bold text-teal mb-0" style="color: #0f766e;">{{ formatPrice(pkg()!.price) }}</div>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="row g-4 mb-4">
+          <div class="col-sm-4">
+            <div class="p-3 rounded-3 bg-light border text-center">
+              <i class="bi bi-clock-history fs-3 text-primary d-block mb-1"></i>
+              <div class="text-muted small">Thời Hạn Hiệu Lực</div>
+              <div class="h5 fw-bold text-dark mb-0">{{ pkg()!.durationDays }} Ngày</div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-3 rounded-3 bg-light border text-center">
+              <i class="bi bi-calendar2-range fs-3 text-teal d-block mb-1" style="color: #0f766e;"></i>
+              <div class="text-muted small">Giới Hạn Slot Khám</div>
+              <div class="h5 fw-bold text-dark mb-0">
+                {{ pkg()!.maxDailySlotsCapacity ? pkg()!.maxDailySlotsCapacity + ' slot/ngày' : 'Không giới hạn' }}
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-3 rounded-3 bg-light border text-center">
+              <i class="bi bi-sort-numeric-down fs-3 text-warning d-block mb-1"></i>
+              <div class="text-muted small">Thứ Tự Hiển Thị</div>
+              <div class="h5 fw-bold text-dark mb-0">Vị trí #{{ pkg()!.displayOrder || 1 }}</div>
+            </div>
+          </div>
+        </div>
+
+        <h5 class="fw-bold text-dark mb-3" style="font-size: 1rem;">
+          <i class="bi bi-shield-check me-2 text-teal" style="color: #0f766e;"></i>
+          Danh Sách Quyền Lợi &amp; Tính Năng Đi Kèm
+        </h5>
+
+        <div class="row g-2 mb-4">
+          @if (getFeatureArray().length === 0) {
+            <div class="col-12 text-muted fst-italic">Chưa có tính năng nào được cấu hình.</div>
+          } @else {
+            @for (feature of getFeatureArray(); track feature) {
+              <div class="col-md-6">
+                <div class="p-2.5 rounded-3 border d-flex align-items-center gap-2" style="background: #f8fafc;">
+                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <span class="text-dark small fw-medium">{{ feature }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

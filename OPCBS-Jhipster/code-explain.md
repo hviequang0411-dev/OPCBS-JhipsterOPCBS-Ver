@@ -25,6 +25,8 @@
    - [5.2. Các câu lệnh SQL Hibernate thực thi ngầm](#52-các-câu-lệnh-sql-hibernate-thực-thi-ngầm)
 6. [Bảng Tra Cứu Nhanh Hàm & Trách Nhiệm (Quick Reference Map)](#6-bảng-tra-cứu-nhanh-hàm--trách-nhiệm-quick-reference-map)
 7. [Cơ Chế Giao Tiếp & Xử Lý Code Giữa 5 Microservices Độc Lập](#7-cơ-chế-giao-tiếp--xử-lý-code-giữa-5-microservices-độc-lập)
+   - [7.1. Bảng Phân Luồng Endpoint và Dịch Vụ Phụ Trách](#71-bảng-phân-luồng-endpoint-và-dịch-vụ-phụ-trách)
+   - [7.2. Cách thức các hàm phía Backend thực thi khi nhận Token](#72-cách-thức-các-hàm-phía-backend-thực-thi-khi-nhận-token)
 8. [Giải Thích Code Service Discovery Với Netflix Eureka Server](#8-giải-thích-code-service-discovery-với-netflix-eureka-server)
 9. [Hướng Dẫn Chi Tiết Cách Sử Dụng Apache Kafka Trong Microservices](#9-hướng-dẫn-chi-tiết-cách-sử-dụng-apache-kafka-trong-microservices)
    - [9.1. Các Khái Niệm Cốt Lõi Cần Nắm Vững](#91-các-khái-niệm-cốt-lõi-cần-nắm-vững)
@@ -34,6 +36,42 @@
    - [9.5. Lập Trình Kafka Consumer - Lắng Nghe & Xử Lý Sự Kiện](#95-lập-trình-kafka-consumer---lắng-nghe--xử-lý-sự-kiện)
    - [9.6. Ba Kịch Bản Thực Tế Trong Dự Án Y Tế MindBridge](#96-ba-kịch-bản-thực-tế-trong-dự-án-y-tế-mindbridge)
    - [9.7. Bộ Lệnh CLI Thao Tác & Kiểm Thử Kafka Bằng Docker](#97-bộ-lệnh-cli-thao-tác--kiểm-thử-kafka-bằng-docker)
+10. [Giải Thích Mã Nguồn Chi Tiết Các Microservices (Notification, Payment, Message & Treatment)](#10-giải-thích-mã-nguồn-chi-tiết-các-microservices-mới-triển-khai-notification-payment-message--treatment-auto-deduct)
+    - [10.1. `opcbs-treatment-service` — Cơ Chế Tự Động Trừ Buổi Điều Trị](#101-opcbs-treatment-service--cơ-chế-tự-động-trừ-buổi-điều-trị)
+    - [10.2. `opcbs-notification-service` — Hệ Thống Thông Báo Thời Gian Thực](#102-opcbs-notification-service--hệ-thống-thông-báo-thời-gian-thực)
+    - [10.3. `opcbs-payment-service` — Gói Nền Tảng & Tích Hợp VNPay Sandbox](#103-opcbs-payment-service--gói-nền-tảng--tích-hợp-vnpay-sandbox)
+    - [10.4. `opcbs-message-service` — Trò Chuyện Trực Tuyến Bác Sĩ - Bệnh Nhân](#104-opcbs-message-service--trò-chuyện-trực-tuyến-bác-sĩ---bệnh-nhân)
+11. [Phân Tích Chuyên Sâu Mã Nguồn Deadlock & Luồng Đặt Lịch (Booking Flow)](#11-phân-tích-chuyên-sâu-mã-nguồn-deadlock--luồng-đặt-lịch-booking-transaction-flow)
+    - [11.1. Bản Chất Deadlock & Mã Nguồn Mô Phỏng vs Khắc Phục](#111-bản-chất-deadlock--mã-nguồn-mô-phỏng-vs-khắc-phục)
+    - [11.2. Phân Tích Mã Nguồn Luồng Đặt Lịch Hẹn (`AppointmentManagementResource.java`)](#112-phân-tích-mã-nguồn-luồng-đặt-lịch-hẹn-appointmentmanagementresourcejava)
+12. [Phân Tích Mã Nguồn Transaction & Tính Lũy Đẳng Trong Payment Gateway](#12-phân-tích-mã-nguồn-transaction--tính-lũy-đẳng-idempotency-trong-payment-gateway-vnpay-sandbox)
+    - [12.1. Thuật Toán Băm HMAC-SHA512 Xác Thực Chữ Ký (`VnPayUtil.java`)](#121-thuật-toán-băm-hmac-sha512-xác-thực-chữ-ký-vnpayutiljava)
+    - [12.2. Kiểm Soát Giao Dịch & Idempotency Guard (`PaymentResource.java`)](#122-kiểm-soát-giao-dịch--idempotency-guard-paymentresourcejava)
+13. [Phân Tích Mã Nguồn Doctor Dashboard Service Với Redis Cache & C# Model Mapping](#13-phân-tích-mã-nguồn-doctor-dashboard-service-với-redis-cache--c-model-mapping)
+    - [13.1. So Sánh Kiến Trúc Mô Hình C# Razor vs Spring Boot + Redis Cache](#131-so-sánh-kiến-trúc-mô-hình-c-razor-vs-spring-boot--redis-cache)
+    - [13.2. Mã Nguồn Redis Cache Container (`DoctorDashboardService.java`)](#132-mã-nguồn-redis-cache-container-doctordashboardservicejava)
+    - [13.3. REST Controller Tiếp Nhận API (`DoctorDashboardResource.java`)](#133-rest-controller-tiếp-nhận-api-doctordashboardresourcejava)
+    - [13.4. Frontend Component Angular 19 (`doctor-dashboard.component.ts`)](#134-frontend-component-angular-19-doctor-dashboardcomponentts)
+14. [Phân Tích Chi Tiết Mã Nguồn Kiến Trúc 2.0: Chuẩn Hóa Database 3NF, Anti-Spam & Microservice Blog](#14-phân-tích-chi-tiết-mã-nguồn-kiến-trúc-20-phase-13-chuẩn-hóa-database-3nf-anti-spam-tầng-db-vòng-đời-bảo-lưu--microservice-blog)
+    - [14.1. Chuẩn Hóa 3NF Database & Ngăn Ngừa Bảng Rác](#141-chuẩn-hóa-3nf-database--ngăn-ngừa-bảng-rác)
+    - [14.2. Bộ Query JPQL Chống Spam & Giới Hạn Tần Suất Đặt Lịch Tầng DB (`AppointmentRepository.java`)](#142-bộ-query-jpql-chống-spam--giới-hạn-tần-suất-đặt-lịch-tầng-db-appointmentrepositoryjava)
+    - [14.3. Nghiệp Vụ Bảo Lưu Gói Trị Liệu & Tự Động Gia Hạn Ngày Hết Hạn (`TreatmentPackageResource.java`)](#143-nghiệp-vụ-bảo-lưu-gói-trị-liệu--tự-động-gia-hạn-ngày-hết-hạn-treatmentpackageresourcejava)
+    - [14.4. Tính Toán Tiến Độ Lâm Sàng Tầng Database (`TreatmentPackageResource.java`)](#144-tính-toán-tiến-độ-lâm-sàng-tầng-database-treatmentpackageresourcejava)
+    - [14.5. Kiến Trúc Microservice Thứ 9: `opcbs-blog-service` (Port 8089)](#145-kiến-trúc-microservice-thứ-9-opcbs-blog-service-port-8089)
+    - [14.6. Giao Diện Người Dùng Angular 19 Đồng Bộ Chuẩn C# Gốc (`OPCBS.Web`)](#146-giao-diện-người-dùng-angular-19-đồng-bộ-chuẩn-c-gốc-opcbsweb)
+    - [14.7. Phân Tích Mã Nguồn Thanh Điều Hướng Lâm Sàng (Clinical Main Navbar)](#147-phân-tích-mã-nguồn-thanh-điều-hướng-lâm-sàng-clinical-main-navbar)
+    - [14.8. Phân Tích Mã Nguồn Quản Lý Gói Dịch Vụ, Gia Hạn Thông Minh & Lịch Sử Giao Dịch Bác Sĩ](#148-phân-tích-mã-nguồn-quản-lý-gói-dịch-vụ-gia-hạn-thông-minh--lịch-sử-giao-dịch-bác-sĩ)
+15. [Phân Tích Chi Tiết Mã Nguồn Chuẩn Hóa Nền Tảng Backend (Ưu tiên 2) & Cải Tiến Toàn Diện Microservices (Ưu tiên 3)](#15-phân-tích-chi-tiết-mã-nguồn-chuẩn-hóa-nền-tảng-backend-ưu-tiên-2--cải-tiến-toàn-diện-microservices-ưu-tiên-3)
+    - [15.1. Cơ Chế Fail-Closed Token Blacklist & Redis Eviction Policy (`opcbs-auth-service`)](#151-cơ-chế-fail-closed-token-blacklist--redis-eviction-policy-opcbs-auth-service)
+    - [15.2. Chống Race Condition & Idempotency Key Tại Tầng Booking (`opcbs-booking-service`)](#152-chống-race-condition--idempotency-key-tại-tầng-booking-opcbs-booking-service)
+    - [15.3. Transactional Event Synchronization & An Toàn Lưu Trữ File (`opcbs-booking-service`)](#153-transactional-event-synchronization--an-toàn-lưu-trữ-file-opcbs-booking-service)
+    - [15.4. Khắc Phục Triệt Để Lỗ Hổng Rò Rỉ Dữ Liệu Bệnh Án (IDOR) & Audit Log Y Tế (`opcbs-clinical-service`)](#154-khắc-phục-triệt-để-lỗ-hổng-rò-rỉ-dữ-liệu-bệnh-án-idor--audit-log-y-tế-opcbs-clinical-service)
+    - [15.5. Trừ Buổi Trị Liệu Chuẩn Xác Khi Hoàn Tất Ca Khám & Phân Quyền Phác Đồ (`opcbs-treatment-service`)](#155-trừ-buổi-trị-liệu-chuẩn-xác-khi-hoàn-tất-ca-khám--phân-quyền-phác-đồ-opcbs-treatment-service)
+    - [15.6. Phân Quyền Truy Cập & Bảo Mật Kết Quả Trắc Nghiệm Tâm Lý (`opcbs-psychometric-service`)](#156-phân-quyền-truy-cập--bảo-mật-kết-quả-trắc-nghiệm-tâm-lý-opcbs-psychometric-service)
+    - [15.7. Tách Biệt Kênh & Quản Lý Vòng Đời Trạng Thái Thông Báo (`opcbs-notification-service`)](#157-tách-biệt-kênh--quản-lý-vòng-đời-trạng-thái-thông-báo-opcbs-notification-service)
+    - [15.8. Xác Thực Chữ Ký HMAC-SHA512, Đối Chiếu Số Tiền & Chặn Mock Checkout Prod (`opcbs-payment-service`)](#158-xác-thực-chữ-ký-hmac-sha512-đối-chiếu-số-tiền--chặn-mock-checkout-prod-opcbs-payment-service)
+    - [15.9. Bộ Lọc HTML Sanitizer Chống Tấn Công XSS & Bảo Vệ Quy Trình Bài Viết (`opcbs-blog-service`)](#159-bộ-lọc-html-sanitizer-chống-tấn-công-xss--bảo-vệ-quy-trình-bài-viết-opcbs-blog-service)
+    - [15.10. Participant Access Control (PAC) & Nguyên Tắc Zero Client Trust (`opcbs-message-service`)](#1510-participant-access-control-pac--nguyên-tắc-zero-client-trust-opcbs-message-service)
 
 ---
 
@@ -1390,8 +1428,715 @@ Giao diện Angular 19 được thiết kế chuẩn theo Razor UI của C# vớ
 4. Khung Lịch Khám Hôm Nay & Lịch Sắp Tới: Action buttons (Vào khám, Xem bệnh án, Nhận xét).
 5. Biểu đồ tuần (CSS dynamic bar chart) & Tỷ lệ phân bổ bệnh nhân (Retention tiers).
 
+---
 
+## 14. Phân Tích Chi Tiết Mã Nguồn Kiến Trúc 2.0 (Phase 13): Chuẩn Hóa Database 3NF, Anti-Spam Tầng DB, Vòng Đời Bảo Lưu & Microservice Blog
 
+### 14.1. Chuẩn Hóa 3NF Database & Ngăn Ngừa Bảng Rác
+Để duy trì độ tinh gọn của schema cơ sở dữ liệu và tuân thủ chặt chẽ dạng chuẩn 3 (3NF):
+1. **Bảo lưu phác đồ trị liệu (`treatment_package`)**: Không tạo bảng phụ tách rời. Chúng tôi mở rộng trực tiếp bảng `treatment_package` với 11 cột thuộc tính:
+   - `is_hold_requested` (BOOLEAN): Cờ đánh dấu bệnh nhân đang gửi đơn xin bảo lưu.
+   - `hold_duration_days` (INTEGER): Số ngày đăng ký bảo lưu (1 đến 180 ngày).
+   - `hold_start_date` (TIMESTAMP): Thời điểm bắt đầu có hiệu lực bảo lưu.
+   - `hold_end_date` (TIMESTAMP): Thời điểm kết thúc bảo lưu dự kiến.
+   - `total_hold_days` (INTEGER): Tổng số ngày đã từng bảo lưu lũy kế trong phác đồ.
+   - `hold_reason` (VARCHAR): Lý do cá nhân/y tế do người bệnh trình bày.
+   - `hold_approved_at` / `hold_approved_by_doctor_id`: Dấu vết bác sĩ phê duyệt.
+   - `hold_rejected_at` / `hold_rejection_reason`: Lý do và thời gian bác sĩ từ chối.
+2. **Bảng mục tiêu điều trị (`treatment_goal`)**:
+   - `id`, `title`, `description`, `priority` (`HIGH`, `MEDIUM`, `LOW`), `status` (`PENDING`, `IN_PROGRESS`, `ACHIEVED`), `achieved_date`, `created_at`.
+   - Khóa ngoại `treatment_package_id` trỏ về `treatment_package(id)`.
+3. **Bảng buổi tham vấn trị liệu (`treatment_session`)**:
+   - `id`, `session_number`, `session_date`, `summary`, `homework`, `mood_before` (1-10), `mood_after` (1-10), `created_at`.
+   - Khóa ngoại `treatment_package_id` trỏ về `treatment_package(id)`.
+4. **Bảng Blog Y Khoa (`blog_post`, `blog_comment`)**:
+   - Chỉ gồm 2 bảng phục vụ trọn vẹn việc quản lý bài viết và bình luận độc giả.
 
+---
 
+### 14.2. Bộ Query JPQL Chống Spam & Giới Hạn Tần Suất Đặt Lịch Tầng DB ([`AppointmentRepository.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/repository/AppointmentRepository.java))
+
+```java
+public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
+
+    // 1. Kiểm tra 1 bệnh nhân chỉ đặt tối đa 1 ca/ngày với cùng 1 bác sĩ
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.id = :patientId AND a.doctor.id = :doctorId " +
+           "AND a.appointmentDate >= :startOfDay AND a.appointmentDate <= :endOfDay " +
+           "AND a.status NOT IN ('CANCELLED', 'REJECTED')")
+    long countActiveAppointmentsOnDate(@Param("patientId") Long patientId, @Param("doctorId") Long doctorId,
+                                      @Param("startOfDay") Instant startOfDay, @Param("endOfDay") Instant endOfDay);
+
+    // 2. Giới hạn số lượng ca active trong 1 tuần với cùng 1 bác sĩ (Tối đa 3)
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.id = :patientId AND a.doctor.id = :doctorId " +
+           "AND a.appointmentDate >= :startOfWeek AND a.appointmentDate <= :endOfWeek " +
+           "AND a.status NOT IN ('CANCELLED', 'REJECTED')")
+    long countActiveAppointmentsWithDoctorInWeek(@Param("patientId") Long patientId, @Param("doctorId") Long doctorId,
+                                                @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek);
+
+    // 3. Giới hạn tổng số lượng ca active trong 1 tuần toàn hệ thống (Tối đa 5)
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.patient.id = :patientId " +
+           "AND a.appointmentDate >= :startOfWeek AND a.appointmentDate <= :endOfWeek " +
+           "AND a.status NOT IN ('CANCELLED', 'REJECTED')")
+    long countTotalActiveAppointmentsInWeek(@Param("patientId") Long patientId,
+                                           @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek);
+
+    // 4. Chống trùng khung giờ khám của bác sĩ
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE a.doctor.id = :doctorId " +
+           "AND a.status NOT IN ('CANCELLED', 'REJECTED') " +
+           "AND a.appointmentDate < :endTime AND a.endTime > :startTime " +
+           "AND (:excludeAppointmentId IS NULL OR a.id != :excludeAppointmentId)")
+    boolean existsOverlappingAppointment(@Param("doctorId") Long doctorId,
+                                         @Param("startTime") Instant startTime,
+                                         @Param("endTime") Instant endTime,
+                                         @Param("excludeAppointmentId") Long excludeAppointmentId);
+}
+```
+
+Kiểm tra trực tiếp tại `AppointmentManagementResource.java`:
+```java
+// Rule 1: Giới hạn 1 ca/ngày với cùng 1 bác sĩ
+long appointmentsOnDate = appointmentRepository.countActiveAppointmentsOnDate(patientId, doctorId, startOfDay, endOfDay);
+if (appointmentsOnDate > 0) {
+    throw new BadRequestAlertException(
+        "Bạn đã có 1 lịch hẹn đang hoạt động với bác sĩ này trong cùng ngày. Mỗi bệnh nhân chỉ được đặt tối đa 1 lịch/ngày với cùng một bác sĩ.",
+        "appointment", "dailyLimitExceeded"
+    );
+}
+
+// Rule 2: Rate limit tối đa 3 ca/tuần với cùng 1 bác sĩ
+long activeAppointmentsWithDoctorInWeek = appointmentRepository.countActiveAppointmentsWithDoctorInWeek(patientId, doctorId, startOfWeek, endOfWeek);
+if (activeAppointmentsWithDoctorInWeek >= 3) {
+    throw new BadRequestAlertException(
+        "Bạn đã đạt giới hạn tối đa 3 lịch hẹn trong tuần này với bác sĩ đã chọn (phòng chống đặt lịch dồn dập).",
+        "appointment", "weeklyDoctorLimitExceeded"
+    );
+}
+
+// Rule 3: Rate limit tối đa 5 ca/tuần trên toàn hệ thống
+long totalActiveAppointmentsInWeek = appointmentRepository.countTotalActiveAppointmentsInWeek(patientId, startOfWeek, endOfWeek);
+if (totalActiveAppointmentsInWeek >= 5) {
+    throw new BadRequestAlertException(
+        "Bạn đã đạt giới hạn tối đa 5 lịch hẹn trong tuần trên toàn hệ thống (chính sách chống spam đặt lịch).",
+        "appointment", "weeklySystemLimitExceeded"
+    );
+}
+
+// Rule 4: Chống trùng giờ khám
+if (appointmentRepository.existsOverlappingAppointment(doctorId, appointmentDate, endTime, null)) {
+    throw new BadRequestAlertException("Khung giờ khám này của bác sĩ đã có lịch hẹn khác. Vui lòng chọn thời gian khác.", "appointment", "timeSlotOverlap");
+}
+```
+
+---
+
+### 14.3. Nghiệp Vụ Bảo Lưu Gói Trị Liệu & Tự Động Gia Hạn Ngày Hết Hạn ([`TreatmentPackageResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/web/rest/TreatmentPackageResource.java))
+
+Khi Bác sĩ bấm Duyệt Bảo Lưu (`approveHoldPackage`):
+```java
+@PostMapping("/treatment-packages/{id}/approve-hold")
+public ResponseEntity<TreatmentPackage> approveHoldPackage(@PathVariable Long id) {
+    TreatmentPackage pkg = treatmentPackageRepository.findById(id)
+        .orElseThrow(() -> new BadRequestAlertException("Không tìm thấy gói điều trị", "treatmentPackage", "idnotfound"));
+
+    if (Boolean.FALSE.equals(pkg.getIsHoldRequested())) {
+        throw new BadRequestAlertException("Gói điều trị không có yêu cầu bảo lưu đang chờ duyệt", "treatmentPackage", "noHoldRequest");
+    }
+
+    int duration = pkg.getHoldDurationDays() != null ? pkg.getHoldDurationDays() : 30;
+    pkg.setIsHoldRequested(false);
+    pkg.setStatus(TreatmentStatus.ON_HOLD);
+    pkg.setHoldStartDate(Instant.now());
+    pkg.setHoldEndDate(Instant.now().plus(duration, ChronoUnit.DAYS));
+    pkg.setHoldApprovedAt(Instant.now());
+    pkg.setHoldApprovedByDoctorId(pkg.getDoctorId());
+    pkg.setTotalHoldDays((pkg.getTotalHoldDays() != null ? pkg.getTotalHoldDays() : 0) + duration);
+
+    // TỰ ĐỘNG GIA HẠN THỜI GIAN HẾT HẠN PHÁC ĐỒ THEO ĐÚNG SỐ NGÀY BẢO LƯU
+    if (pkg.getExpirationDate() != null) {
+        pkg.setExpirationDate(pkg.getExpirationDate().plus(duration, ChronoUnit.DAYS));
+    }
+
+    TreatmentPackage result = treatmentPackageRepository.save(pkg);
+    return ResponseEntity.ok(result);
+}
+```
+
+---
+
+### 14.4. Tính Toán Tiến Độ Lâm Sàng Tầng Database ([`TreatmentPackageResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/web/rest/TreatmentPackageResource.java))
+
+```java
+@GetMapping("/treatment-packages/{id}/progress-summary")
+public ResponseEntity<Map<String, Object>> getTreatmentProgressSummary(@PathVariable Long id) {
+    long totalGoals = treatmentGoalRepository.countByTreatmentPackageId(id);
+    long achievedGoals = treatmentGoalRepository.countByTreatmentPackageIdAndStatus(id, "ACHIEVED");
+    long completedSessions = treatmentSessionRepository.countByTreatmentPackageId(id);
+
+    Double avgMoodBefore = treatmentSessionRepository.getAverageMoodBefore(id);
+    Double avgMoodAfter = treatmentSessionRepository.getAverageMoodAfter(id);
+
+    double goalCompletionPercent = totalGoals > 0 ? ((double) achievedGoals / totalGoals) * 100.0 : 0.0;
+    double moodDelta = (avgMoodBefore != null && avgMoodAfter != null) ? (avgMoodAfter - avgMoodBefore) : 0.0;
+
+    Map<String, Object> response = new LinkedHashMap<>();
+    response.put("packageId", id);
+    response.put("totalGoals", totalGoals);
+    response.put("achievedGoals", achievedGoals);
+    response.put("goalCompletionPercent", Math.round(goalCompletionPercent * 10.0) / 10.0);
+    response.put("completedSessions", completedSessions);
+    response.put("averageMoodBefore", avgMoodBefore != null ? Math.round(avgMoodBefore * 10.0) / 10.0 : null);
+    response.put("averageMoodAfter", avgMoodAfter != null ? Math.round(avgMoodAfter * 10.0) / 10.0 : null);
+    response.put("moodImprovementDelta", Math.round(moodDelta * 10.0) / 10.0);
+
+    return ResponseEntity.ok(response);
+}
+```
+
+---
+
+### 14.5. Kiến Trúc Microservice Thứ 9: `opcbs-blog-service` (Port 8089)
+
+Cấu trúc module Spring Boot độc lập:
+```
+opcbs-blog-service/
+├── src/main/java/com/ocbs/
+│   ├── config/ (ApplicationProperties, SecurityConfiguration, DatabaseConfiguration)
+│   ├── domain/
+│   │   ├── BlogPost.java (Entity 3NF chính)
+│   │   ├── BlogComment.java (Entity bình luận 3NF)
+│   │   └── enumeration/BlogStatus.java (DRAFT, SUBMITTED, APPROVED, PUBLISHED, REJECTED)
+│   ├── repository/
+│   │   ├── BlogPostRepository.java (Tăng lượt xem ở tầng DB, tìm kiếm từ khóa, lọc bài viết đã duyệt)
+│   │   └── BlogCommentRepository.java
+│   └── web/rest/
+│       ├── PublicBlogResource.java (Đọc bài công khai, tăng view DB, độc giả bình luận)
+│       ├── DoctorBlogResource.java (Bác sĩ viết bài, sửa bài, gửi duyệt SUBMITTED)
+│       └── AdminBlogResource.java (Admin kiểm duyệt, phê duyệt APPROVED/PUBLISHED, từ chối REJECTED)
+├── src/main/resources/
+│   ├── config/application.yml (Cổng 8089, Eureka client, PostgreSQL database)
+│   └── config/liquibase/
+│       └── changelog/20261015160000_added_entity_BlogPost_and_BlogComment.xml
+└── pom.xml
+```
+
+Tăng lượt xem an toàn ở tầng Database Engine (`BlogPostRepository.java`):
+```java
+@Modifying
+@Query("UPDATE BlogPost b SET b.viewsCount = COALESCE(b.viewsCount, 0) + 1 WHERE b.id = :id")
+void incrementViewsCount(@Param("id") Long id);
+```
+
+---
+
+### 14.6. Giao Diện Người Dùng Angular 19 Đồng Bộ Chuẩn C# Gốc (`OPCBS.Web`)
+1. **Banner Cảnh Báo Bảo Lưu Chuẩn C#**:
+   - Class CSS `.clinical-hold-banner`:
+     ```css
+     background: #fffbeb !important;
+     border: 1px solid #fde68a !important;
+     color: #92400e !important;
+     ```
+   - Hiển thị ngày bắt đầu, ngày kết thúc bảo lưu, lý do và thời gian hết hạn mới đã gia hạn.
+2. **5 Tab Lâm Sàng Đồng Bộ**:
+   - Tab 1: Tổng quan (Thông tin chi tiết phác đồ, số buổi, chi phí).
+   - Tab 2: Các buổi tham vấn (Nhật ký phiên trị liệu, điểm tâm trạng trước/sau, bài tập về nhà).
+   - Tab 3: Mục tiêu điều trị (Danh mục mục tiêu, tích chọn hoàn thành, cấp độ ưu tiên).
+   - Tab 4: Hoạt động & Nhật ký (Theo dõi triệu chứng và tiến trình).
+   - Tab 5: Hành trình điều trị (Visual timeline từ lúc tiếp nhận đến khi kết thúc phác đồ).
+3. **Module Blog**:
+   - `/blogs`: Danh mục bài viết y khoa công khai, tìm kiếm theo tiêu đề/nội dung, lọc chuyên khoa, thẻ tag.
+   - `/blogs/:id`: Trang đọc bài viết chuyên môn chi tiết, thông tin bác sĩ tác giả, khung bình luận tương tác.
+   - `/doctor/blogs`: Giao diện bác sĩ soạn bài, quản lý bài viết và gửi kiểm duyệt.
+   - `/admin/blogs`: Giao diện Admin/Ban Biên Tập kiểm duyệt bài viết y khoa trước khi công bố.
+
+---
+
+### 14.7. Phân Tích Mã Nguồn Thanh Điều Hướng Lâm Sàng (Clinical Main Navbar)
+
+#### 1. Cấu Trúc Scss Y Khoa ([`navbar.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/navbar/navbar.scss))
+- **Dải Phân Cách Y Tế Đỉnh Navbar**:
+  ```scss
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #0f766e 0%, #0d9488 25%, #0284c7 60%, #10b981 100%);
+    z-index: 1031;
+  }
+  ```
+- **Hộp Biểu Tượng Lâm Sàng (`clinical-icon-box`)**:
+  Được thiết kế kích thước chuẩn 30x30px với bo góc 7px, nền `#f1f5f9` và màu biểu tượng `#0f766e`. Khi hover, hộp chuyển sang nền ngọc lam nhạt `#ccfbf1` và phóng to nhẹ `scale(1.05)`, kết hợp mũi tên vi mô `item-arrow` trượt ngang tạo hiệu ứng điều hướng mượt mà.
+- **Huy Hiệu Nhận Diện Trạng Thái Trực Tuyến (`online-pulse-indicator`)**:
+  Chấm tròn xanh ngọc `#10b981` viền trắng 2px định vị ở góc dưới avatar người dùng, biểu trưng cho sự sẵn sàng tiếp nhận và hỗ trợ y tế.
+
+#### 2. Cấu Trúc Template Phân Khu Y Khoa ([`navbar.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/navbar/navbar.html))
+- Tái cấu trúc menu dropdown với tiêu đề nhóm chức năng:
+  - `dropdown-section-title`: Phân biệt rành mạch giữa nghiệp vụ lâm sàng của Bác sĩ (`bi-stethoscope`), hồ sơ của Bệnh nhân (`bi-heart-pulse`), trung tâm quản trị (`bi-sliders`) và bảo mật tài khoản cá nhân (`bi-shield-lock`).
+  - Toàn bộ các icon từ danh mục chính đến các tác vụ nghiệp vụ đều sử dụng Bootstrap Icons chuẩn y khoa.
+
+---
+
+### 14.8. Phân Tích Mã Nguồn Quản Lý Gói Dịch Vụ, Gia Hạn Thông Minh & Lịch Sử Giao Dịch Bác Sĩ
+
+#### 1. Kiến Trúc Backend (`opcbs-payment-service`)
+- **Endpoint Lấy Lịch Sử Giao Dịch**:
+  - `GET /api/doctor/subscriptions/history`: Truy vấn `DoctorSubscriptionRepository.findAllByDoctorLoginOrderByCreatedDateDesc(login)` để lấy toàn bộ danh sách gói theo thứ tự thời gian mới nhất.
+- **Endpoint Gia Hạn Gói Thông Minh (Smart Extension)**:
+  - `POST /api/doctor/subscriptions/renew?packageId=...`:
+    ```java
+    // Nếu gói hiện tại của bác sĩ còn hạn sử dụng, hạn mới được cộng nối tiếp từ hạn cũ
+    Instant baseExpiration = (existingSub != null && existingSub.getExpirationDate().isAfter(Instant.now()))
+        ? existingSub.getExpirationDate()
+        : Instant.now();
+    Instant newExpiration = baseExpiration.plus(durationDays, ChronoUnit.DAYS);
+    ```
+  - Cơ chế này bảo toàn 100% số ngày còn lại của Bác sĩ, đồng thời chuyển trạng thái gói cũ sang `EXTENDED` để ghi nhận chu kỳ liên tục.
+
+#### 2. Kiến Trúc Frontend 3 Tab Chuẩn C# (`doctor-subscription.component.ts/.html/.scss`)
+- **Tab 1: Gói Hiện Tại (`STATUS`)**:
+  - Tích hợp 4 thẻ Grid Lâm Sàng: Ngày Kích Hoạt (`startDate`), Hạn Đăng Ký (`expirationDate`), Ngày Giao Dịch (`createdDate`), và Thời Gian Còn Lại (`daysRemaining`).
+  - Thanh tiến độ sử dụng (`progressPct = usedDays / totalDays * 100`) trực quan hóa phần trăm chu kỳ đã trôi qua.
+  - Cảnh báo sắp hết hạn ($\le 7$ ngày) sử dụng màu vàng y tế cảnh báo Bác sĩ gia hạn sớm để tránh gián đoạn khám chữa bệnh.
+- **Tab 2: Lịch Sử Giao Dịch (`HISTORY`)**:
+  - Thống kê tóm lược tổng lượt đăng ký và tổng chi phí đầu tư.
+  - Bộ lọc linh hoạt theo trạng thái: Tất cả, Đang dùng (`ACTIVE`), Đã gia hạn (`EXTENDED`), Đã hết hạn (`EXPIRED`), Chờ thanh toán (`PENDING_PAYMENT`).
+  - Bảng tra cứu Desktop & Card Mobile hiển thị mã hợp đồng `#SUB-XXXX`, mã giao dịch VNPay, số tiền và chu kỳ sử dụng.
+  - Modal xem chi tiết giao dịch y tế bất biến.
+- **Tab 3: Bảng Giá & Đổi Gói Mới (`PLANS`)**:
+  - Danh mục các gói hội viên với tính năng phân tầng rõ ràng, kết nối trực tiếp cổng thanh toán trực tuyến VNPay Sandbox.
+---
+
+## 15. Phân Tích Chi Tiết Mã Nguồn Chuẩn Hóa Nền Tảng Backend (Ưu tiên 2) & Cải Tiến Toàn Diện Microservices (Ưu tiên 3)
+
+### 15.1. Cơ Chế Fail-Closed Token Blacklist & Redis Eviction Policy (`opcbs-auth-service`)
+
+#### 1. Bài toán kỹ thuật
+Trong kiến trúc phân tán dựa trên JWT vô trạng thái (Stateless JWT), việc thu hồi token khi người dùng bấm Đăng Xuất (Logout) dựa trên một danh sách đen (Blacklist) lưu tạm thời trong Redis Cache. Tuy nhiên, nếu Redis gặp sự cố mạng, sập tiến trình hoặc bị quá tải bộ nhớ:
+- **Fail-Open**: Nếu hệ thống bỏ qua lỗi Redis và cho phép request đi qua, một token đã bị thu hồi (ví dụ: tài khoản bị xâm nhập và đã bấm đăng xuất trên thiết bị cũ) vẫn tiếp tục được truy cập vào dữ liệu y tế nhạy cảm.
+- **Fail-Closed**: Trên môi trường sản xuất (Production), bất kỳ sự cố Redis nào xảy ra trong quá trình kiểm tra thu hồi token đều phải dẫn đến việc **từ chối xác thực ngay lập tức** (`isBlacklisted = true`).
+
+#### 2. Phân tích mã nguồn [`TokenBlacklistService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/security/TokenBlacklistService.java)
+```java
+@Service
+public class TokenBlacklistService {
+
+    private final Logger log = LoggerFactory.getLogger(TokenBlacklistService.java);
+    private static final String BLACKLIST_PREFIX = "auth:blacklist:token:";
+
+    @Value("${application.security.jwt.blacklist-fail-closed:false}")
+    private boolean failClosed;
+
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final Set<String> localFallbackBlacklist = Collections.synchronizedSet(new HashSet<>());
+
+    public boolean isBlacklisted(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+
+        try {
+            if (redisTemplate != null) {
+                String tokenHash = hashToken(token);
+                Boolean hasKey = redisTemplate.hasKey(BLACKLIST_PREFIX + tokenHash);
+                return Boolean.TRUE.equals(hasKey);
+            }
+        } catch (Exception e) {
+            log.warn("Redis error while checking token blacklist: {}", e.getMessage());
+            // CHẾ ĐỘ FAIL-CLOSED TRÊN MÔI TRƯỜNG PRODUCTION
+            if (failClosed) {
+                log.error("Fail-closed mode active: rejecting request due to Redis error");
+                return true;
+            }
+        }
+
+        // Môi trường Dev/Local fallback in-memory an toàn
+        return localFallbackBlacklist.contains(hashToken(token));
+    }
+}
+```
+
+- **Băm bảo mật SHA-256 (`hashToken`)**: Thay vì lưu token JWT nguyên bản (chứa header, payload, signature có thể bị lộ qua log Redis), hệ thống băm token thành chuỗi hex SHA-256 độ dài cố định 64 ký tự trước khi gắn prefix `auth:blacklist:token:`.
+- **Cấu hình phân tách môi trường**:
+  - `application.yml` (Dev): `blacklist-fail-closed: false` $\rightarrow$ Cho phép lập trình viên chạy local kiểm thử khi không có container Redis mà không bị chặn API.
+  - `application-prod.yml` (Prod): `blacklist-fail-closed: true` $\rightarrow$ Kích hoạt bức tường bảo vệ nghiêm ngặt chống token replay attack.
+- **Chính sách Eviction trong Docker Compose**:
+  Trong [`docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml), Redis được cấu hình với cờ:
+  ```yaml
+  command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy noeviction
+  ```
+  Chính sách `noeviction` đảm bảo Redis sẽ từ chối ghi dữ liệu mới khi bộ nhớ đầy thay vì tự ý xóa bớt các key TTL của danh sách token đã thu hồi, bảo vệ hệ thống không bị lộ hổng bảo mật do tự động giải phóng bộ nhớ.
+
+---
+
+### 15.2. Chống Race Condition & Idempotency Key Tại Tầng Booking (`opcbs-booking-service`)
+
+#### 1. Bài toán Race Condition đặt trùng lịch (Double-Booking Hazard)
+Khi 2 bệnh nhân cùng lúc bấm nút "Xác nhận đặt khám" cho cùng 1 khung giờ slot (ví dụ: Slot 14:00 - 15:00 của Bác sĩ An):
+- Nếu chỉ dùng `SELECT` thông thường, cả 2 Transaction $T_1$ và $T_2$ đều đọc được `is_available = true`.
+- Cả 2 đều tạo thành công bản ghi `Appointment`, dẫn đến lỗi nghiêm trọng trong y tế: 2 bệnh nhân đến phòng khám tại cùng một thời điểm.
+
+#### 2. Giải pháp Pessimistic Locking tầng Database
+Phương thức trong [`AvailabilitySlotRepository.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/repository/AvailabilitySlotRepository.java):
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT s FROM AvailabilitySlot s WHERE s.id = :id")
+Optional<AvailabilitySlot> findByIdWithLock(@Param("id") Long id);
+```
+
+Mã nguồn xử lý tại [`AppointmentManagementResource.bookAppointment`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/web/rest/AppointmentManagementResource.java):
+```java
+// 1. Áp dụng Khóa Bi Quan trên dòng CSDL của khung giờ slot
+AvailabilitySlot slot = availabilitySlotRepository
+    .findByIdWithLock(bookingRequest.getSlotId())
+    .orElseThrow(() -> new BadRequestAlertException("Khung giờ khám không tồn tại", "appointment", "slotnotfound"));
+
+// 2. Kiểm tra tính khả dụng ngay sau khi chiếm giữ khóa
+if (Boolean.FALSE.equals(slot.getIsAvailable())) {
+    throw new BadRequestAlertException(
+        "Khung giờ khám này vừa được đặt bởi một bệnh nhân khác. Vui lòng chọn khung giờ khác.",
+        "appointment",
+        "slotunavailable"
+    );
+}
+
+// 3. Đánh dấu slot đã được đặt và lưu CSDL
+slot.setIsAvailable(false);
+availabilitySlotRepository.save(slot);
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor BệnhNhânA as 👤 Bệnh Nhân A
+    actor BệnhNhânB as 👤 Bệnh Nhân B
+    participant Svc as 📅 Booking Service
+    participant MySQL as 🗄️ MySQL Database (InnoDB)
+
+    BệnhNhânA->>Svc: POST /api/appointments/book (Slot 10)
+    BệnhNhânB->>Svc: POST /api/appointments/book (Slot 10)
+    Svc->>MySQL: T1: SELECT * FROM availability_slot WHERE id=10 FOR UPDATE
+    Note over MySQL: Khóa Bi Quan (X-Lock) cấp cho T1
+    Svc->>MySQL: T2: SELECT * FROM availability_slot WHERE id=10 FOR UPDATE
+    Note over MySQL: T2 BỊ BLOCK, phải chờ T1 commit/rollback
+    Svc->>MySQL: T1: UPDATE slot SET is_available=false; INSERT appointment; COMMIT
+    Note over MySQL: T1 COMMIT thành công. X-Lock giải phóng.
+    Note over MySQL: T2 được đánh thức, đọc dòng dữ liệu mới
+    MySQL-->>Svc: T2 đọc được is_available = false
+    Svc-->>BệnhNhânB: ❌ HTTP 400 Bad Request ("Khung giờ vừa được đặt bởi người khác")
+    Svc-->>BệnhNhânA: ✅ HTTP 201 Created (Lịch hẹn thành công)
+```
+
+#### 3. Cơ chế Idempotency-Key Header
+Khi mạng di động của bệnh nhân chập chờn, nút "Đặt lịch" có thể bị gửi 2 lần liên tiếp:
+```java
+@PostMapping("/appointments/book")
+public ResponseEntity<?> bookAppointment(
+    @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+    @Valid @RequestBody BookingRequestDTO bookingRequest
+) {
+    if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+        Optional<Appointment> existingOpt = appointmentRepository.findByIdempotencyKey(idempotencyKey.trim());
+        if (existingOpt.isPresent()) {
+            log.info("Idempotent request detected for key: {}. Returning existing appointment ID: {}",
+                idempotencyKey, existingOpt.get().getId());
+            return ResponseEntity.ok(existingOpt.get());
+        }
+    }
+    // Tiến hành tạo lịch hẹn mới và lưu idempotencyKey vào entity Appointment
+    ...
+}
+```
+
+---
+
+### 15.3. Transactional Event Synchronization & An Toàn Lưu Trữ File (`opcbs-booking-service`)
+
+#### 1. Bài toán Dual-Write Hazard trong Microservices
+Nếu một service thực hiện:
+1. Ghi dữ liệu vào MySQL.
+2. Bắn Message vào Kafka Broker.
+$\rightarrow$ Nếu bước 2 thành công nhưng sau đó Transaction MySQL bị rollback (do lỗi ràng buộc, timeout, hoặc crash), Kafka Consumer đã nhận được tin nhắn và trừ buổi/gửi email cho một ca khám **không hề tồn tại**!
+
+#### 2. Giải pháp `TransactionSynchronizationManager`
+Trong [`AppointmentEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/event/AppointmentEventProducer.java):
+```java
+public void publishAppointmentEvent(AppointmentEvent event) {
+    // Đảm bảo event chỉ được phát sau khi CSDL MySQL đã commit transaction thành công
+    if (TransactionSynchronizationManager.isActualTransactionActive()) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                dispatchAppointmentEvent(event);
+            }
+        });
+    } else {
+        dispatchAppointmentEvent(event);
+    }
+}
+```
+
+#### 3. Chuẩn hóa Metadata Sự Kiện
+Mọi sự kiện `AppointmentEvent` đều được chuẩn hóa cấu trúc để phục vụ truy vết phân tán (Distributed Tracing):
+```java
+event.setEventId(UUID.randomUUID().toString());
+event.setEventVersion("1.0");
+event.setIdempotencyKey(idempotencyKey);
+event.setEventTime(Instant.now());
+```
+
+#### 4. Loại bỏ rủi ro lưu file tạm (`FileStorageService`)
+Trong [`FileStorageService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/service/FileStorageService.java), hệ thống loại bỏ hoàn toàn cơ chế fallback ghi file y tế vào thư mục `/tmp`. Nếu biến môi trường persistent upload volume không tồn tại, service sẽ **fail-fast** ngay khi khởi động nhằm ngăn chặn mất mát hồ sơ bệnh án khi container Docker bị khởi động lại.
+
+---
+
+### 15.4. Khắc Phục Triệt Để Lỗ Hổng Rò Rỉ Dữ Liệu Bệnh Án (IDOR) & Audit Log Y Tế (`opcbs-clinical-service`)
+
+#### 1. Phân tích lỗ hổng IDOR cũ
+Trong phiên bản cũ của `getMyDoctorPatients()`, khi bác sĩ đang đăng nhập chưa có bản ghi hồ sơ bác sĩ hoàn chỉnh trong database, mã nguồn rơi vào nhánh:
+```java
+// MÃ CŨ CỰC KỲ NGUY HIỂM:
+if (doctorOpt.isEmpty()) {
+    return ResponseEntity.ok(patientProfileRepository.findAll()); // LÀM RÒ RỈ TOÀN BỘ BỆNH NHÂN!
+}
+```
+Kẻ tấn công chỉ cần đăng ký một tài khoản không hợp lệ là có thể lấy toàn bộ danh sách bệnh nhân và bệnh án trong hệ thống.
+
+#### 2. Mã nguồn khắc phục triệt để trong [`ClinicalManagementResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-clinical-service/src/main/java/com/ocbs/web/rest/ClinicalManagementResource.java)
+```java
+@GetMapping("/clinical/my-patients")
+public ResponseEntity<List<PatientProfile>> getMyDoctorPatients() {
+    String currentLogin = SecurityUtils.getCurrentUserLogin().orElse("");
+    boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+
+    if (isAdmin) {
+        return ResponseEntity.ok(patientProfileRepository.findAll());
+    }
+
+    Optional<DoctorProfile> doctorOpt = doctorProfileRepository.findByUserLogin(currentLogin);
+    if (doctorOpt.isEmpty()) {
+        // TRẢ VỀ DANH SÁCH RỖNG AN TOÀN - TRIỆT TIÊU RÒ RỈ DỮ LIỆU
+        log.warn("Doctor profile not found for login: {}. Returning empty patients list.", currentLogin);
+        return ResponseEntity.ok(Collections.emptyList());
+    }
+
+    List<PatientProfile> patients = clinicalService.findPatientsByDoctorId(doctorOpt.get().getId());
+    auditLog("READ_DOCTOR_PATIENTS", doctorOpt.get().getId(), null);
+    return ResponseEntity.ok(patients);
+}
+```
+
+#### 3. Kiểm tra quan hệ điều trị trên `getPatientDetailRecord` và xuất PDF
+Bác sĩ chỉ được phép đọc chi tiết bệnh án hoặc xuất PDF khi thỏa mãn ít nhất 1 trong 3 điều kiện:
+1. Người gọi là Quản Trị Viên (`ROLE_ADMIN`).
+2. Người gọi chính là Bệnh Nhân sở hữu hồ sơ bệnh án đó.
+3. Người gọi là Bác Sĩ đã từng tiếp nhận khám hoặc đang điều trị cho bệnh nhân này (`appointmentRepository.existsByDoctorIdAndPatientId(...)`).
+
+#### 4. Tiêu chuẩn Audit Logging Y Tế Không Chứa PHI
+```java
+private void auditLog(String action, Long doctorId, Long patientId) {
+    // CHỈ GHI DẤU VẾT HÀNH ĐỘNG - TUYỆT ĐỐI KHÔNG GHI THÔNG TIN CHẨN ĐOÁN / PHI VÀO LOG
+    log.info("[CLINICAL_AUDIT] Action: {} | DoctorId: {} | PatientId: {} | Timestamp: {}",
+        action, doctorId, patientId, Instant.now());
+}
+```
+
+---
+
+### 15.5. Trừ Buổi Trị Liệu Chuẩn Xác Khi Hoàn Tất Ca Khám & Phân Quyền Phác Đồ (`opcbs-treatment-service`)
+
+#### 1. Khắc phục lỗi nghiệp vụ trừ buổi sớm
+Trước đây, Consumer lắng nghe `APPOINTMENT_BOOKED` để trừ buổi gói trị liệu. Nếu lịch hẹn bị bác sĩ từ chối hoặc bệnh nhân hủy lịch, số buổi khả dụng của gói đã bị mất oan.
+Bản sửa đổi trong [`AppointmentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/event/AppointmentEventConsumer.java):
+```java
+@KafkaListener(topics = "opcbs-appointment-events", groupId = "opcbs-treatment-group",
+    autoStartup = "${application.kafka.enabled:false}")
+public void handleAppointmentEvent(AppointmentEvent event) {
+    if (event == null || event.getEventType() == null) return;
+
+    // CHỈ TRỪ BUỔI KHI CA KHÁM ĐÃ ĐƯỢC BÁC SĨ HOÀN TẤT
+    if ("APPOINTMENT_COMPLETED".equalsIgnoreCase(event.getEventType())) {
+        processSessionDeduction(event);
+    } else {
+        log.info("Ignoring event type: {} for session deduction", event.getEventType());
+    }
+}
+```
+
+#### 2. Bảo vệ tính Idempotent chống trừ buổi 2 lần
+```java
+private synchronized void processSessionDeduction(AppointmentEvent event) {
+    Long appointmentId = event.getAppointmentId();
+    // Kiểm tra lịch sử trừ buổi dựa trên appointmentId duy nhất
+    if (appointmentId != null && treatmentSessionRepository.existsByAppointmentId(appointmentId)) {
+        log.warn("Session deduction already processed for appointment ID: {}. Skipping duplicate.", appointmentId);
+        return;
+    }
+    // Thực hiện trừ buổi và tạo bản ghi TreatmentSession tương ứng
+    ...
+}
+```
+
+#### 3. Chống IDOR toàn diện trong [`TreatmentPackageResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/web/rest/TreatmentPackageResource.java)
+Mọi API cập nhật mục tiêu (`goals`), xem tiến độ (`progress-summary`), xin bảo lưu và duyệt bảo lưu đều thông qua 2 hàm kiểm tra quyền:
+```java
+private void checkPackageAccess(TreatmentPackage pkg) {
+    String currentLogin = SecurityUtils.getCurrentUserLogin().orElse("");
+    boolean isAdmin = SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+    if (isAdmin) return;
+
+    // Bệnh nhân chỉ được xem gói của mình, Bác sĩ chỉ xem gói do mình phụ trách
+    boolean isOwner = (pkg.getPatientLogin() != null && pkg.getPatientLogin().equalsIgnoreCase(currentLogin))
+                   || (pkg.getDoctorLogin() != null && pkg.getDoctorLogin().equalsIgnoreCase(currentLogin));
+    if (!isOwner) {
+        throw new AccessDeniedException("Bạn không có quyền truy cập thông tin gói điều trị này");
+    }
+}
+```
+
+---
+
+### 15.6. Phân Quyền Truy Cập & Bảo Mật Kết Quả Trắc Nghiệm Tâm Lý (`opcbs-psychometric-service`)
+
+Trong [`PsychometricResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-psychometric-service/src/main/java/com/ocbs/web/rest/PsychometricResource.java):
+1. **Endpoint Chi Tiết Bài Làm (`GET /api/psychometrics/submissions/{id}`)**:
+   - Bệnh nhân chỉ xem được bài trắc nghiệm do chính mình thực hiện (`submission.getPatientId() == currentPatientId`).
+   - Bác sĩ chỉ xem được bài nếu bài đó do chính bác sĩ chỉ định cho bệnh nhân (`submission.getDoctorId() == currentDoctorId`).
+   - Admin có quyền xem để kiểm định chất lượng y tế.
+   - Các trường hợp khác: ném `AccessDeniedException("Bạn không có quyền xem kết quả bài trắc nghiệm này")` trả về mã HTTP `403 Forbidden`.
+2. **Endpoint Danh Sách Cho Bác Sĩ (`GET /api/psychometrics/doctor/patient-submissions`)**:
+   - Thay vì trả về toàn bộ bài test của bệnh nhân trong database, truy vấn được siết chặt:
+     ```java
+     List<PsychometricSubmission> submissions = submissionRepository
+         .findByPatientIdAndDoctorIdOrderBySubmittedAtDesc(patientId, doctorId);
+     ```
+
+---
+
+### 15.7. Tách Biệt Kênh & Quản Lý Vòng Đời Trạng Thái Thông Báo (`opcbs-notification-service`)
+
+Entity [`Notification.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/domain/Notification.java) được mở rộng với 3 trường quản lý vòng đời gửi:
+```java
+@Column(name = "channel", length = 30)
+private String channel; // "IN_APP", "EMAIL", "SMS"
+
+@Column(name = "delivery_status", length = 30)
+private String deliveryStatus; // "PENDING", "SENT", "FAILED"
+
+@Column(name = "retry_count")
+private Integer retryCount = 0;
+```
+- Thông báo In-App trên giao diện được hiển thị ngay lập tức và quản lý trạng thái đọc (`isRead = false/true`).
+- Các kênh gửi ngoài (Email thông báo lịch hẹn) được theo dõi trạng thái `deliveryStatus`, cho phép cơ chế retry khi SMTP gặp sự cố mà không làm mất thông báo trong ứng dụng của người dùng.
+
+---
+
+### 15.8. Xác Thực Chữ Ký HMAC-SHA512, Đối Chiếu Số Tiền & Chặn Mock Checkout Prod (`opcbs-payment-service`)
+
+#### 1. Kiểm tra toàn vẹn callback VNPay trong [`PaymentResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/web/rest/PaymentResource.java)
+```java
+@GetMapping("/payments/vnpay/callback")
+public ResponseEntity<?> vnpayCallback(@RequestParam Map<String, String> queryParams) {
+    // 1. Kiểm tra chữ ký băm mật HMAC-SHA512
+    String vnp_SecureHash = queryParams.get("vnp_SecureHash");
+    boolean isValidSignature = VnPayUtil.verifyCallback(queryParams, vnp_SecureHash, vnpaySecretKey);
+    if (!isValidSignature) {
+        log.error("VNPay callback signature verification failed!");
+        throw new BadRequestAlertException("Chữ ký thanh toán không hợp lệ", "payment", "invalidsignature");
+    }
+
+    // 2. Đối chiếu số tiền giao dịch từ VNPay (VNPay gửi amount * 100)
+    long vnpAmount = Long.parseLong(queryParams.get("vnp_Amount")) / 100;
+    PaymentTransaction txn = findTransactionByTxnRef(queryParams.get("vnp_TxnRef"));
+    if (txn.getAmount() == null || txn.getAmount().longValue() != vnpAmount) {
+        log.error("Payment amount mismatch! Expected: {}, Received: {}", txn.getAmount(), vnpAmount);
+        throw new BadRequestAlertException("Số tiền thanh toán không khớp", "payment", "amountmismatch");
+    }
+
+    // 3. Đối chiếu mã định danh Merchant
+    String vnp_TmnCode = queryParams.get("vnp_TmnCode");
+    if (!vnpayTmnCode.equalsIgnoreCase(vnp_TmnCode)) {
+        throw new BadRequestAlertException("Mã merchant không hợp lệ", "payment", "merchantmismatch");
+    }
+
+    // 4. Cập nhật trạng thái SUCCESS và gia hạn gói dịch vụ
+    ...
+}
+```
+
+#### 2. Vô hiệu hóa Mock Checkout trên Production
+```java
+@PostMapping("/payments/mock-checkout")
+public ResponseEntity<?> mockCheckout(@RequestParam String txnRef) {
+    // Ngăn chặn gian lận kích hoạt gói miễn phí trên Production
+    if (Arrays.asList(env.getActiveProfiles()).contains("prod")) {
+        log.warn("Mock checkout attempted on PRODUCTION environment! Rejected.");
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Mock checkout bị vô hiệu hóa trên môi trường production");
+    }
+    // Xử lý giả lập cho môi trường phát triển dev
+    ...
+}
+```
+
+---
+
+### 15.9. Bộ Lọc HTML Sanitizer Chống Tấn Công XSS & Bảo Vệ Quy Trình Bài Viết (`opcbs-blog-service`)
+
+#### 1. Bộ lọc XSS chuyên sâu [`HtmlSanitizerUtil.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/service/util/HtmlSanitizerUtil.java)
+```java
+public class HtmlSanitizerUtil {
+    private static final Pattern SCRIPT_PATTERN = Pattern.compile("<script[^>]*>.*?</script>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern IFRAME_PATTERN = Pattern.compile("<iframe[^>]*>.*?</iframe>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern OBJECT_PATTERN = Pattern.compile("<object[^>]*>.*?</object>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern FORM_PATTERN = Pattern.compile("<form[^>]*>.*?</form>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern EVENT_HANDLER_PATTERN = Pattern.compile("(?i)\\s*on[a-z]+\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)");
+    private static final Pattern JS_PROTOCOL_PATTERN = Pattern.compile("(?i)(href|src)\\s*=\\s*(\"|')?\\s*javascript:", Pattern.CASE_INSENSITIVE);
+
+    public static String sanitizeHtml(String input) {
+        if (input == null || input.isBlank()) return input;
+        String clean = SCRIPT_PATTERN.matcher(input).replaceAll("");
+        clean = IFRAME_PATTERN.matcher(clean).replaceAll("");
+        clean = OBJECT_PATTERN.matcher(clean).replaceAll("");
+        clean = FORM_PATTERN.matcher(clean).replaceAll("");
+        clean = EVENT_HANDLER_PATTERN.matcher(clean).replaceAll("");
+        clean = JS_PROTOCOL_PATTERN.matcher(clean).replaceAll("$1=\"#\"");
+        return clean;
+    }
+
+    public static String stripAllHtml(String input) {
+        if (input == null || input.isBlank()) return input;
+        return input.replaceAll("<[^>]*>", "").trim();
+    }
+}
+```
+
+#### 2. Bảo vệ State Machine bài viết y khoa
+- Trong [`DoctorBlogResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/web/rest/DoctorBlogResource.java): Bác sĩ chỉ được phép cập nhật nội dung bài viết khi trạng thái đang là `DRAFT` hoặc `REJECTED`. Khi bài viết đã ở trạng thái `SUBMITTED` (chờ duyệt) hoặc `PUBLISHED` (đang công khai), API từ chối cập nhật trực tiếp nhằm ngăn chặn việc chèn nội dung độc hại sau khi đã được Ban Biên Tập phê duyệt.
+- Trong [`AdminBlogResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/web/rest/AdminBlogResource.java): Chỉ những bài viết ở trạng thái `SUBMITTED` mới có thể duyệt sang `APPROVED`/`PUBLISHED`. Khi từ chối bài viết, hệ thống bắt buộc Admin phải nhập `rejectionReason` để phản hồi lâm sàng minh bạch cho Bác sĩ tác giả.
+
+---
+
+### 15.10. Participant Access Control (PAC) & Nguyên Tắc Zero Client Trust (`opcbs-message-service`)
+
+Trong [`ConversationResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-message-service/src/main/java/com/ocbs/web/rest/ConversationResource.java):
+1. **Loại bỏ tin tưởng Client (Zero Client Trust)**:
+   - Các trường `senderId`, `senderRole`, `patientId` do phía Frontend gửi lên đều bị loại bỏ khỏi luồng định danh.
+   - Định danh người gửi luôn được trích xuất an toàn từ JWT Principal:
+     ```java
+     String currentUser = SecurityUtils.getCurrentUserLogin()
+         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập"));
+     ```
+2. **Participant Access Control (PAC)**:
+   - Trước khi gửi tin nhắn (`POST /api/conversations/{id}/messages`) hoặc đọc danh sách tin nhắn (`GET /api/conversations/{id}/messages`), hệ thống kiểm tra người dùng hiện tại có thuộc về cuộc hội thoại đó hay không:
+     ```java
+     Conversation conv = conversationRepository.findById(conversationId)
+         .orElseThrow(() -> new BadRequestAlertException("Hội thoại không tồn tại", "conversation", "idnotfound"));
+
+     boolean isParticipant = currentUser.equalsIgnoreCase(conv.getPatientLogin())
+                          || currentUser.equalsIgnoreCase(conv.getDoctorLogin())
+                          || SecurityUtils.hasCurrentUserThisAuthority(AuthoritiesConstants.ADMIN);
+     if (!isParticipant) {
+         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không phải thành viên của cuộc hội thoại này");
+     }
+     ```
+   - Triệt tiêu hoàn toàn lỗi IDOR rò rỉ tin nhắn tâm sự nhạy cảm giữa bác sĩ tâm lý và bệnh nhân.
 

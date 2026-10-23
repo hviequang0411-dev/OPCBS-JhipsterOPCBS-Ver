@@ -1,0 +1,724 @@
+name: opcbs-production
+
+services:
+  # ============================================================================
+  # 1. DATABASE & CACHE TIER (Phân lập trong opcbs-backend-net)
+  # ============================================================================
+  mysql:
+    image: mysql:8.4
+    container_name: opcbs-mysql-prod
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max_connections=500
+      --max_user_connections=450
+      --wait_timeout=28800
+      --interactive_timeout=28800
+      --innodb_buffer_pool_size=1G
+      --innodb_redo_log_capacity=512M
+      --innodb_flush_log_at_trx_commit=2
+      --innodb_lock_wait_timeout=30
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-opcbs}
+      MYSQL_USER: ${DB_USER:-opcbs_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-opcbs_secure_password_2026}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secure_password_2026}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ../create_tables.sql:/docker-entrypoint-initdb.d/01-create_tables.sql:ro
+    ports:
+      # Production Security: Bind exclusively to localhost for maintenance; avoid public exposure
+      - "127.0.0.1:3307:3306"
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: "2048M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: opcbs-redis-prod
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_password_2026}
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis_secure_password_2026}
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+      --save 60 1000
+    volumes:
+      - redis-data:/data
+    networks:
+      - opcbs-backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Redis Cache Dedicated Instance (Dành riêng cho Dashboard Cache & Application Query Caching)
+  # Phân lập hoàn toàn khỏi JWT Blacklist Redis (chính sách allkeys-lru tự động dọn dẹp khi đầy, không lưu đĩa - transient cache)
+  redis-cache:
+    image: redis:7.4-alpine
+    container_name: opcbs-redis-cache-prod
+    restart: unless-stopped
+    environment:
+      - REDIS_CACHE_PASSWORD=${REDIS_CACHE_PASSWORD:-${REDIS_PASSWORD:-redis_secure_password_2026}}
+    command: >
+      redis-server
+      --requirepass ${REDIS_CACHE_PASSWORD:-${REDIS_PASSWORD:-redis_secure_password_2026}}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+    networks:
+      - opcbs-backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_CACHE_PASSWORD\" ping | grep PONG || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # (Service Discovery: Microservices use Docker Compose internal DNS and Nginx reverse proxy routing directly; Eureka Server is omitted to optimize system resources)
+
+  # Apache Kafka KRaft Broker (Single-node KRaft broker for Event-Driven Messaging)
+  # Note: A single broker is resource-efficient for this stage; if the broker is down, the transactional outbox holds events.
+  kafka:
+    image: apache/kafka:3.8.1
+    container_name: opcbs-kafka-prod
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      # Optional host debugging port, bound strictly to loopback
+      - "127.0.0.1:29092:29092"
+    networks:
+      - opcbs-backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      # Kafka's JVM can need more than one probe interval under Compose CPU limits during cold startup.
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "${KAFKA_CPU_LIMIT:-1.0}"
+          memory: "${KAFKA_MEM_LIMIT:-1024M}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Provision event and DLT topics before Kafka consumers start. This avoids broker auto-create
+  # racing Spring's NewTopic beans and leaving lifecycle topics with only one partition or no DLT.
+  kafka-init:
+    image: apache/kafka:3.8.1
+    container_name: opcbs-kafka-init
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      set -eu
+      kafka_cli=/opt/kafka/bin/kafka-topics.sh
+      for topic in opcbs-appointment-events opcbs-appointment-events.DLT opcbs-payment-events opcbs-payment-events.DLT opcbs-user-events opcbs-user-events.DLT; do
+        "$$kafka_cli" --bootstrap-server kafka:9092 --create --if-not-exists --topic "$$topic" --partitions 3 --replication-factor 1
+        current_partitions=$$("$$kafka_cli" --bootstrap-server kafka:9092 --describe --topic "$$topic" | sed -n 's/.*PartitionCount: \([0-9][0-9]*\).*/\1/p')
+        if [ "$$current_partitions" -lt 3 ]; then
+          "$$kafka_cli" --bootstrap-server kafka:9092 --alter --topic "$$topic" --partitions 3
+        fi
+      done
+    networks:
+      - opcbs-backend-net
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # RabbitMQ Broker (Task & Worker Queue for Asynchronous Email and Background Commands)
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: opcbs-rabbitmq-prod
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-opcbs_rabbit}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-opcbs_secure_rabbit_2026}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      # Production Security: Bind AMQP and Management ports to loopback
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    networks:
+      - opcbs-backend-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "${RABBITMQ_CPU_LIMIT:-1.0}"
+          memory: "${RABBITMQ_MEM_LIMIT:-512M}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # 3. DOMAIN MICROSERVICES TIER (8 SERVICES)
+  # ============================================================================
+
+  # Service 1: Auth Service (Port 8081)
+  opcbs-auth-service:
+    build:
+      context: ../opcbs-auth-service
+      dockerfile: Dockerfile
+    container_name: opcbs-auth-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8081
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - SPRING_LIQUIBASE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_LIQUIBASE_USER=${DB_USER:-opcbs_user}
+      - JWT_PRIVATE_KEY_PATH=${JWT_PRIVATE_KEY_PATH:-/secrets/jwt/private.pem}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY:-}
+      - JWT_KEY_ID=${JWT_KEY_ID:-opcbs-jwt-key-prod-1}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_password_2026}
+      - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
+      - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME:-quanghvhe161464@fpt.edu.vn}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD:-pjhq xpdx sxil qbcs}
+      - SPRING_MAIL_FROM=${SPRING_MAIL_FROM:-quanghvhe161464@fpt.edu.vn}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - APPLICATION_KAFKA_ENABLED=${APPLICATION_KAFKA_ENABLED:-true}
+    volumes:
+      - ${JWT_SECRET_DIR:-./secrets/jwt}:/secrets/jwt:ro
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "768M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "3"
+
+  # Service 2: Booking Service (Port 8082)
+  opcbs-booking-service:
+    build:
+      context: ../opcbs-booking-service
+      dockerfile: Dockerfile
+    container_name: opcbs-booking-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8082
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - SPRING_LIQUIBASE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_LIQUIBASE_USER=${DB_USER:-opcbs_user}
+      - SPRING_LIQUIBASE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - SPRING_DATA_REDIS_HOST=redis-cache
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_CACHE_PASSWORD:-${REDIS_PASSWORD:-redis_secure_password_2026}}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - APPLICATION_FILE_STORAGE_UPLOAD_DIR=/app/uploads/certificates
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - APPLICATION_KAFKA_ENABLED=${APPLICATION_KAFKA_ENABLED:-true}
+      - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
+      - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME:-quanghvhe161464@fpt.edu.vn}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD:-pjhq xpdx sxil qbcs}
+      - SPRING_MAIL_FROM=${SPRING_MAIL_FROM:-quanghvhe161464@fpt.edu.vn}
+    volumes:
+      - booking-uploads:/app/uploads
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: "1024M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "3"
+
+  # Service 3: Clinical Service (Port 8083)
+  opcbs-clinical-service:
+    build:
+      context: ../opcbs-clinical-service
+      dockerfile: Dockerfile
+    container_name: opcbs-clinical-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8083
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - SPRING_LIQUIBASE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_LIQUIBASE_USER=${DB_USER:-opcbs_user}
+      - SPRING_LIQUIBASE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "768M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "30m"
+        max-file: "3"
+
+  # Service 4: Treatment Service (Port 8084)
+  opcbs-treatment-service:
+    build:
+      context: ../opcbs-treatment-service
+      dockerfile: Dockerfile
+    container_name: opcbs-treatment-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8084
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - APPLICATION_KAFKA_ENABLED=${APPLICATION_KAFKA_ENABLED:-true}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Service 5: Psychometric Service (Port 8085)
+  opcbs-psychometric-service:
+    build:
+      context: ../opcbs-psychometric-service
+      dockerfile: Dockerfile
+    container_name: opcbs-psychometric-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8085
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - CLINICAL_SERVICE_URL=http://opcbs-clinical-service:8083
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      opcbs-auth-service:
+        condition: service_started
+      opcbs-clinical-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Service 6: Notification Service (Port 8086)
+  opcbs-notification-service:
+    build:
+      context: ../opcbs-notification-service
+      dockerfile: Dockerfile
+    container_name: opcbs-notification-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8086
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - APPLICATION_KAFKA_ENABLED=${APPLICATION_KAFKA_ENABLED:-true}
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_DEFAULT_USER:-opcbs_rabbit}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_DEFAULT_PASS:-opcbs_secure_rabbit_2026}
+      - APPLICATION_RABBITMQ_ENABLED=${APPLICATION_RABBITMQ_ENABLED:-true}
+      - SPRING_MAIL_HOST=${SPRING_MAIL_HOST:-smtp.gmail.com}
+      - SPRING_MAIL_PORT=${SPRING_MAIL_PORT:-587}
+      - SPRING_MAIL_USERNAME=${SPRING_MAIL_USERNAME:-quanghvhe161464@fpt.edu.vn}
+      - SPRING_MAIL_PASSWORD=${SPRING_MAIL_PASSWORD:-pjhq xpdx sxil qbcs}
+      - SPRING_MAIL_FROM=${SPRING_MAIL_FROM:-quanghvhe161464@fpt.edu.vn}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "${NOTIFICATION_SERVICE_CPU_LIMIT:-1.0}"
+          memory: "${NOTIFICATION_SERVICE_MEM_LIMIT:-768M}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Service 7: Payment Service (Port 8087)
+  opcbs-payment-service:
+    build:
+      context: ../opcbs-payment-service
+      dockerfile: Dockerfile
+    container_name: opcbs-payment-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8087
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - SPRING_DATA_REDIS_HOST=redis-cache
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_CACHE_PASSWORD:-${REDIS_PASSWORD:-redis_secure_password_2026}}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_PAY_URL=${VNPAY_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      - APPLICATION_PAYMENT_MOCK_ENABLED=${PAYMENT_MOCK_ENABLED:-false}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - APPLICATION_KAFKA_ENABLED=${APPLICATION_KAFKA_ENABLED:-true}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Service 8: Message Service (Port 8088)
+  opcbs-message-service:
+    build:
+      context: ../opcbs-message-service
+      dockerfile: Dockerfile
+    container_name: opcbs-message-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8088
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+      - APPLICATION_WEBSOCKET_ALLOWED_ORIGINS=${WS_ALLOWED_ORIGINS:-http://localhost,https://localhost,http://localhost:9000,http://localhost:80}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_password_2026}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # Service 9: Blog Service (Port 8089)
+  opcbs-blog-service:
+    build:
+      context: ../opcbs-blog-service
+      dockerfile: Dockerfile
+    container_name: opcbs-blog-prod
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8089
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${DB_NAME:-opcbs}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USER:-opcbs_user}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-opcbs_secure_password_2026}
+      - JWT_JWK_SET_URI=${JWT_JWK_SET_URI:-http://opcbs-auth-service:8081/.well-known/jwks.json}
+      - JWT_PUBLIC_KEY_PATH=${JWT_PUBLIC_KEY_PATH:-}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY:-}
+    networks:
+      - opcbs-backend-net
+      - opcbs-frontend-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+      opcbs-auth-service:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.75"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # 4. FRONTEND SPA TIER: Angular 19 Nginx Static Web Server
+  # ============================================================================
+  opcbs-frontend:
+    build:
+      context: ../mindbridge-jhipster
+      dockerfile: Dockerfile
+    container_name: opcbs-frontend-prod
+    restart: unless-stopped
+    networks:
+      - opcbs-frontend-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/index.html > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "384M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ============================================================================
+  # 5. GATEWAY & LOAD BALANCER TIER: Nginx Reverse Proxy
+  # ============================================================================
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: opcbs-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_SSL_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx-logs:/var/log/nginx
+    networks:
+      - opcbs-frontend-net
+    depends_on:
+      - opcbs-frontend
+      - opcbs-auth-service
+      - opcbs-booking-service
+      - opcbs-clinical-service
+      - opcbs-treatment-service
+      - opcbs-psychometric-service
+      - opcbs-notification-service
+      - opcbs-payment-service
+      - opcbs-message-service
+      - opcbs-blog-service
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+# ==============================================================================
+# VOLUMES & NETWORKS SEGMENTATION
+# ==============================================================================
+volumes:
+  mysql-data:
+    name: opcbs_prod_mysql_data
+  redis-data:
+    name: opcbs_prod_redis_data
+  nginx-logs:
+    name: opcbs_prod_nginx_logs
+  booking-uploads:
+    name: opcbs_prod_booking_uploads
+  kafka-data:
+    name: opcbs_prod_kafka_data
+  rabbitmq-data:
+    name: opcbs_prod_rabbitmq_data
+
+networks:
+  opcbs-frontend-net:
+    name: opcbs_frontend_network
+    driver: bridge
+  opcbs-backend-net:
+    name: opcbs_backend_network
+    driver: bridge
+    internal: true # Cô lập hoàn toàn DB, Cache và Eureka khỏi Internet

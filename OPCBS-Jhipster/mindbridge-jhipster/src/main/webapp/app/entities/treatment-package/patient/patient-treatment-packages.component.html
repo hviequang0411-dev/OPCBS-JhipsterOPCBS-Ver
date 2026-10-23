@@ -3,9 +3,9 @@
   <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4 pb-2 border-bottom">
     <div>
       <h1 class="page-title mb-1">
-        <i class="bi bi-box-seam-fill me-2" style="color: #0d9488;"></i>Gói Trị Liệu & Lộ Trình Của Tôi
+        <i class="bi bi-box-seam-fill me-2" style="color: #0d9488;"></i>Gói Trị Liệu &amp; Lộ Trình Của Tôi
       </h1>
-      <p class="page-subtitle mb-0">Theo dõi các gói tư vấn, tiến độ buổi khám và kế hoạch chăm sóc tâm lý do bác sĩ thiết kế riêng</p>
+      <p class="page-subtitle mb-0">Theo dõi các gói tư vấn, tiến độ buổi khám, mục tiêu lâm sàng và bảo lưu lộ trình khi cần thiết</p>
     </div>
     <div class="pp-search">
       <i class="bi bi-search"></i>
@@ -37,8 +37,9 @@
         [class.active]="viewMode === 'active'"
         (click)="setViewMode('active')"
       >
-        <i class="bi bi-lightning-charge-fill me-1"></i>Đang Hoạt Động & Chờ Duyệt
+        <i class="bi bi-lightning-charge-fill me-1"></i>Đang Hoạt Động &amp; Chờ Duyệt
         <span *ngIf="pendingCount > 0" class="seg-badge bg-amber">{{ pendingCount }} mới</span>
+        <span *ngIf="onHoldCount > 0" class="seg-badge bg-warning text-dark ms-1">{{ onHoldCount }} bảo lưu</span>
       </button>
       <button
         type="button"
@@ -71,249 +72,259 @@
       <h5 class="fw-bold text-slate-700 mb-2">Hiện chưa có gói trị liệu nào đang hoạt động</h5>
       <p class="text-muted small mb-3">Sau khi thăm khám, Bác sĩ sẽ thiết kế lộ trình trị liệu cá nhân hóa và gửi đề xuất cho bạn tại đây.</p>
       <a routerLink="/patient/appointments" class="btn btn-teal px-4 py-2 fw-semibold rounded-pill text-white text-decoration-none">
-        <i class="bi bi-calendar-plus me-1"></i>Xem Lịch Khám & Đặt Lịch Mới
+        <i class="bi bi-calendar-plus me-1"></i>Xem Lịch Khám &amp; Đặt Lịch Mới
       </a>
     </ng-container>
   </div>
 
-  <!-- Packages List Grid (Styled after C# .pp-card) -->
+  <!-- Packages List Grid -->
   <div *ngIf="!isLoading && displayList.length > 0" class="row g-4">
-    <div *ngFor="let pkg of displayList" class="col-12 col-md-6 col-xl-4">
-      <div class="pp-card h-100" [class.pending]="pkg.status === 'PROPOSED'">
-        <div class="pp-card-body">
-          <!-- Title + Status Badge -->
-          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-            <h6 class="pp-title text-truncate mb-0" [title]="pkg.name">{{ pkg.name }}</h6>
-            <span [class]="getStatusBadgeClass(pkg.status)">{{ getStatusLabel(pkg.status) }}</span>
-          </div>
+    <div *ngFor="let pkg of displayList" class="col-12 col-md-6 col-lg-4">
+      <div class="pp-card h-100 d-flex flex-column">
 
-          <!-- Doctor Badge Chip -->
-          <div class="pp-doctor mb-3">
-            <i class="bi bi-person-badge"></i>
-            <span>BS. {{ pkg.doctor?.fullName || pkg.doctor?.user?.login || 'Bác sĩ phụ trách' }}</span>
-          </div>
-
-          <!-- Description / Target Outcome -->
-          <p class="pp-desc mb-3">
-            {{ pkg.targetOutcome || pkg.description || 'Lộ trình trị liệu tâm lý chuyên sâu cá nhân hóa.' }}
-          </p>
-
-          <!-- Progress Bar if Active -->
-          <div *ngIf="pkg.status === 'ACTIVE'" class="session-progress-wrap p-2 rounded-3 bg-light mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-1 small">
-              <span class="text-muted fw-semibold">Tiến độ điều trị:</span>
-              <strong class="text-teal">Đã dùng {{ getUsedSessions(pkg) }}/{{ pkg.sessionQuantity }} buổi</strong>
+        <!-- BANNER BẢO LƯU (Clone C# Gốc: #fffbeb, viền #fde68a) -->
+        <div *ngIf="pkg.isHoldRequested" class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#fffbeb; border-color:#fde68a !important;">
+          <div>
+            <div class="fw-bold d-flex align-items-center gap-1.5" style="color:#92400e; font-size:0.82rem;">
+              <i class="bi bi-pause-circle-fill"></i>
+              <span>Đang chờ duyệt bảo lưu ({{ pkg.holdDurationDays || 30 }} ngày)</span>
             </div>
-            <div class="progress" style="height: 8px; border-radius: 6px; background-color: #e2e8f0;">
-              <div
-                class="progress-bar bg-teal"
-                role="progressbar"
-                [style.width.%]="getProgressPercentage(pkg)"
-                [attr.aria-valuenow]="getProgressPercentage(pkg)"
-                aria-valuemin="0"
-                aria-valuemax="100"
-              ></div>
+            <div class="text-muted" style="font-size:0.75rem;">Bác sĩ đang xem xét yêu cầu của bạn</div>
+          </div>
+          <button class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size:0.75rem;" (click)="cancelHold(pkg.id)" title="Hủy yêu cầu">
+            Hủy
+          </button>
+        </div>
+
+        <div *ngIf="pkg.status === 'ON_HOLD'" class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#fffbeb; border-color:#fde68a !important;">
+          <div>
+            <div class="fw-bold d-flex align-items-center gap-1.5" style="color:#92400e; font-size:0.82rem;">
+              <i class="bi bi-clock-history"></i>
+              <span>Phác đồ đang tạm dừng / bảo lưu</span>
             </div>
-            <div class="text-end mt-1" style="font-size: 0.72rem; color: #0d9488; font-weight: 600;">
-              Còn lại {{ pkg.remainingSessions }} buổi
+            <div class="text-muted" style="font-size:0.75rem;">
+              Thời gian hết hạn đã được tự động cộng thêm {{ pkg.totalHoldDays || pkg.holdDurationDays }} ngày
             </div>
           </div>
+          <button class="btn btn-sm btn-teal text-white py-1 px-2.5" style="font-size:0.75rem;" (click)="resumePackage(pkg.id)">
+            Mở lại
+          </button>
+        </div>
 
-          <!-- Package Metadata with Icons -->
-          <div class="pp-meta">
-            <i class="bi bi-calendar-check"></i>
-            <span>Tần suất: <strong>{{ pkg.recommendedSessionsPerWeek || 1 }} buổi/tuần</strong></span>
-          </div>
-
-          <div class="pp-meta">
-            <i class="bi bi-hourglass-split"></i>
-            <span>Thời hạn: <strong>{{ pkg.validityDays }} ngày (Tổng {{ pkg.sessionQuantity }} buổi)</strong></span>
-          </div>
-
-          <div *ngIf="pkg.status === 'PROPOSED'" class="pp-meta mt-1">
-            <i class="bi bi-exclamation-circle text-amber"></i>
-            <span class="text-amber">Trạng thái: <strong>Cần bạn xem và đồng ý</strong></span>
-          </div>
-
-          <div class="pp-meta mt-2 pt-2 border-top">
-            <i class="bi bi-cash-stack"></i>
-            <span>Chi phí gói: <strong class="text-teal fs-6">{{ (pkg.price || 0) | currency:'VND':'symbol':'1.0-0' }}</strong></span>
+        <!-- Header -->
+        <div class="pp-card-header d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="pp-card-title mb-1">{{ pkg.name }}</h5>
+            <span [class]="getStatusBadgeClass(pkg.status, pkg.isHoldRequested)">
+              {{ getStatusLabel(pkg.status, pkg.isHoldRequested) }}
+            </span>
           </div>
         </div>
 
-        <!-- Footer Actions -->
-        <div class="pp-card-footer d-flex gap-2">
-          <!-- Case: Awaiting Patient Response -->
-          <ng-container *ngIf="pkg.status === 'PROPOSED'">
-            <button
-              class="btn btn-sm btn-amber flex-fill d-flex align-items-center justify-content-center gap-1 py-2"
-              (click)="openDetailModal(detailModal, pkg)"
-            >
-              <i class="bi bi-envelope-open me-1"></i>Xem & Phản Hồi Đề Xuất
-            </button>
-          </ng-container>
+        <!-- Doctor Meta -->
+        <div class="pp-doctor-meta d-flex align-items-center gap-2 mb-3 p-2 rounded-3 bg-light">
+          <div class="pp-avatar">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <div>
+            <div class="text-xs text-muted">Bác sĩ phụ trách:</div>
+            <div class="fw-bold text-dark text-sm">{{ pkg.doctor?.fullName || 'Bác sĩ chuyên khoa' }}</div>
+          </div>
+        </div>
 
-          <!-- Case: Active -->
-          <ng-container *ngIf="pkg.status === 'ACTIVE'">
-            <button
-              class="btn btn-sm btn-outline-teal flex-fill d-flex align-items-center justify-content-center gap-1 py-2"
-              (click)="openDetailModal(detailModal, pkg)"
-            >
-              <i class="bi bi-eye me-1"></i>Chi Tiết
-            </button>
-            <a
-              routerLink="/patient/appointments"
-              class="btn btn-sm btn-teal flex-fill d-flex align-items-center justify-content-center gap-1 py-2 text-white text-decoration-none"
-            >
-              <i class="bi bi-calendar-plus me-1"></i>Đặt Lịch
-            </a>
-          </ng-container>
+        <!-- Progress (if active) -->
+        <div *ngIf="pkg.status === 'ACTIVE' || pkg.status === 'ON_HOLD'" class="mb-3">
+          <div class="d-flex justify-content-between text-xs text-muted mb-1">
+            <span>Tiến độ tham vấn:</span>
+            <span class="fw-bold text-dark">{{ getUsedSessions(pkg) }} / {{ pkg.sessionQuantity }} buổi ({{ getProgressPercentage(pkg) }}%)</span>
+          </div>
+          <div class="progress" style="height: 6px; border-radius: 99px;">
+            <div class="progress-bar bg-teal" [style.width.%]="getProgressPercentage(pkg)"></div>
+          </div>
+        </div>
 
-          <!-- Case: History / Other -->
-          <ng-container *ngIf="pkg.status !== 'PROPOSED' && pkg.status !== 'ACTIVE'">
-            <button
-              class="btn btn-sm btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-1 py-2"
-              (click)="openDetailModal(detailModal, pkg)"
-            >
-              <i class="bi bi-info-circle me-1"></i>Xem Lịch Sử
-            </button>
-          </ng-container>
+        <!-- Specifications -->
+        <div class="pp-specs mb-3">
+          <div class="d-flex justify-content-between text-sm py-1 border-bottom">
+            <span class="text-muted">Tổng số buổi:</span>
+            <span class="fw-semibold text-dark">{{ pkg.sessionQuantity }} buổi</span>
+          </div>
+          <div class="d-flex justify-content-between text-sm py-1 border-bottom">
+            <span class="text-muted">Số buổi còn lại:</span>
+            <span class="fw-bold text-teal">{{ pkg.remainingSessions }} buổi</span>
+          </div>
+          <div class="d-flex justify-content-between text-sm py-1 border-bottom">
+            <span class="text-muted">Thời hạn gói:</span>
+            <span class="fw-semibold text-dark">{{ pkg.validityDays }} ngày</span>
+          </div>
+          <div class="d-flex justify-content-between text-sm py-1" *ngIf="pkg.expirationDate">
+            <span class="text-muted">Ngày hết hạn:</span>
+            <span class="fw-semibold text-dark">{{ pkg.expirationDate | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Target outcome preview -->
+        <p class="text-secondary small mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+          {{ pkg.targetOutcome || pkg.description || 'Lộ trình chăm sóc sức khỏe tinh thần toàn diện.' }}
+        </p>
+
+        <!-- Card Actions -->
+        <div class="d-flex gap-2 mt-auto">
+          <button class="btn btn-outline-teal flex-grow-1 btn-sm py-2" (click)="openDetailModal(detailModal, pkg)">
+            <i class="bi bi-eye me-1"></i>Xem Chi Tiết
+          </button>
+          
+          <button 
+            *ngIf="pkg.status === 'ACTIVE' && !pkg.isHoldRequested" 
+            class="btn btn-outline-warning text-dark btn-sm py-2 px-3" 
+            (click)="openRequestHoldModal(requestHoldModal, pkg)"
+            title="Gửi yêu cầu tạm dừng / bảo lưu gói điều trị"
+          >
+            <i class="bi bi-pause-circle me-1"></i>Xin Bảo Lưu
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal Detail & Accept / Reject (Styled after C# Details.cshtml) -->
+<!-- ========================================================================= -->
+<!-- MODAL XIN BẢO LƯU GÓI ĐIỀU TRỊ (PATIENT REQUEST HOLD MODAL)               -->
+<!-- ========================================================================= -->
+<ng-template #requestHoldModal let-modal>
+  <div class="modal-header bg-warning text-dark px-4 py-3">
+    <h5 class="modal-title fw-bold">
+      <i class="bi bi-pause-circle-fill me-2"></i>Yêu Cầu Tạm Dừng / Bảo Lưu Gói
+    </h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body p-4">
+    <div class="alert alert-info border-0 small mb-3">
+      <i class="bi bi-info-circle-fill me-1.5"></i>
+      Khi được Bác sĩ phê duyệt, gói trị liệu sẽ tạm dừng và <strong>thời gian hết hạn sẽ tự động được kéo dài</strong> theo đúng số ngày bạn bảo lưu.
+    </div>
+    <div class="mb-3">
+      <label class="form-label small fw-semibold text-muted mb-1">Số ngày muốn bảo lưu (1 đến 180 ngày) <span class="text-danger">*</span></label>
+      <input type="number" min="1" max="180" class="form-control" [(ngModel)]="holdDurationDays" />
+      <div class="form-text small">Thông thường từ 14 đến 60 ngày.</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label small fw-semibold text-muted mb-1">Lý do bảo lưu <span class="text-danger">*</span></label>
+      <textarea rows="3" class="form-control" [(ngModel)]="holdReason" placeholder="Nêu lý do cá nhân (bận công việc, đi công tác, việc gia đình...)..."></textarea>
+    </div>
+  </div>
+  <div class="modal-footer bg-light px-4 py-2.5">
+    <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="modal.dismiss()">Hủy</button>
+    <button type="button" class="btn btn-sm btn-warning text-dark fw-bold px-4" (click)="submitRequestHold(modal)" [disabled]="isProcessingHold">
+      <i class="bi bi-send me-1"></i>Gửi Yêu Cầu Cho Bác Sĩ
+    </button>
+  </div>
+</ng-template>
+
+<!-- ========================================================================= -->
+<!-- MODAL CHI TIẾT GÓI ĐIỀU TRỊ DÀNH CHO BỆNH NHÂN (DETAIL MODAL)              -->
+<!-- ========================================================================= -->
 <ng-template #detailModal let-modal>
-  <div class="modal-header bg-light border-bottom">
-    <div class="d-flex align-items-center gap-2">
-      <div class="pd-modal-icon">
-        <i class="bi bi-box2-heart-fill text-teal fs-4"></i>
-      </div>
-      <div>
-        <h5 class="modal-title fw-bold text-slate-800 mb-0">Chi Tiết Gói Trị Liệu</h5>
-        <span class="text-muted small">Thông tin kế hoạch điều trị tâm lý cá nhân hóa</span>
-      </div>
+  <div class="modal-header bg-light border-bottom px-4 py-3">
+    <div>
+      <h5 class="modal-title fw-bold text-dark mb-0">{{ selectedPackage?.name }}</h5>
+      <span class="text-muted small">Phác đồ chăm sóc do Bác sĩ {{ selectedPackage?.doctor?.fullName }} phụ trách</span>
     </div>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
   </div>
 
-  <div class="modal-body p-4" *ngIf="selectedPackage">
-    <div *ngIf="errorMessage" class="alert alert-danger rounded-3">{{ errorMessage }}</div>
+  <div class="modal-body p-0">
+    <!-- Tab navigation -->
+    <ul class="nav nav-tabs px-4 pt-2 border-bottom" style="background:#ffffff;">
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'">
+          <i class="bi bi-info-circle me-1"></i>Tổng quan
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'sessions'" (click)="activeTab = 'sessions'">
+          <i class="bi bi-calendar-check me-1"></i>Buổi tham vấn ({{ sessions.length }})
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link fw-semibold" [class.active]="activeTab === 'goals'" (click)="activeTab = 'goals'">
+          <i class="bi bi-flag me-1"></i>Mục tiêu của tôi ({{ goals.length }})
+        </button>
+      </li>
+    </ul>
 
-    <!-- Proposed Banner -->
-    <div *ngIf="selectedPackage.status === 'PROPOSED'" class="pd-pending-banner mb-4">
-      <h6 class="fw-bold mb-1"><i class="bi bi-bell-fill me-2"></i>Bác Sĩ Đã Thiết Kế Lộ Trình Cho Bạn</h6>
-      <p class="mb-0 small">Vui lòng đọc kỹ thông tin mục tiêu và bài tập dưới đây. Sau khi bạn bấm "Đồng Ý Tiếp Nhận", gói sẽ được kích hoạt để bạn bắt đầu đặt lịch khám.</p>
-    </div>
+    <div class="p-4">
+      <!-- Tab 1: Tổng quan -->
+      <div *ngIf="activeTab === 'overview'">
+        <div class="card border p-3 mb-3">
+          <h6 class="fw-bold text-dark mb-2">Lộ Trình Can Thiệp</h6>
+          <p class="text-secondary small mb-3">{{ selectedPackage?.description }}</p>
 
-    <!-- Overview Card -->
-    <div class="pd-section mb-4">
-      <div class="pd-section-head">
-        <i class="bi bi-info-circle-fill text-teal"></i>Thông Tin Tổng Quan
-      </div>
-      <div class="pd-section-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="fw-bold text-slate-800 mb-0">{{ selectedPackage.name }}</h5>
-          <span [class]="getStatusBadgeClass(selectedPackage.status)">{{ getStatusLabel(selectedPackage.status) }}</span>
+          <h6 class="fw-bold text-dark mb-2">Mục Tiêu Đạt Được</h6>
+          <p class="text-secondary small mb-3">{{ selectedPackage?.targetOutcome || 'Nâng cao khả năng quản lý cảm xúc và phục hồi năng lượng sống.' }}</p>
+
+          <h6 class="fw-bold text-dark mb-2">Bài Tập Lâm Sàng Bác Sĩ Dặn Dò</h6>
+          <p class="text-secondary small mb-0">{{ selectedPackage?.recommendedExercises || 'Ghi nhật ký cảm xúc hàng ngày và thực hành bài tập thở thư giãn.' }}</p>
         </div>
 
-        <div class="row g-3 bg-light p-3 rounded-3 mb-3">
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Bác sĩ phụ trách:</span>
-            <strong class="text-slate-800">BS. {{ selectedPackage.doctor?.fullName || selectedPackage.doctor?.user?.login || 'N/A' }}</strong>
-          </div>
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Tổng số buổi:</span>
-            <strong class="text-teal">{{ selectedPackage.sessionQuantity }} buổi</strong>
-          </div>
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Số buổi còn lại:</span>
-            <strong class="text-success">{{ selectedPackage.remainingSessions }} buổi</strong>
-          </div>
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Thời hạn sử dụng:</span>
-            <strong>{{ selectedPackage.validityDays }} ngày</strong>
-          </div>
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Tần suất khuyến nghị:</span>
-            <strong>{{ selectedPackage.recommendedSessionsPerWeek || 1 }} buổi/tuần</strong>
-          </div>
-          <div class="col-6 col-md-4">
-            <span class="text-muted small d-block">Chi phí gói:</span>
-            <strong class="text-teal fs-6">{{ (selectedPackage.price || 0) | currency:'VND':'symbol':'1.0-0' }}</strong>
+        <!-- Confirm or Reject buttons if PROPOSED -->
+        <div *ngIf="selectedPackage?.status === 'PROPOSED'" class="p-3 bg-light rounded-3 border">
+          <h6 class="fw-bold text-dark mb-2">Bạn có muốn tiếp nhận gói trị liệu này không?</h6>
+          <p class="text-muted small mb-3">Sau khi tiếp nhận, các buổi khám trong gói sẽ được kích hoạt để bạn bắt đầu đặt lịch tham vấn.</p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-teal text-white btn-sm px-4" (click)="acceptPackage(modal, selectedPackage!)" [disabled]="isProcessing">
+              <i class="bi bi-check2-circle me-1"></i>Tiếp Nhận Gói Ngay
+            </button>
+            <button class="btn btn-outline-danger btn-sm px-3" (click)="rejectPackage(modal, selectedPackage!)" [disabled]="isProcessing">
+              Từ Chối
+            </button>
           </div>
         </div>
+      </div>
 
-        <div *ngIf="selectedPackage.description" class="mb-3">
-          <h6 class="fw-bold text-slate-800 small mb-1">Mô tả tổng quát:</h6>
-          <div class="pd-info-box">{{ selectedPackage.description }}</div>
+      <!-- Tab 2: Các buổi tham vấn -->
+      <div *ngIf="activeTab === 'sessions'">
+        <h6 class="fw-bold text-dark mb-3">Lịch Sử Các Buổi Tham Vấn Đã Khám</h6>
+        <div *ngIf="sessions.length === 0" class="text-center py-4 text-muted small">
+          Chưa có buổi tham vấn nào được ghi nhận. Hãy liên hệ bác sĩ hoặc đặt lịch hẹn để bắt đầu!
+        </div>
+        <div *ngFor="let s of sessions" class="card border mb-2.5 p-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong class="text-dark">Buổi {{ s.sessionNumber }}: {{ s.title }}</strong>
+            <span class="badge bg-success">Đã hoàn tất</span>
+          </div>
+          <p class="text-muted small mb-0" *ngIf="s.patientFriendlySummary">
+            <strong>Lời dặn của bác sĩ:</strong> {{ s.patientFriendlySummary }}
+          </p>
         </div>
       </div>
-    </div>
 
-    <!-- Clinical Details Sections -->
-    <div class="pd-section mb-3" *ngIf="selectedPackage.targetOutcome">
-      <div class="pd-section-head">
-        <i class="bi bi-bullseye text-danger"></i>Mục Tiêu Trị Liệu (Target Outcome)
+      <!-- Tab 3: Mục tiêu của tôi -->
+      <div *ngIf="activeTab === 'goals'">
+        <h6 class="fw-bold text-dark mb-3">Mục Tiêu Điều Trị Được Bác Sĩ Thiết Lập</h6>
+        <div *ngIf="goals.length === 0" class="text-center py-4 text-muted small">
+          Bác sĩ đang xây dựng các mục tiêu định lượng cụ thể cho phác đồ của bạn.
+        </div>
+        <div *ngFor="let g of goals" class="card border mb-3 p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong class="text-dark">{{ g.title }}</strong>
+            <span *ngIf="g.status === 'ACHIEVED'" class="badge bg-success">
+              <i class="bi bi-check2-all me-1"></i>Đã đạt được
+            </span>
+            <span *ngIf="g.status !== 'ACHIEVED'" class="badge bg-warning text-dark">
+              Đang thực hiện ({{ g.progressPercent || 0 }}%)
+            </span>
+          </div>
+          <p class="text-secondary small mb-2" *ngIf="g.description">{{ g.description }}</p>
+          <div class="progress" style="height: 6px; border-radius: 99px;">
+            <div class="progress-bar bg-purple" [style.width.%]="g.progressPercent || 0"></div>
+          </div>
+        </div>
       </div>
-      <div class="pd-section-body">
-        <div class="pd-info-box">{{ selectedPackage.targetOutcome }}</div>
-      </div>
-    </div>
-
-    <div class="pd-section mb-3" *ngIf="selectedPackage.recommendedExercises">
-      <div class="pd-section-head">
-        <i class="bi bi-activity text-success"></i>Bài Tập & Hoạt Động Khuyến Nghị
-      </div>
-      <div class="pd-section-body">
-        <div class="pd-info-box">{{ selectedPackage.recommendedExercises }}</div>
-      </div>
-    </div>
-
-    <div class="pd-section mb-3" *ngIf="selectedPackage.instructions">
-      <div class="pd-section-head">
-        <i class="bi bi-card-checklist text-primary"></i>Hướng Dẫn Dành Cho Bệnh Nhân
-      </div>
-      <div class="pd-section-body">
-        <div class="pd-info-box">{{ selectedPackage.instructions }}</div>
-      </div>
-    </div>
-
-    <!-- Rejection Reason Input if Proposed -->
-    <div *ngIf="selectedPackage.status === 'PROPOSED'" class="border-top pt-3 mt-3">
-      <label class="form-label fw-semibold text-danger small">Nếu bạn cần từ chối gói, vui lòng nhập lý do:</label>
-      <input
-        type="text"
-        class="form-control form-control-sm"
-        [(ngModel)]="rejectionReason"
-        placeholder="Ví dụ: Cần điều chỉnh số buổi, đổi lịch, v.v..."
-      />
     </div>
   </div>
 
-  <div class="modal-footer bg-light border-top">
-    <button type="button" class="btn btn-outline-secondary px-4" (click)="modal.dismiss()">Đóng</button>
-
-    <ng-container *ngIf="selectedPackage?.status === 'PROPOSED'">
-      <button
-        type="button"
-        class="btn btn-outline-danger px-3"
-        [disabled]="isProcessing"
-        (click)="rejectPackage(modal, selectedPackage!)"
-      >
-        <i class="bi bi-x-circle me-1"></i>Từ Chối Gói
-      </button>
-      <button
-        type="button"
-        class="btn btn-teal px-4 text-white"
-        [disabled]="isProcessing"
-        (click)="acceptPackage(modal, selectedPackage!)"
-      >
-        <span *ngIf="isProcessing" class="spinner-border spinner-border-sm me-1"></span>
-        <i class="bi bi-check-circle-fill me-1"></i>Đồng Ý Tiếp Nhận Gói
-      </button>
-    </ng-container>
+  <div class="modal-footer bg-light px-4 py-2.5">
+    <button type="button" class="btn btn-secondary btn-sm px-4" (click)="modal.close()">Đóng</button>
   </div>
 </ng-template>

@@ -55,8 +55,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: "quanghvhe161464@fpt.edu.vn"
-    password: "pjhq xpdx sxil qbcs"
+    username: ${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}
+    password: ${SPRING_MAIL_PASSWORD:pjhq xpdx sxil qbcs}
     protocol: smtp
     properties:
       mail:
@@ -101,11 +101,12 @@ jhipster:
   security:
     authentication:
       jwt:
+        # Dedicated DEV-only keypair is auto-loaded by SecurityJwtConfiguration when empty
         # Token is valid 24 hours
         token-validity-in-seconds: 86400
         token-validity-in-seconds-for-remember-me: 2592000
   mail: # specific JHipster mail property, for standard properties see MailProperties
-    from: ${SPRING_MAIL_FROM:${SPRING_MAIL_USERNAME:mindbridge.healthcare.system@gmail.com}}
+    from: ${SPRING_MAIL_FROM:${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}}
     base-url: http://127.0.0.1:8081
   logging:
     use-json-format: false # By default, logs are not in Json format
@@ -130,3 +131,12 @@ application:
     google:
       client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
       client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+
+management:
+  health:
+    redis:
+      enabled: false
+
+opcbs:
+  jwt:
+    key-id: opcbs-jwt-key-dev-1

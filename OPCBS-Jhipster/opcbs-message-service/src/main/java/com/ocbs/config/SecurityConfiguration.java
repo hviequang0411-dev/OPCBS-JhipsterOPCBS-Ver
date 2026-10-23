@@ -59,6 +59,7 @@ public class SecurityConfiguration {
                     .requestMatchers("/content/**").permitAll()
                     .requestMatchers("/resources/**").permitAll()
                     .requestMatchers("/swagger-ui/**").permitAll()
+                    .requestMatchers("/ws/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/authenticate", "/api/authenticate/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/authenticate", "/api/authenticate/**").permitAll()
                     .requestMatchers("/api/register", "/api/register-doctor").permitAll()

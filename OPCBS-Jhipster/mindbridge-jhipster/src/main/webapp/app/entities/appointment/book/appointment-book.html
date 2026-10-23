@@ -133,78 +133,244 @@
           </div>
         </aside>
 
-        <!-- ══ COLUMN 2: SLOTS WEEK GRID ══ -->
+        <!-- ══ COLUMN 2: SLOTS AREA (GRID BẮT ĐẦU TỪ HÔM NAY & 1 NGÀY LÀ 1 TRANG SLOT) ══ -->
         <section class="slots-main-area">
-          <!-- Week Navigation Toolbar -->
+          <!-- Rolling Days Navigation Toolbar -->
           <div class="slots-nav-bar">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center flex-wrap gap-2">
               <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="prevWeek()" title="Tuần trước">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary fw-bold text-dark"
+                  (click)="prevDays()"
+                  [disabled]="!canGoPrev()"
+                  title="7 ngày trước (không thể lùi về quá khứ)"
+                >
                   <i class="bi bi-chevron-left"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="goToToday()">
+                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="goToToday()" title="Nhảy về ngày hôm nay">
                   Hôm nay
                 </button>
-                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="nextWeek()" title="Tuần sau">
+                <button type="button" class="btn btn-outline-secondary fw-bold text-dark" (click)="nextDays()" title="7 ngày tiếp theo">
                   <i class="bi bi-chevron-right"></i>
                 </button>
               </div>
               <span class="week-range-text ms-2">
-                <i class="bi bi-calendar3 me-1" style="color: #0f766e;"></i> {{ weekRangeDisplay() }}
+                <i class="bi bi-calendar3 me-1" style="color: #0f766e;"></i> {{ dateRangeDisplay() }}
               </span>
             </div>
 
             <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-light text-dark border fw-bold px-2.5 py-1.5" style="font-size: 0.78rem;">
+                <i class="bi bi-info-circle text-teal me-1" style="color: #0f766e;"></i> Cột 1 bắt đầu từ Hôm nay
+              </span>
               <span class="badge bg-success-subtle text-success border border-success fw-bold px-2.5 py-1.5" style="font-size: 0.78rem;">
-                <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> Khung giờ trống (Bấm để đặt)
+                <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> Mỗi ngày là 1 trang slot
               </span>
             </div>
           </div>
 
-          <!-- Week Days Grid -->
-          <div class="slots-days-grid">
-            @for (day of weekDays(); track day.dateStr) {
-              <div class="slot-day-col" [class.today-col]="day.isToday">
-                <!-- Day Header -->
-                <div class="slot-day-header">
-                  <div class="d-name">{{ day.dayName }}</div>
-                  <div class="d-num">{{ day.dayNumber }}</div>
-                </div>
-
-                <!-- Day Slots List -->
-                <div class="slot-day-body">
-                  @for (slot of day.slots; track slot.id) {
-                    @if (slot.status === 'AVAILABLE' && !isSlotInPast(slot)) {
-                      <div class="patient-slot-btn" (click)="selectSlotForBooking(slot, bookingModalTemplate)" title="Bấm để đặt khung giờ này">
-                        <div class="slot-time-text">
-                          <i class="bi bi-clock me-1"></i>{{ formatSlotTime(slot) }}
-                        </div>
-                        <div class="slot-mode-chip">
-                          <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
-                          {{ slot.consultationMode }}
-                        </div>
-                      </div>
-                    } @else if (isSlotInPast(slot)) {
-                      <div class="slot-booked-card" style="opacity: 0.55; background: #f1f5f9;" title="Khung giờ này đã qua trong quá khứ">
-                        <div class="slot-time-text text-muted">{{ formatSlotTime(slot) }}</div>
-                        <div class="slot-booked-label text-muted"><i class="bi bi-clock-history me-1"></i>Đã qua</div>
-                      </div>
-                    } @else {
-                      <div class="slot-booked-card" title="Khung giờ này đã kín lịch">
-                        <div class="slot-time-text">{{ formatSlotTime(slot) }}</div>
-                        <div class="slot-booked-label"><i class="bi bi-lock-fill me-1"></i>Đã Đặt</div>
-                      </div>
-                    }
+          <!-- Rolling 7-Day Strip (Cột đầu tiên luôn bắt đầu từ Ngày Hôm Nay) -->
+          <div class="slots-days-strip">
+            @for (day of rollingDays(); track day.dateStr) {
+              <div
+                class="slot-day-tab-card"
+                [class.today-card]="day.isToday"
+                [class.active-card]="day.isSelected"
+                (click)="selectDate(day.date)"
+                role="button"
+                tabindex="0"
+                title="Bấm để xem danh sách khung giờ ngày {{ day.dateStr }}"
+              >
+                <div class="day-tab-header">
+                  <span class="d-name">{{ day.dayName }}</span>
+                  @if (day.isToday) {
+                    <span class="today-chip">Hiện tại</span>
                   }
-
-                  @if (day.slots.length === 0) {
-                    <div class="text-center py-4 fw-semibold" style="color: #94a3b8; font-size: 0.82rem;">
-                      <i class="bi bi-cup-hot fs-5 d-block mb-1"></i>
-                      <span>Không có giờ</span>
-                    </div>
+                </div>
+                <div class="day-tab-num">{{ day.dayNumber }}</div>
+                <div class="day-tab-action">
+                  @if (day.isSelected) {
+                    <span class="tab-indicator active"><i class="bi bi-check-circle-fill me-1"></i>Đang xem</span>
+                  } @else {
+                    <span class="tab-indicator">Xem giờ khám</span>
                   }
                 </div>
               </div>
+            }
+          </div>
+
+          <!-- ══ DAILY SLOT PAGE (TRANG HIỂN THỊ CÁC SLOT TRONG 1 NGÀY & PHÂN TRANG) ══ -->
+          <div class="daily-slot-page-section">
+            <div class="daily-slot-page-header d-flex justify-content-between align-items-center flex-wrap gap-2 pb-3 mb-3 border-bottom">
+              <div>
+                <h2 class="daily-page-title mb-1">
+                  <i class="bi bi-calendar2-check-fill me-2" style="color: #0f766e;"></i>
+                  Khung Giờ Khám: <span style="color: #0f766e;">{{ selectedDateFormatted() }}</span>
+                </h2>
+                <p class="daily-page-subtitle mb-0 text-muted">
+                  Danh sách các khung giờ còn trống của ngày được chọn. Bấm vào khung giờ để đặt lịch.
+                </p>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge fw-bold px-3 py-2" style="background: #f0fdfa; color: #0f766e; border: 1.5px solid #2dd4bf; font-size: 0.85rem;">
+                  <i class="bi bi-clock-history me-1"></i> {{ dailyTotalSlots() }} Khung Giờ Khả Dụng
+                </span>
+              </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            @if (isLoadingDailySlots()) {
+              <div class="text-center py-5">
+                <div class="spinner-border text-teal mb-3" style="color: #0f766e; width: 2.5rem; height: 2.5rem;" role="status"></div>
+                <div class="fw-bold text-dark">Đang tải danh sách khung giờ khám...</div>
+                <div class="text-muted small">Vui lòng chờ trong giây lát</div>
+              </div>
+            } @else if (dailySlots().length === 0) {
+              <!-- Empty State cho ngày không có slot -->
+              <div class="card border-0 rounded-4 text-center py-5 px-4 my-2" style="background: #f8fafc; border: 1.5px dashed #cbd5e1 !important;">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width: 64px; height: 64px; background: #e2e8f0; color: #64748b; font-size: 1.8rem;">
+                  <i class="bi bi-calendar-x"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-1">Không Có Khung Giờ Khám Trong Ngày Này</h4>
+                <p class="text-muted mb-3" style="max-width: 460px; margin: 0 auto; font-size: 0.92rem;">
+                  Bác sĩ chưa mở lịch hoặc các khung giờ trong ngày <strong>{{ selectedDateFormatted() }}</strong> đã được đặt hết.
+                </p>
+                <div>
+                  <button type="button" class="btn btn-outline-teal fw-bold px-3 py-1.5" (click)="nextDays()" style="border-radius: 8px; color: #0f766e; border-color: #0f766e;">
+                    <i class="bi bi-chevron-right me-1"></i> Xem Các Ngày Tiếp Theo
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- ══ DANH SÁCH KHUNG GIỜ PHÂN THEO CA TRONG NGÀY ══ -->
+              <div class="daily-sessions-container">
+                <!-- Ca Sáng -->
+                @if (morningSlots().length > 0) {
+                  <div class="session-block mb-4">
+                    <div class="session-badge morning mb-2">
+                      <i class="bi bi-sunrise-fill me-1.5"></i> Ca Buổi Sáng (Trước 12:00)
+                    </div>
+                    <div class="daily-slots-grid">
+                      @for (slot of morningSlots(); track slot.id) {
+                        <div
+                          class="daily-slot-card"
+                          (click)="selectSlotForBooking(slot, bookingModalTemplate)"
+                          role="button"
+                          tabindex="0"
+                          title="Bấm để đặt khung giờ {{ formatSlotTime(slot) }}"
+                        >
+                          <div class="slot-card-time">
+                            <i class="bi bi-clock me-1"></i> {{ formatSlotTime(slot) }}
+                          </div>
+                          <div class="slot-card-mode">
+                            <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
+                            <span>{{ slot.consultationMode === 'ONLINE' ? 'Tư vấn Online' : 'Khám Tại Viện' }}</span>
+                          </div>
+                          <div class="slot-card-cta">
+                            <span>Đặt khám</span> <i class="bi bi-arrow-right-short"></i>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Ca Chiều -->
+                @if (afternoonSlots().length > 0) {
+                  <div class="session-block mb-4">
+                    <div class="session-badge afternoon mb-2">
+                      <i class="bi bi-sun-fill me-1.5"></i> Ca Buổi Chiều (12:00 - 18:00)
+                    </div>
+                    <div class="daily-slots-grid">
+                      @for (slot of afternoonSlots(); track slot.id) {
+                        <div
+                          class="daily-slot-card"
+                          (click)="selectSlotForBooking(slot, bookingModalTemplate)"
+                          role="button"
+                          tabindex="0"
+                          title="Bấm để đặt khung giờ {{ formatSlotTime(slot) }}"
+                        >
+                          <div class="slot-card-time">
+                            <i class="bi bi-clock me-1"></i> {{ formatSlotTime(slot) }}
+                          </div>
+                          <div class="slot-card-mode">
+                            <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
+                            <span>{{ slot.consultationMode === 'ONLINE' ? 'Tư vấn Online' : 'Khám Tại Viện' }}</span>
+                          </div>
+                          <div class="slot-card-cta">
+                            <span>Đặt khám</span> <i class="bi bi-arrow-right-short"></i>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Ca Tối -->
+                @if (eveningSlots().length > 0) {
+                  <div class="session-block mb-4">
+                    <div class="session-badge evening mb-2">
+                      <i class="bi bi-moon-stars-fill me-1.5"></i> Ca Buổi Tối (Sau 18:00)
+                    </div>
+                    <div class="daily-slots-grid">
+                      @for (slot of eveningSlots(); track slot.id) {
+                        <div
+                          class="daily-slot-card"
+                          (click)="selectSlotForBooking(slot, bookingModalTemplate)"
+                          role="button"
+                          tabindex="0"
+                          title="Bấm để đặt khung giờ {{ formatSlotTime(slot) }}"
+                        >
+                          <div class="slot-card-time">
+                            <i class="bi bi-clock me-1"></i> {{ formatSlotTime(slot) }}
+                          </div>
+                          <div class="slot-card-mode">
+                            <i class="bi" [ngClass]="getModeIcon(slot.consultationMode)"></i>
+                            <span>{{ slot.consultationMode === 'ONLINE' ? 'Tư vấn Online' : 'Khám Tại Viện' }}</span>
+                          </div>
+                          <div class="slot-card-cta">
+                            <span>Đặt khám</span> <i class="bi bi-arrow-right-short"></i>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- ══ PHÂN TRANG CHO CÁC SLOT TRONG NGÀY (DAILY SLOT PAGINATION) ══ -->
+              @if (dailyTotalPages() > 1) {
+                <div class="daily-pagination-footer d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 mt-2 border-top">
+                  <div class="pagination-info text-muted fw-bold" style="font-size: 0.88rem;">
+                    Hiển thị trang <strong>{{ dailyPage() }}</strong> / <strong>{{ dailyTotalPages() }}</strong>
+                    (Tổng số <strong>{{ dailyTotalSlots() }}</strong> khung giờ khám trong ngày)
+                  </div>
+
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary fw-bold px-3 py-1.5"
+                      (click)="changeDailyPage(dailyPage() - 1)"
+                      [disabled]="dailyPage() === 1"
+                    >
+                      <i class="bi bi-chevron-left me-1"></i> Trang trước
+                    </button>
+                    <button type="button" class="btn btn-light fw-bold disabled px-3 py-1.5" style="color: #0f766e;">
+                      {{ dailyPage() }} / {{ dailyTotalPages() }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary fw-bold px-3 py-1.5"
+                      (click)="changeDailyPage(dailyPage() + 1)"
+                      [disabled]="dailyPage() === dailyTotalPages()"
+                    >
+                      Trang sau <i class="bi bi-chevron-right ms-1"></i>
+                    </button>
+                  </div>
+                </div>
+              }
             }
           </div>
         </section>

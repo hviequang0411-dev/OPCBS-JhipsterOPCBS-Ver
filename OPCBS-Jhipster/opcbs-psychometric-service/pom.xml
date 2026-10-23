@@ -65,6 +65,7 @@
         <spotless-maven-plugin.version>3.10.2</spotless-maven-plugin.version>
         <spring.profiles.active>dev</spring.profiles.active>
         <springdoc-openapi-starter-webmvc-api.version>3.1.1</springdoc-openapi-starter-webmvc-api.version>
+        <frontend.skip>true</frontend.skip>
     </properties>
 
     <dependencies>
@@ -590,6 +591,7 @@
                         <installDirectory>target</installDirectory>
                         <nodeVersion>${node.version}</nodeVersion>
                         <npmVersion>${npm.version}</npmVersion>
+                        <skip>${frontend.skip}</skip>
                     </configuration>
                 </plugin>
                 <plugin>

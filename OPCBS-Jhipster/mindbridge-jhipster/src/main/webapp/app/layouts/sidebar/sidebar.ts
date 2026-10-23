@@ -17,23 +17,25 @@ export default class Sidebar {
   private readonly loginService = inject(LoginService);
   private readonly router = inject(Router);
 
+  isAdmin(): boolean {
+    return this.account()?.authorities.includes('ROLE_ADMIN') ?? false;
+  }
+
   isDoctor(): boolean {
-    return this.account()?.authorities.includes('ROLE_DOCTOR') ?? false;
+    return !this.isAdmin() && (this.account()?.authorities.includes('ROLE_DOCTOR') ?? false);
   }
 
   isPatient(): boolean {
-    return this.account()?.authorities.includes('ROLE_PATIENT') ?? false;
-  }
-
-  isAdmin(): boolean {
-    return this.account()?.authorities.includes('ROLE_ADMIN') ?? false;
+    const acc = this.account();
+    if (!acc) return false;
+    if (this.isAdmin() || this.isDoctor()) return false;
+    return acc.authorities.includes('ROLE_PATIENT') || acc.authorities.includes('ROLE_USER');
   }
 
   getPortalTitle(): string {
     if (this.isAdmin()) return 'Cổng Quản Trị';
     if (this.isDoctor()) return 'Cổng Bác Sĩ';
-    if (this.isPatient()) return 'Cổng Bệnh Nhân';
-    return 'Cổng MindBridge';
+    return 'Cổng Bệnh Nhân';
   }
 
   getPortalIcon(): string {
@@ -70,7 +72,13 @@ export default class Sidebar {
   }
 
   logout(): void {
-    this.loginService.logout();
-    this.router.navigate(['']);
+    this.loginService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login'], { queryParams: { loggedOut: 'true' } });
+      },
+      error: () => {
+        this.router.navigate(['/login'], { queryParams: { loggedOut: 'true' } });
+      },
+    });
   }
 }

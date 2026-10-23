@@ -34,15 +34,18 @@ public class DoctorDocumentResource {
     private final FileStorageService fileStorageService;
     private final CloudinaryStorageService cloudinaryStorageService;
     private final DoctorProfileRepository doctorProfileRepository;
+    private final com.ocbs.service.DoctorVerificationService doctorVerificationService;
 
     public DoctorDocumentResource(
         FileStorageService fileStorageService,
         CloudinaryStorageService cloudinaryStorageService,
-        DoctorProfileRepository doctorProfileRepository
+        DoctorProfileRepository doctorProfileRepository,
+        com.ocbs.service.DoctorVerificationService doctorVerificationService
     ) {
         this.fileStorageService = fileStorageService;
         this.cloudinaryStorageService = cloudinaryStorageService;
         this.doctorProfileRepository = doctorProfileRepository;
+        this.doctorVerificationService = doctorVerificationService;
     }
 
     /**
@@ -113,6 +116,9 @@ public class DoctorDocumentResource {
             LOG.info("💾 [Lưu trữ Local Disk] Đang lưu file trực tiếp vào ổ đĩa thư mục './uploads/certificates'...");
             metadata = fileStorageService.storeFile(uploadFile, doctor.getId(), documentType);
         }
+
+        // Attach certificate to doctor verification record
+        doctorVerificationService.recordUploadedCertificate(doctor.getId(), metadata);
 
         return ResponseEntity.ok(metadata);
     }
@@ -189,6 +195,9 @@ public class DoctorDocumentResource {
             );
         }
 
+        // Attach certificate to doctor verification record
+        doctorVerificationService.recordUploadedCertificate(doctor.getId(), metadata);
+
         return ResponseEntity.ok(metadata);
     }
 
@@ -198,62 +207,7 @@ public class DoctorDocumentResource {
     @GetMapping("/verification")
     public ResponseEntity<com.ocbs.service.dto.DoctorVerificationDTO> getDoctorVerification() {
         String login = SecurityUtils.getCurrentUserLogin().orElse(null);
-        DoctorProfile doctor = null;
-        if (login != null) {
-            doctor = doctorProfileRepository.findByUser_Login(login).orElse(null);
-        }
-        if (doctor == null) {
-            doctor = doctorProfileRepository.findAll().stream().findFirst().orElse(null);
-        }
-
-        if (doctor == null) {
-            throw new BadRequestAlertException("Doctor profile not found", ENTITY_NAME, "doctornotfound");
-        }
-
-        com.ocbs.service.dto.DoctorVerificationDTO dto = new com.ocbs.service.dto.DoctorVerificationDTO();
-        dto.setDoctorId(doctor.getId());
-        dto.setDoctorName(doctor.getFullName() != null ? doctor.getFullName() : "Dr. " + (login != null ? login : "Specialist"));
-        dto.setSpecialization(doctor.getTitle() != null ? doctor.getTitle() : "Bác Sĩ Tâm Lý / Chuyên Gia Trị Liệu");
-        dto.setLicenseNumber("VN-MED-" + (100000 + doctor.getId()));
-        dto.setExperienceYears(doctor.getExperienceYears() != null ? doctor.getExperienceYears() : 5);
-        dto.setEducation("Bác Sĩ Chuyên Khoa - Đại Học Y Hà Nội");
-        dto.setSubmittedAt(java.time.Instant.now().minus(java.time.Duration.ofDays(2)));
-        
-        boolean isActive = doctor.getIsActive() != null && doctor.getIsActive();
-        dto.setStatus(isActive ? "APPROVED" : "PENDING");
-        dto.setNotes(doctor.getBio());
-
-        // Kiểm tra xem đã có file certificate trong thư mục uploads chưa
-        try {
-            java.nio.file.Path uploadPath = java.nio.file.Paths.get("./uploads/certificates");
-            if (Files.exists(uploadPath)) {
-                try (java.util.stream.Stream<java.nio.file.Path> stream = Files.list(uploadPath)) {
-                    Optional<java.nio.file.Path> latestFile = stream
-                        .filter(p -> p.getFileName().toString().startsWith("doc_" + dto.getDoctorId() + "_"))
-                        .max(java.util.Comparator.comparingLong(p -> {
-                            try { return Files.getLastModifiedTime(p).toMillis(); } catch (Exception e) { return 0L; }
-                        }));
-                    
-                    if (latestFile.isPresent()) {
-                        String fileName = latestFile.get().getFileName().toString();
-                        dto.setCertificateFileName(fileName);
-                        dto.setCertificateUrl("/api/doctor/certificates/" + fileName);
-                        try {
-                            dto.setCertificateUploadedAt(Files.getLastModifiedTime(latestFile.get()).toInstant());
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            LOG.warn("Error scanning certificate files: {}", ex.getMessage());
-        }
-
-        if (dto.getCertificateUrl() == null && isActive) {
-            dto.setStatus("APPROVED");
-        } else if (dto.getCertificateUrl() == null && !isActive) {
-            dto.setStatus("DRAFT");
-        }
-
+        com.ocbs.service.dto.DoctorVerificationDTO dto = doctorVerificationService.getDoctorVerification(login);
         return ResponseEntity.ok(dto);
     }
 
@@ -268,26 +222,8 @@ public class DoctorDocumentResource {
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
 
-        DoctorProfile doctor = doctorProfileRepository.findByUser_Login(login)
-            .orElseThrow(() -> new BadRequestAlertException("Doctor profile not found for user: " + login, ENTITY_NAME, "doctornotfound"));
-
-        if (input.getDoctorName() != null && !input.getDoctorName().isBlank()) {
-            doctor.setFullName(input.getDoctorName());
-        }
-        if (input.getSpecialization() != null && !input.getSpecialization().isBlank()) {
-            doctor.setTitle(input.getSpecialization());
-        }
-        if (input.getExperienceYears() != null) {
-            doctor.setExperienceYears(input.getExperienceYears());
-        }
-        if (input.getNotes() != null) {
-            doctor.setBio(input.getNotes());
-        }
-        
-        doctorProfileRepository.save(doctor);
-        LOG.info("✅ Saved verification credentials for doctor id: {}", doctor.getId());
-
-        return getDoctorVerification();
+        com.ocbs.service.dto.DoctorVerificationDTO dto = doctorVerificationService.submitVerification(login, input);
+        return ResponseEntity.ok(dto);
     }
 
     /**

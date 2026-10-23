@@ -48,6 +48,10 @@ public class Appointment implements Serializable {
     @Column(name = "status", nullable = false)
     private AppointmentStatus status;
 
+    @Size(max = 100)
+    @Column(name = "idempotency_key", length = 100, unique = true)
+    private String idempotencyKey;
+
     @Size(max = 1000)
     @Column(name = "reason", length = 1000)
     private String reason;
@@ -182,6 +186,14 @@ public class Appointment implements Serializable {
 
     public void setStatus(AppointmentStatus status) {
         this.status = status;
+    }
+
+    public String getIdempotencyKey() {
+        return this.idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public String getReason() {

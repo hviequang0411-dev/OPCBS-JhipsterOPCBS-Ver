@@ -20,4 +20,7 @@ public interface PsychometricTestRepository extends JpaRepository<PsychometricTe
 
     @Query("select pt from PsychometricTest pt where pt.testType = :testType and pt.isActive = true")
     Optional<PsychometricTest> findFirstByTestType(@Param("testType") String testType);
+
+    @Query("select distinct pt from PsychometricTest pt left join fetch pt.questions q order by pt.id asc")
+    List<PsychometricTest> findAllWithQuestions();
 }

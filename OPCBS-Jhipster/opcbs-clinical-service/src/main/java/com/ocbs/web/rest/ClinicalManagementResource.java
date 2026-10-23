@@ -5,8 +5,10 @@ import com.ocbs.domain.DoctorProfile;
 import com.ocbs.domain.PatientProfile;
 import com.ocbs.domain.enumeration.AppointmentStatus;
 import com.ocbs.repository.AppointmentRepository;
+import com.ocbs.repository.ClinicalPsychometricAlertRepository;
 import com.ocbs.repository.DoctorProfileRepository;
 import com.ocbs.repository.PatientProfileRepository;
+import com.ocbs.repository.PsychometricSubmissionRepository;
 import com.ocbs.security.SecurityUtils;
 import com.ocbs.service.dto.AppointmentDTO;
 import com.ocbs.service.mapper.AppointmentMapper;
@@ -40,6 +42,10 @@ public class ClinicalManagementResource {
     private final AppointmentMapper appointmentMapper;
     private final com.ocbs.service.mapper.PatientProfileMapper patientProfileMapper;
     private final com.ocbs.service.ClinicalPdfService clinicalPdfService;
+    private final PsychometricSubmissionRepository psychometricSubmissionRepository;
+    private final ClinicalPsychometricAlertRepository clinicalPsychometricAlertRepository;
+    private final com.ocbs.repository.EmotionJournalRepository emotionJournalRepository;
+    private final com.ocbs.repository.TreatmentPackageRepository treatmentPackageRepository;
 
     public ClinicalManagementResource(
         AppointmentRepository appointmentRepository,
@@ -47,7 +53,11 @@ public class ClinicalManagementResource {
         DoctorProfileRepository doctorProfileRepository,
         AppointmentMapper appointmentMapper,
         com.ocbs.service.mapper.PatientProfileMapper patientProfileMapper,
-        com.ocbs.service.ClinicalPdfService clinicalPdfService
+        com.ocbs.service.ClinicalPdfService clinicalPdfService,
+        PsychometricSubmissionRepository psychometricSubmissionRepository,
+        ClinicalPsychometricAlertRepository clinicalPsychometricAlertRepository,
+        com.ocbs.repository.EmotionJournalRepository emotionJournalRepository,
+        com.ocbs.repository.TreatmentPackageRepository treatmentPackageRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.patientProfileRepository = patientProfileRepository;
@@ -55,6 +65,10 @@ public class ClinicalManagementResource {
         this.appointmentMapper = appointmentMapper;
         this.patientProfileMapper = patientProfileMapper;
         this.clinicalPdfService = clinicalPdfService;
+        this.psychometricSubmissionRepository = psychometricSubmissionRepository;
+        this.clinicalPsychometricAlertRepository = clinicalPsychometricAlertRepository;
+        this.emotionJournalRepository = emotionJournalRepository;
+        this.treatmentPackageRepository = treatmentPackageRepository;
     }
 
     // ==========================================
@@ -95,9 +109,13 @@ public class ClinicalManagementResource {
             targetPatients = allPatients.stream()
                 .filter(p -> myPatientIds.contains(p.getId()))
                 .toList();
-        } else {
+        } else if (isAdmin) {
             targetPatients = allPatients;
+        } else {
+            targetPatients = java.util.Collections.emptyList();
         }
+
+        LOG.info("AUDIT: User '{}' retrieved patient list. Found {} records", login, targetPatients.size());
 
         List<BookingVM.DoctorPatientSummaryVM> summaries = targetPatients.stream()
             .map(p -> {
@@ -197,12 +215,74 @@ public class ClinicalManagementResource {
             if (doctorAppointments.isEmpty()) {
                 throw new BadRequestAlertException("Bạn không có quyền truy cập hồ sơ của bệnh nhân này vì chưa phụ trách ca khám nào", ENTITY_NAME, "accessdenied");
             }
-        } else {
+        } else if (isAdmin) {
             doctorAppointments = allPatientAppointments;
+        } else {
+            throw new BadRequestAlertException("Bạn không có quyền truy cập hồ sơ của bệnh nhân này", ENTITY_NAME, "accessdenied");
         }
+
+        LOG.info("AUDIT: User '{}' viewed clinical record of patient ID {}", login, patientId);
 
         long total = doctorAppointments.size();
         long completed = doctorAppointments.stream().filter(a -> a.getStatus() == AppointmentStatus.COMPLETED).count();
+
+        // 1. Lấy kết quả bài test tâm lý của bệnh nhân (nếu có)
+        List<com.ocbs.domain.PsychometricSubmission> submissions = psychometricSubmissionRepository.findAllByPatientId(patientId);
+
+        // 2. Lấy nhật ký cảm xúc do bệnh nhân chia sẻ (nếu có)
+        List<com.ocbs.domain.EmotionJournal> sharedJournals = emotionJournalRepository.findSharedByPatientId(patientId);
+
+        // 3. Lấy danh sách gói trị liệu được gán cho bệnh nhân
+        List<com.ocbs.domain.TreatmentPackage> treatmentPackages = treatmentPackageRepository.findAllByPatientId(patientId);
+
+        // 4. Phát hiện nguy cơ tâm lý & cảm xúc tiêu cực để cảnh báo nội dung đỏ cho Bác sĩ
+        boolean hasNegativeTest = submissions.stream().anyMatch(s -> {
+            String interp = s.getInterpretation() != null ? s.getInterpretation().toLowerCase() : "";
+            return interp.contains("nặng") || interp.contains("rất nặng") || interp.contains("severe") || interp.contains("critical") || (s.getTotalScore() != null && s.getTotalScore() >= 14);
+        });
+
+        boolean hasNegativeEmotion = sharedJournals.stream().anyMatch(j ->
+            (j.getMoodScale() != null && j.getMoodScale() <= 2) ||
+            (j.getStressScale() != null && j.getStressScale() >= 4) ||
+            (j.getDepressionScale() != null && j.getDepressionScale() >= 4)
+        );
+
+        boolean hasNegativeRisk = hasNegativeTest || hasNegativeEmotion;
+        String warningMessage = null;
+        if (hasNegativeTest && hasNegativeEmotion) {
+            warningMessage = "⚠️ CẢNH BÁO NGUY CƠ CAO: Bệnh nhân có kết quả bài test tâm lý ở mức Nặng/Rất Nặng kết hợp cùng nhật ký cảm xúc tiêu cực kéo dài (Stress/Trầm cảm cao). Bác sĩ cần ưu tiên can thiệp khẩn cấp!";
+        } else if (hasNegativeTest) {
+            warningMessage = "⚠️ CẢNH BÁO LÂM SÀNG: Bệnh nhân có bài trắc nghiệm tâm lý đạt mức độ Nặng/Rất Nặng. Đề xuất bác sĩ đánh giá kỹ trong buổi tham vấn.";
+        } else if (hasNegativeEmotion) {
+            warningMessage = "⚠️ CẢNH BÁO TÂM TRẠNG: Bệnh nhân chia sẻ các nhật ký cảm xúc có mức độ căng thẳng/buồn bã tiêu cực (Thang điểm cảm xúc 1-2/5, Căng thẳng >= 4/5).";
+        }
+
+        // 5. Thống kê trực quan hóa: Thang đo cảm xúc
+        java.util.Map<String, Long> moodDistribution = new java.util.LinkedHashMap<>();
+        moodDistribution.put("Rất tệ (1⭐)", sharedJournals.stream().filter(j -> j.getMoodScale() != null && j.getMoodScale() == 1).count());
+        moodDistribution.put("Tệ (2⭐)", sharedJournals.stream().filter(j -> j.getMoodScale() != null && j.getMoodScale() == 2).count());
+        moodDistribution.put("Bình thường (3⭐)", sharedJournals.stream().filter(j -> j.getMoodScale() != null && j.getMoodScale() == 3).count());
+        moodDistribution.put("Tốt (4⭐)", sharedJournals.stream().filter(j -> j.getMoodScale() != null && j.getMoodScale() == 4).count());
+        moodDistribution.put("Rất tốt (5⭐)", sharedJournals.stream().filter(j -> j.getMoodScale() != null && j.getMoodScale() == 5).count());
+
+        // 6. Thống kê trực quan hóa: Tỷ lệ phân loại kết quả bài test
+        java.util.Map<String, Long> testSeverityDistribution = new java.util.LinkedHashMap<>();
+        testSeverityDistribution.put("Bình thường", submissions.stream().filter(s -> {
+            String interp = s.getInterpretation() != null ? s.getInterpretation().toLowerCase() : "";
+            return interp.contains("bình thường") || interp.contains("normal");
+        }).count());
+        testSeverityDistribution.put("Nhẹ (Mild)", submissions.stream().filter(s -> {
+            String interp = s.getInterpretation() != null ? s.getInterpretation().toLowerCase() : "";
+            return interp.contains("nhẹ") || interp.contains("mild");
+        }).count());
+        testSeverityDistribution.put("Vừa (Moderate)", submissions.stream().filter(s -> {
+            String interp = s.getInterpretation() != null ? s.getInterpretation().toLowerCase() : "";
+            return interp.contains("vừa") || interp.contains("moderate");
+        }).count());
+        testSeverityDistribution.put("Nặng / Rất Nặng (Severe)", submissions.stream().filter(s -> {
+            String interp = s.getInterpretation() != null ? s.getInterpretation().toLowerCase() : "";
+            return interp.contains("nặng") || interp.contains("rất nặng") || interp.contains("severe");
+        }).count());
 
         BookingVM.PatientDetailRecordVM vm = new BookingVM.PatientDetailRecordVM(
             patientProfileMapper.toDto(patient),
@@ -210,8 +290,55 @@ public class ClinicalManagementResource {
             completed,
             appointmentMapper.toDto(doctorAppointments)
         );
+        vm.setPsychometricSubmissions(submissions);
+        vm.setSharedJournals(sharedJournals);
+        vm.setTreatmentPackages(treatmentPackages);
+        vm.setHasNegativeRisk(hasNegativeRisk);
+        vm.setWarningMessage(warningMessage);
+        vm.setMoodDistribution(moodDistribution);
+        vm.setTestSeverityDistribution(testSeverityDistribution);
 
         return ResponseEntity.ok(vm);
+    }
+
+    /**
+     * {@code POST /doctor/patients/:patientId/treatment-packages} : Doctor creates and assigns a treatment package to patient.
+     */
+    @PostMapping("/doctor/patients/{patientId}/treatment-packages")
+    @PreAuthorize("hasAnyAuthority('ROLE_DOCTOR', 'ROLE_ADMIN')")
+    public ResponseEntity<com.ocbs.domain.TreatmentPackage> createPackageForPatient(
+        @PathVariable("patientId") Long patientId,
+        @Valid @RequestBody com.ocbs.domain.TreatmentPackage treatmentPackage
+    ) {
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
+
+        Optional<DoctorProfile> doctorOpt = doctorProfileRepository.findByUser_Login(login);
+        if (doctorOpt.isEmpty() && !SecurityUtils.hasCurrentUserAnyOfAuthorities(com.ocbs.security.AuthoritiesConstants.ADMIN)) {
+            throw new BadRequestAlertException("Chỉ bác sĩ mới có quyền gán gói điều trị", ENTITY_NAME, "accessdenied");
+        }
+
+        PatientProfile patient = patientProfileRepository.findById(patientId)
+            .orElseThrow(() -> new BadRequestAlertException("Không tìm thấy bệnh nhân", ENTITY_NAME, "patientnotfound"));
+
+        if (doctorOpt.isPresent()) {
+            treatmentPackage.setDoctor(doctorOpt.get());
+        }
+        treatmentPackage.setPatient(patient);
+        if (treatmentPackage.getStatus() == null) {
+            treatmentPackage.setStatus(com.ocbs.domain.enumeration.TreatmentPackageStatus.PROPOSED);
+        }
+        if (treatmentPackage.getRemainingSessions() == null) {
+            treatmentPackage.setRemainingSessions(treatmentPackage.getSessionQuantity() != null ? treatmentPackage.getSessionQuantity() : 1);
+        }
+        treatmentPackage.setAssignedDate(Instant.now());
+        treatmentPackage.setAcceptanceExpiresAt(Instant.now().plus(7, java.time.temporal.ChronoUnit.DAYS));
+
+        com.ocbs.domain.TreatmentPackage saved = treatmentPackageRepository.save(treatmentPackage);
+        LOG.info("✅ [Clinical Service] Doctor '{}' created treatment package #{} for patient #{}",
+            login, saved.getId(), patientId);
+
+        return ResponseEntity.ok(saved);
     }
 
     /**
@@ -244,9 +371,13 @@ public class ClinicalManagementResource {
             if (doctorAppointments.isEmpty()) {
                 throw new BadRequestAlertException("Bạn không có quyền truy cập hồ sơ của bệnh nhân này vì chưa phụ trách ca khám nào", ENTITY_NAME, "accessdenied");
             }
-        } else {
+        } else if (isAdmin) {
             doctorAppointments = allPatientAppointments;
+        } else {
+            throw new BadRequestAlertException("Bạn không có quyền xuất hồ sơ của bệnh nhân này", ENTITY_NAME, "accessdenied");
         }
+
+        LOG.info("AUDIT: User '{}' exported clinical PDF for patient ID {}", login, patientId);
 
         byte[] pdfBytes = clinicalPdfService.generatePatientClinicalRecordPdf(
             patient,
@@ -278,13 +409,14 @@ public class ClinicalManagementResource {
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
 
         Optional<DoctorProfile> doctorOpt = doctorProfileRepository.findByUser_Login(login);
+        boolean isAdmin = SecurityUtils.hasCurrentUserAnyOfAuthorities(com.ocbs.security.AuthoritiesConstants.ADMIN);
 
         Appointment appointment = appointmentRepository
             .findOneWithToOneRelationships(id)
             .orElseThrow(() -> new BadRequestAlertException("Không tìm thấy lịch hẹn", ENTITY_NAME, "idnotfound"));
 
-        if (doctorOpt.isPresent() && appointment.getDoctor() != null) {
-            if (!appointment.getDoctor().getId().equals(doctorOpt.get().getId()) && !SecurityUtils.hasCurrentUserAnyOfAuthorities(com.ocbs.security.AuthoritiesConstants.ADMIN)) {
+        if (!isAdmin) {
+            if (doctorOpt.isEmpty() || appointment.getDoctor() == null || !appointment.getDoctor().getId().equals(doctorOpt.get().getId())) {
                 throw new BadRequestAlertException("Bạn không có quyền cập nhật ghi chú cho lịch hẹn này", ENTITY_NAME, "accessdenied");
             }
         }
@@ -315,6 +447,7 @@ public class ClinicalManagementResource {
         }
 
         Appointment updated = appointmentRepository.save(appointment);
+        LOG.info("AUDIT: User '{}' updated consultation note for appointment ID {}", login, id);
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
 
@@ -333,28 +466,69 @@ public class ClinicalManagementResource {
         }
 
         PatientProfile patient = patientOpt.get();
+        LOG.info("AUDIT: Patient user '{}' viewed their clinical records", login);
 
-        /*
-        // =========================================================================================
-        // CODE CŨ (GẶP LỖI N+1 VÀ LỌC STREAM IN-MEMORY):
-        // 1. Kéo toàn bộ appointments của patient về, thiếu join fetch p.user và d.user.
-        // 2. Khi appointmentMapper.toDto() chạy, MapStruct gọi getDoctor().getUser() và getPatient().getUser()
-        //    -> Kích hoạt Lazy Loading và sinh ra N query phụ vào bảng jhi_user (1 + 2N queries).
-        // 3. Phải tốn CPU/RAM lọc bằng Java Stream.
-        // =========================================================================================
-        List<Appointment> completedList = appointmentRepository.findByPatientId(patient.getId()).stream()
-            .filter(a -> a.getStatus() == AppointmentStatus.COMPLETED || a.getDiagnosis() != null || a.getConsultationSummary() != null || a.getRecommendations() != null)
-            .collect(java.util.stream.Collectors.toList());
-
-        return ResponseEntity.ok(appointmentMapper.toDto(completedList));
-        */
-
-        // =========================================================================================
-        // CODE MỚI ĐÃ TỐI ƯU (1 QUERY DUY NHẤT, LOẠI BỎ HOÀN TOÀN LỖI N+1):
-        // - Eager join fetch a.patient p, p.user, a.doctor d, d.user, a.slot s.
-        // - Lọc trực tiếp ở tầng SQL Database -> Database Index tối ưu, 0 query phụ khi map sang DTO.
-        // =========================================================================================
         List<Appointment> completedList = appointmentRepository.findClinicalRecordsByPatientId(patient.getId());
         return ResponseEntity.ok(appointmentMapper.toDto(completedList));
+    }
+
+    /**
+     * {@code POST /clinical/psychometrics-alert} : Receive real-time severe score event from opcbs-psychometric-service.
+     * Records clinical high-risk alert for the patient and supervising doctor.
+     */
+    @PostMapping("/clinical/psychometrics-alert")
+    @PreAuthorize("hasAuthority('ROLE_PATIENT')")
+    public ResponseEntity<java.util.Map<String, Object>> receivePsychometricAlert(
+        @RequestBody java.util.Map<String, Object> alertPayload
+    ) {
+        Long submissionId = parseRequiredId(alertPayload.get("submissionId"), "submissionId");
+        Long patientProfileId = parseRequiredId(alertPayload.get("patientId"), "patientId");
+        String severityLevel = String.valueOf(alertPayload.getOrDefault("severityLevel", "Nguy cơ cao"));
+        if (severityLevel.length() > 80) {
+            throw new BadRequestAlertException("Invalid severity level", ENTITY_NAME, "invalidseverity");
+        }
+
+        String login = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
+        PatientProfile currentPatient = patientProfileRepository.findByUser_Login(login)
+            .orElseThrow(() -> new BadRequestAlertException("Patient profile not found", ENTITY_NAME, "patientnotfound"));
+        if (!currentPatient.getId().equals(patientProfileId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Alert patient does not match authenticated patient");
+        }
+
+        com.ocbs.domain.PsychometricSubmission submission = psychometricSubmissionRepository.findOneWithDetails(submissionId)
+            .orElseThrow(() -> new BadRequestAlertException("Assessment submission not found", ENTITY_NAME, "submissionnotfound"));
+        if (submission.getPatient() == null || !submission.getPatient().getId().equals(patientProfileId) ||
+            !"COMPLETED".equalsIgnoreCase(submission.getStatus())) {
+            throw new org.springframework.security.access.AccessDeniedException("Assessment submission ownership or state is invalid");
+        }
+
+        if (clinicalPsychometricAlertRepository.existsBySubmissionId(submissionId)) {
+            return ResponseEntity.ok(java.util.Map.of("status", "DUPLICATE", "submissionId", submissionId));
+        }
+
+        int inserted = clinicalPsychometricAlertRepository.insertIfAbsent(submissionId, patientProfileId, severityLevel);
+        if (inserted == 0) {
+            return ResponseEntity.ok(java.util.Map.of("status", "DUPLICATE", "submissionId", submissionId));
+        }
+
+        LOG.warn("Clinical high-risk alert recorded for submissionId={}.", submissionId);
+        return ResponseEntity.ok(java.util.Map.of(
+            "status", "RECORDED",
+            "submissionId", submissionId,
+            "receivedAt", Instant.now().toString()
+        ));
+    }
+
+    private Long parseRequiredId(Object value, String field) {
+        if (value instanceof Number number) return number.longValue();
+        if (value instanceof String string) {
+            try {
+                return Long.parseLong(string);
+            } catch (NumberFormatException ignored) {
+                // The field is rejected below with the same safe validation response.
+            }
+        }
+        throw new BadRequestAlertException("Missing or invalid " + field, ENTITY_NAME, "invalidalert");
     }
 }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Bảng Transactional Outbox cho Appointment Lifecycle Events trong Booking Service -->
+    <changeSet id="20261020160000-1" author="opcbs">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="outbox_event"/>
+            </not>
+        </preConditions>
+        <createTable tableName="outbox_event">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_id" type="varchar(100)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="ux_outbox_event_id"/>
+            </column>
+            <column name="event_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_version" type="varchar(20)" defaultValue="1.0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_type" type="varchar(50)" defaultValue="APPOINTMENT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="idempotency_key" type="varchar(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="${clobType}">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(30)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="retry_count" type="int" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_retry_at" type="${datetimeType}"/>
+            <column name="error_message" type="varchar(1000)"/>
+            <column name="created_at" type="${datetimeType}" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sent_at" type="${datetimeType}"/>
+        </createTable>
+
+        <createIndex indexName="idx_outbox_status_created" tableName="outbox_event">
+            <column name="status"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

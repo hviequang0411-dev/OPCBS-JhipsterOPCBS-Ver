@@ -46,14 +46,44 @@ public class AppointmentResource {
 
     private final AppointmentQueryService appointmentQueryService;
 
+    private final com.ocbs.service.DoctorDashboardService doctorDashboardService;
+
     public AppointmentResource(
         AppointmentService appointmentService,
         AppointmentRepository appointmentRepository,
-        AppointmentQueryService appointmentQueryService
+        AppointmentQueryService appointmentQueryService,
+        @org.springframework.beans.factory.annotation.Autowired(required = false) com.ocbs.service.DoctorDashboardService doctorDashboardService
     ) {
         this.appointmentService = appointmentService;
         this.appointmentRepository = appointmentRepository;
         this.appointmentQueryService = appointmentQueryService;
+        this.doctorDashboardService = doctorDashboardService;
+    }
+
+    private void evictDashboardCacheSafely(AppointmentDTO dto) {
+        if (doctorDashboardService != null && dto != null && dto.getDoctor() != null && dto.getDoctor().getUser() != null && dto.getDoctor().getUser().getLogin() != null) {
+            String login = dto.getDoctor().getUser().getLogin();
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            try {
+                                doctorDashboardService.evictDoctorDashboardCache(login);
+                            } catch (Exception e) {
+                                LOG.warn("Failed to evict doctor dashboard cache after commit: {}", e.getMessage());
+                            }
+                        }
+                    }
+                );
+            } else {
+                try {
+                    doctorDashboardService.evictDoctorDashboardCache(login);
+                } catch (Exception e) {
+                    LOG.warn("Failed to evict doctor dashboard cache: {}", e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -70,6 +100,7 @@ public class AppointmentResource {
             throw new BadRequestAlertException("A new appointment cannot already have an ID", ENTITY_NAME, "idexists");
         }
         appointmentDTO = appointmentService.save(appointmentDTO);
+        evictDashboardCacheSafely(appointmentDTO);
         return ResponseEntity.created(new URI("/api/appointments/" + appointmentDTO.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, false, ENTITY_NAME, appointmentDTO.getId().toString()))
             .body(appointmentDTO);
@@ -103,6 +134,7 @@ public class AppointmentResource {
         }
 
         appointmentDTO = appointmentService.update(appointmentDTO);
+        evictDashboardCacheSafely(appointmentDTO);
         return ResponseEntity.ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, false, ENTITY_NAME, appointmentDTO.getId().toString()))
             .body(appointmentDTO);
@@ -137,6 +169,7 @@ public class AppointmentResource {
         }
 
         Optional<AppointmentDTO> result = appointmentService.partialUpdate(appointmentDTO);
+        result.ifPresent(this::evictDashboardCacheSafely);
 
         return ResponseUtil.wrapOrNotFound(
             result,
@@ -197,7 +230,9 @@ public class AppointmentResource {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAppointment(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Appointment : {}", id);
+        Optional<AppointmentDTO> existing = appointmentService.findOne(id);
         appointmentService.delete(id);
+        existing.ifPresent(this::evictDashboardCacheSafely);
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, false, ENTITY_NAME, id.toString()))
             .build();

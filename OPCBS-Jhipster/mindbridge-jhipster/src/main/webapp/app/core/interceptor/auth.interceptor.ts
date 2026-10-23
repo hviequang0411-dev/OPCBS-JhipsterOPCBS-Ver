@@ -12,12 +12,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const token = stateStorageService.getAuthenticationToken();
-  if (token) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
+  
+  // =========================================================================
+  // [BFF HTTPONLY COOKIE SUPPORT]:
+  // withCredentials: true đảm bảo trình duyệt luôn tự động gửi kèm HttpOnly Cookie
+  // ('jhi-authenticationToken') trong mọi request API tới Nginx Gateway / Backend.
+  // Nếu có sẵn token trong bộ nhớ thì gắn kèm Header 'Authorization: Bearer <token>'
+  // để tương thích ngược 100% với legacy flow.
+  // =========================================================================
+  req = req.clone({
+    withCredentials: true,
+    ...(token ? { setHeaders: { Authorization: `Bearer ${token}` } } : {}),
+  });
   return next(req);
 };

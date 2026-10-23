@@ -1,329 +1,446 @@
 <div class="doctor-dashboard-container">
-  <!-- 1. Top Sub-Navigation (Matching C# Razor layout) -->
-  <nav class="doc-nav-bar">
-    <div class="doc-nav-links">
-      <a routerLink="/doctor/dashboard" class="doc-nav-link active">
-        <i class="fa-solid fa-chart-pie"></i> Tổng Quan
-      </a>
-      <a routerLink="/appointment" class="doc-nav-link">
-        <i class="fa-solid fa-calendar-check"></i> Lịch Hẹn
-      </a>
-      <a routerLink="/doctor/patients" class="doc-nav-link">
-        <i class="fa-solid fa-user-injured"></i> Hồ Sơ Bệnh Nhân
-      </a>
-      <a routerLink="/doctor/treatment-packages" class="doc-nav-link">
-        <i class="fa-solid fa-box-open"></i> Gói Trị Liệu
-      </a>
-      <a routerLink="/doctor/psychometrics" class="doc-nav-link">
-        <i class="fa-solid fa-brain"></i> Trắc Nghiệm Tâm Lý
-      </a>
-      <a routerLink="/doctor/subscriptions" class="doc-nav-link">
-        <i class="fa-solid fa-credit-card"></i> Gói Nền Tảng
-      </a>
-      <a routerLink="/doctor/verification" class="doc-nav-link">
-        <i class="fa-solid fa-file-signature"></i> Chứng Chỉ & Thẩm Định
-      </a>
+  <!-- Top Period Filter & Controls Bar -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-3 border-bottom">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1.5">
+        <span class="badge bg-teal-subtle text-teal text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 6px; background: rgba(15, 118, 110, 0.08); color: #0f766e;">
+          <i class="fa-solid fa-stethoscope me-1"></i>Khu Vực Bác Sĩ Lâm Sàng
+        </span>
+        <span class="text-muted" style="font-size: 0.8rem;">&bull;</span>
+        <span class="text-muted" style="font-size: 0.8rem;">Hiệu Suất Thực Thời (OPCBS Redis Cache)</span>
+      </div>
+      <h1 class="h3 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="fa-solid fa-chart-line" style="color: #0f766e;"></i>
+        <span>Bảng Điều Khiển Tổng Quan Lâm Sàng</span>
+      </h1>
     </div>
 
-    <!-- Filter Buttons (Hôm nay / Tuần / Tháng) -->
-    <div class="period-toggle-group">
+    <!-- Filter Buttons (Hôm nay / Tuần / Tháng) & Refresh -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="period-toggle-group">
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod() === 'today'" 
+          (click)="loadDashboard('today')">
+          Hôm nay
+        </button>
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod() === 'week'" 
+          (click)="loadDashboard('week')">
+          Tuần này
+        </button>
+        <button 
+          class="period-btn" 
+          [class.active]="selectedPeriod() === 'month'" 
+          (click)="loadDashboard('month')">
+          Tháng này
+        </button>
+      </div>
+
       <button 
-        class="period-btn" 
-        [class.active]="selectedPeriod() === 'today'" 
-        (click)="loadDashboard('today')">
-        Hôm nay
-      </button>
-      <button 
-        class="period-btn" 
-        [class.active]="selectedPeriod() === 'week'" 
-        (click)="loadDashboard('week')">
-        Tuần này
-      </button>
-      <button 
-        class="period-btn" 
-        [class.active]="selectedPeriod() === 'month'" 
-        (click)="loadDashboard('month')">
-        Tháng này
+        type="button" 
+        class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5" 
+        style="border-radius: 8px; padding: 0.45rem 0.85rem;"
+        (click)="loadDashboard(selectedPeriod())"
+        title="Làm mới dữ liệu dashboard"
+      >
+        <i class="fa-solid fa-rotate"></i>
+        <span class="d-none d-sm-inline">Làm mới</span>
       </button>
     </div>
-  </nav>
+  </div>
 
   <!-- Notification Toast Alert -->
-  <div *ngIf="alertMessage()" class="cache-alert-toast">
-    <i class="fa-solid fa-bolt text-warning"></i> {{ alertMessage() }}
-  </div>
+  @if (alertMessage()) {
+    <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm" role="alert" style="border-radius: 8px;">
+      <i class="fa-solid fa-bolt text-warning"></i>
+      <span style="font-size: 0.88rem;">{{ alertMessage() }}</span>
+    </div>
+  }
 
-  <div *ngIf="isLoading()" class="loading-state">
-    <div class="spinner-border text-teal" role="status"></div>
-    <p>Đang tải dữ liệu Tổng quan & Redis Cache...</p>
-  </div>
-
-  <div *ngIf="!isLoading() && dashboard() as d" class="dashboard-content">
-    <!-- 2. Refined Doctor Welcome Header -->
-    <header class="doc-header-card">
-      <div class="doc-info-left">
-        <div class="doc-avatar-beacon">
-          <i class="fa-solid fa-user-doctor"></i>
-          <span class="doc-status-dot"></span>
+  <!-- Error / Doctor Not Found Alert -->
+  @if (isNotFound()) {
+    <div class="alert alert-warning py-4 px-4 mb-4 shadow-sm border-warning" role="alert" style="border-radius: 12px; background: #fffbeb;">
+      <div class="d-flex align-items-center gap-3">
+        <div class="rounded-circle d-flex align-items-center justify-content-center text-warning" style="width: 48px; height: 48px; background: rgba(245, 158, 11, 0.15); font-size: 1.5rem; flex-shrink: 0;">
+          <i class="fa-solid fa-user-shield"></i>
         </div>
-        <div class="doc-title-group">
-          <div class="doc-badge-pill">
-            <i class="fa-solid fa-shield-halved"></i> {{ d.professionalTitle || 'CHUYÊN GIA TÂM LÝ LÂM SÀNG' }}
-          </div>
-          <h2 class="doc-name">{{ d.greeting }}</h2>
-          <p class="doc-subtext">
-            <i class="fa-solid fa-hospital me-1"></i> Trung tâm Tham vấn & Trị liệu Tâm lý MindBridge OPCBS
+        <div>
+          <h5 class="fw-bold text-dark mb-1">Chưa Tìm Thấy Hồ Sơ Bác Sĩ Của Tài Khoản</h5>
+          <p class="text-muted mb-0" style="font-size: 0.88rem;">
+            Tài khoản hiện tại của bạn chưa được liên kết với hồ sơ bác sĩ chuyên khoa hoặc đang chờ kích hoạt. 
+            Để đảm bảo an toàn bảo mật, hệ thống không hiển thị dữ liệu của chuyên gia khác. Vui lòng liên hệ Quản trị viên để hoàn tất hồ sơ.
           </p>
         </div>
       </div>
+    </div>
+  }
 
-      <!-- Redis Cache Performance Badge -->
-      <div class="cache-performance-card">
-        <div class="cache-status" [class.hit]="d.cacheHit" [class.miss]="!d.cacheHit">
-          <span *ngIf="d.cacheHit" class="badge-tag hit">
-            <i class="fa-solid fa-bolt"></i> REDIS CACHE HIT ({{ d.executionTimeMs }} ms)
-          </span>
-          <span *ngIf="!d.cacheHit" class="badge-tag miss">
-            <i class="fa-solid fa-database"></i> MYSQL FRESH QUERY ({{ d.executionTimeMs }} ms)
-          </span>
-        </div>
-        <div class="cache-meta">
-          <small class="text-muted">Key: <code>{{ d.cacheKey }}</code></small>
-        </div>
-        <button class="btn-evict-cache" (click)="evictCache()" [disabled]="isEvicting()">
-          <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isEvicting()"></i> Làm Mới Cache
-        </button>
-      </div>
-    </header>
+  @if (errorMessage() && !isNotFound()) {
+    <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm" role="alert" style="border-radius: 8px;">
+      <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+      <span style="font-size: 0.88rem;">{{ errorMessage() }}</span>
+      <button class="btn btn-sm btn-outline-danger ms-auto py-0 px-2" (click)="loadDashboard(selectedPeriod())">Thử lại</button>
+    </div>
+  }
 
-    <!-- 3. KPI Metrics Grid (4 Main Cards) -->
-    <section class="kpi-grid">
-      <!-- Card 1: Ca khám hôm nay -->
-      <div class="kpi-card teal-glow">
-        <div class="kpi-icon-wrap teal">
-          <i class="fa-solid fa-calendar-day"></i>
-        </div>
-        <div class="kpi-info">
-          <span class="kpi-label">Ca Khám Hôm Nay</span>
-          <h3 class="kpi-value">{{ d.todaySessionsCount }} <span class="unit">lịch hẹn</span></h3>
-          <div class="kpi-sub-stats">
-            <span class="sub-stat success"><i class="fa-solid fa-check"></i> {{ d.todayCompletedCount }} Đã xong</span>
-            <span class="sub-stat pending"><i class="fa-solid fa-clock"></i> {{ d.todayUpcomingCount }} Sắp tới</span>
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-teal mb-3" style="color: #0f766e; width: 3rem; height: 3rem;" role="status"></div>
+      <p class="text-muted fw-medium">Đang tải dữ liệu Tổng quan &amp; Redis Cache của Bác sĩ...</p>
+    </div>
+  }
+
+  <!-- Main Dashboard Content -->
+  @if (!isLoading() && dashboard(); as d) {
+    <div class="dashboard-content">
+      <!-- 1. Refined Doctor Welcome Header -->
+      <header class="doc-header-card">
+        <div class="doc-info-left">
+          <div class="doc-avatar-beacon">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span class="doc-status-dot"></span>
+          </div>
+          <div class="doc-title-group">
+            <div class="doc-badge-pill">
+              <i class="fa-solid fa-shield-halved"></i> {{ d.professionalTitle || 'CHUYÊN GIA TÂM LÝ LÂM SÀNG' }}
+            </div>
+            <h2 class="doc-name">{{ d.greeting }}</h2>
+            <p class="doc-subtext">
+              <i class="fa-solid fa-hospital me-1"></i> Trung tâm Tham vấn &amp; Trị liệu Tâm lý MindBridge OPCBS
+            </p>
           </div>
         </div>
-      </div>
 
-      <!-- Card 2: Tổng ca khám tháng này -->
-      <div class="kpi-card blue-glow">
-        <div class="kpi-icon-wrap blue">
-          <i class="fa-solid fa-user-check"></i>
+        <!-- Redis Cache Performance Badge -->
+        <div class="cache-performance-card">
+          <div class="cache-status" [class.hit]="d.cacheHit" [class.miss]="!d.cacheHit">
+            @if (d.cacheHit) {
+              <span class="badge-tag hit">
+                <i class="fa-solid fa-bolt"></i> REDIS CACHE HIT ({{ d.executionTimeMs }} ms)
+              </span>
+            } @else {
+              <span class="badge-tag miss">
+                <i class="fa-solid fa-database"></i> MYSQL FRESH QUERY ({{ d.executionTimeMs }} ms)
+              </span>
+            }
+          </div>
+          <div class="cache-meta">
+            <small class="text-muted">Key: <code>{{ d.cacheKey }}</code></small>
+          </div>
+          <button class="btn-evict-cache" (click)="evictCache()" [disabled]="isEvicting()" title="Xóa cache và lấy dữ liệu mới">
+            <i class="fa-solid fa-arrows-rotate" [class.fa-spin]="isEvicting()"></i>
+            <span>{{ isEvicting() ? 'Đang xóa...' : 'Làm Mới Cache' }}</span>
+          </button>
         </div>
-        <div class="kpi-info">
-          <span class="kpi-label">Lịch Hẹn Trong Tháng</span>
-          <h3 class="kpi-value">{{ d.appointmentsThisMonth }}</h3>
-          <div class="kpi-trend positive">
-            <i class="fa-solid fa-arrow-trend-up"></i> +{{ d.appointmentsGrowthPercent }}% so với tháng trước
+      </header>
+
+      <!-- 2. KPI Metrics Grid (4 Main Cards) -->
+      <section class="kpi-grid">
+        <!-- Card 1: Ca khám hôm nay -->
+        <div class="kpi-card teal-glow">
+          <div class="kpi-icon-wrap teal">
+            <i class="fa-solid fa-calendar-day"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Ca Khám Trong Ngày</span>
+            <h3 class="kpi-value">{{ d.todaySessionsCount }} <span class="unit">lịch hẹn</span></h3>
+            <div class="kpi-sub-stats">
+              <span class="sub-stat success"><i class="fa-solid fa-check"></i> {{ d.todayCompletedCount }} Đã xong</span>
+              <span class="sub-stat pending"><i class="fa-solid fa-clock"></i> {{ d.todayUpcomingCount }} Sắp tới</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Card 3: Bệnh nhân & Tỉ lệ quay lại -->
-      <div class="kpi-card purple-glow">
-        <div class="kpi-icon-wrap purple">
-          <i class="fa-solid fa-users"></i>
-        </div>
-        <div class="kpi-info">
-          <span class="kpi-label">Thân Chủ Đang Điều Trị</span>
-          <h3 class="kpi-value">{{ d.activePatientsCount }} <span class="unit">người</span></h3>
-          <div class="kpi-trend positive">
-            <i class="fa-solid fa-repeat"></i> {{ d.returningPatientRate }}% thân chủ quay lại
+        <!-- Card 2: Tổng ca khám theo kỳ -->
+        <div class="kpi-card blue-glow">
+          <div class="kpi-icon-wrap blue">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Lịch Hẹn {{ d.periodLabel || 'Trong Kỳ' }}</span>
+            <h3 class="kpi-value">{{ d.appointmentsThisMonth }} <span class="unit">lượt</span></h3>
+            @if (d.appointmentsGrowthPercent !== null && d.appointmentsGrowthPercent !== undefined) {
+              <div class="kpi-trend" [class.positive]="d.isAppointmentsGrowthPositive" [class.negative]="!d.isAppointmentsGrowthPositive">
+                <i [class]="d.isAppointmentsGrowthPositive ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-arrow-trend-down'"></i>
+                {{ d.isAppointmentsGrowthPositive ? '+' : '' }}{{ d.appointmentsGrowthPercent }}% so với kỳ trước
+              </div>
+            } @else {
+              <div class="kpi-trend text-muted" style="font-size: 0.76rem;">
+                <i class="fa-solid fa-circle-info"></i> Chưa có dữ liệu kỳ trước để so sánh
+              </div>
+            }
           </div>
         </div>
-      </div>
 
-      <!-- Card 4: Doanh thu ước tính -->
-      <div class="kpi-card amber-glow">
-        <div class="kpi-icon-wrap amber">
-          <i class="fa-solid fa-coins"></i>
-        </div>
-        <div class="kpi-info">
-          <span class="kpi-label">Doanh Thu Ước Tính</span>
-          <h3 class="kpi-value revenue">{{ formatCurrency(d.revenueThisMonth) }}</h3>
-          <div class="kpi-trend positive">
-            <i class="fa-solid fa-arrow-trend-up"></i> +{{ d.revenueGrowthPercent }}% tăng trưởng
+        <!-- Card 3: Bệnh nhân & Tỉ lệ quay lại -->
+        <div class="kpi-card purple-glow">
+          <div class="kpi-icon-wrap purple">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Thân Chủ {{ d.periodLabel || 'Trong Kỳ' }}</span>
+            <h3 class="kpi-value">{{ d.activePatientsCount }} <span class="unit">người</span></h3>
+            <div class="kpi-trend positive" style="font-size: 0.76rem;">
+              <i class="fa-solid fa-repeat"></i> {{ d.returningPatientsCount }} quay lại ({{ d.returningPatientRate }}%), {{ d.newPatientsThisMonth }} mới
+            </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- 4. Action Center (Cần xử lý ngay) -->
-    <section class="action-center-banner">
-      <div class="action-left">
-        <div class="pulse-indicator"></div>
-        <div>
-          <h4 class="action-title">Cần Xử Lý Ngay (Action Center)</h4>
-          <p class="action-sub">Các tác vụ lâm sàng và duyệt lịch hẹn đang chờ bác sĩ hoàn tất</p>
+        <!-- Card 4: Doanh thu ước tính -->
+        <div class="kpi-card amber-glow">
+          <div class="kpi-icon-wrap amber">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-label">Doanh Thu Ước Tính ({{ d.periodLabel || 'Kỳ này' }})</span>
+            <h3 class="kpi-value revenue">{{ formatCurrency(d.revenueThisMonth) }}</h3>
+            @if (d.revenueGrowthPercent !== null && d.revenueGrowthPercent !== undefined) {
+              <div class="kpi-trend" [class.positive]="d.isRevenueGrowthPositive" [class.negative]="!d.isRevenueGrowthPositive">
+                <i [class]="d.isRevenueGrowthPositive ? 'fa-solid fa-arrow-trend-up' : 'fa-solid fa-arrow-trend-down'"></i>
+                {{ d.isRevenueGrowthPositive ? '+' : '' }}{{ d.revenueGrowthPercent }}% so với kỳ trước
+              </div>
+            } @else {
+              <div class="kpi-trend text-muted" style="font-size: 0.74rem;" [title]="d.revenueNote || ''">
+                <i class="fa-solid fa-circle-info"></i> {{ d.revenueNote || 'Ước tính theo ca hoàn tất' }}
+              </div>
+            }
+          </div>
         </div>
-      </div>
-      <div class="action-pills">
-        <a routerLink="/appointment" class="action-pill warning">
-          <i class="fa-solid fa-inbox"></i> <strong>{{ d.pendingApprovalsCount }}</strong> Lịch hẹn chờ duyệt
-        </a>
-        <a routerLink="/doctor/patients" class="action-pill info">
-          <i class="fa-solid fa-file-medical"></i> <strong>{{ d.pendingNotesCount }}</strong> Bệnh án cần ghi chú
-        </a>
-        <a routerLink="/appointment" class="action-pill active-call">
-          <i class="fa-solid fa-video"></i> <strong>{{ d.inProgressAppointmentsCount }}</strong> Ca khám đang diễn ra
-        </a>
-      </div>
-    </section>
+      </section>
 
-    <!-- 5. Main Dashboard Split Layout -->
-    <div class="dashboard-split-grid">
-      <!-- Cột Trái: Lịch khám hôm nay (Today's Schedule Table) -->
-      <div class="dashboard-main-col">
-        <div class="content-card">
-          <div class="card-header-bar">
-            <h4 class="card-title">
-              <i class="fa-solid fa-clock-rotate-left text-teal me-2"></i> Lịch Khám Trong Ngày
-            </h4>
-            <span class="badge-count">{{ d.todaySessions.length }} ca khám</span>
+      <!-- 3. Action Center (Cần xử lý ngay) -->
+      <section class="action-center-banner">
+        <div class="action-left">
+          <div class="pulse-indicator"></div>
+          <div>
+            <h4 class="action-title">Cần Xử Lý Ngay (Action Center)</h4>
+            <p class="action-sub">Các tác vụ lâm sàng và duyệt lịch hẹn đang chờ bác sĩ hoàn tất</p>
+          </div>
+        </div>
+        <div class="action-pills">
+          <a routerLink="/appointment" class="action-pill warning">
+            <i class="fa-solid fa-inbox"></i> <strong>{{ d.pendingApprovalsCount }}</strong> Lịch hẹn chờ duyệt
+          </a>
+          <a routerLink="/doctor/patients" class="action-pill info">
+            <i class="fa-solid fa-file-medical"></i> <strong>{{ d.pendingNotesCount }}</strong> Bệnh án cần ghi chú
+          </a>
+          <a routerLink="/appointment" class="action-pill active-call">
+            <i class="fa-solid fa-video"></i> <strong>{{ d.inProgressAppointmentsCount }}</strong> Ca khám đang diễn ra
+          </a>
+        </div>
+      </section>
+
+      <!-- 4. Main Dashboard Split Layout -->
+      <div class="dashboard-split-grid">
+        <!-- Cột Trái: Lịch khám hôm nay & Biểu đồ tuần -->
+        <div class="dashboard-main-col">
+          <!-- Table: Lịch khám trong ngày -->
+          <div class="content-card">
+            <div class="card-header-bar">
+              <h4 class="card-title">
+                <i class="fa-solid fa-clock-rotate-left text-teal me-2" style="color: #0f766e;"></i> Lịch Khám Trong Ngày
+              </h4>
+              <span class="badge-count">{{ d.todaySessions.length }} ca khám</span>
+            </div>
+
+            @if (d.todaySessions.length === 0) {
+              <div class="empty-state-mini text-center py-4 text-muted">
+                <i class="fa-solid fa-calendar-check text-muted fa-2x mb-2 d-block opacity-50"></i>
+                <p class="mb-0">Hôm nay bác sĩ không có ca khám nào còn lại.</p>
+              </div>
+            } @else {
+              <div class="table-responsive">
+                <table class="table modern-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Thời Gian</th>
+                      <th>Thân Chủ / Bệnh Nhân</th>
+                      <th>Hình Thức</th>
+                      <th>Lý Do Khám</th>
+                      <th>Trạng Thái</th>
+                      <th class="text-end">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (s of d.todaySessions; track s.id) {
+                      <tr>
+                        <td>
+                          <div class="time-slot-pill">
+                            <i class="fa-regular fa-clock me-1"></i> {{ s.timeRange }}
+                          </div>
+                        </td>
+                        <td>
+                          <div class="patient-cell">
+                            <strong class="patient-name">{{ s.patientName }}</strong>
+                            <small class="text-muted d-block">{{ s.patientPhone || 'Chưa cập nhật SĐT' }}</small>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="mode-badge" [class.online]="s.consultationMode === 'ONLINE'" [class.offline]="s.consultationMode === 'OFFLINE'">
+                            <i [class]="s.consultationMode === 'ONLINE' ? 'fa-solid fa-video' : 'fa-solid fa-building'"></i>
+                            {{ s.consultationMode === 'ONLINE' ? 'Trực Tuyến' : 'Tại Clinic' }}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="reason-preview" [title]="s.reason || 'Khám tham vấn tâm lý'">
+                            {{ s.reason || 'Khám tham vấn tâm lý' }}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="status-pill" [class]="s.status.toLowerCase()">
+                            {{ s.status }}
+                          </span>
+                        </td>
+                        <td class="text-end">
+                          <a [routerLink]="['/appointment', s.id, 'view']" class="btn btn-sm btn-outline-teal me-1" title="Chi tiết ca khám">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           </div>
 
-          <div *ngIf="d.todaySessions.length === 0" class="empty-state-mini">
-            <i class="fa-solid fa-calendar-check text-muted fa-2x mb-2"></i>
-            <p>Hôm nay bác sĩ không có ca khám nào còn lại.</p>
-          </div>
+          <!-- Biểu đồ: Tần Suất Ca Khám Hoàn Tất Trong Tuần (Interactive Scaled Bar Chart) -->
+          <div class="content-card mt-4">
+            <div class="card-header-bar">
+              <div>
+                <h4 class="card-title">
+                  <i class="fa-solid fa-chart-column text-teal me-2" style="color: #0f766e;"></i> Tần Suất Ca Hoàn Tất &amp; Doanh Thu Ước Tính Trong Tuần
+                </h4>
+                <div class="text-muted small mt-0.5">Biểu đồ trực quan số ca khám đã hoàn thành (COMPLETED) từ Thứ Hai đến Chủ Nhật</div>
+              </div>
+              <span class="badge bg-light text-muted border" style="font-size: 0.72rem;">Thứ 2 - Chủ Nhật</span>
+            </div>
 
-          <div *ngIf="d.todaySessions.length > 0" class="table-responsive">
-            <table class="table modern-table">
-              <thead>
-                <tr>
-                  <th>Thời Gian</th>
-                  <th>Thân Chủ / Bệnh Nhân</th>
-                  <th>Hình Thức</th>
-                  <th>Lý Do Khám</th>
-                  <th>Trạng Thái</th>
-                  <th class="text-end">Thao Tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let s of d.todaySessions">
-                  <td>
-                    <div class="time-slot-pill">
-                      <i class="fa-regular fa-clock me-1"></i> {{ s.timeRange }}
+            <div class="p-3">
+              @if (hoveredBar()) {
+                <div class="bar-tooltip-indicator text-center py-1 mb-2 bg-light rounded border text-teal fw-semibold" style="font-size: 0.8rem; color: #0f766e;">
+                  <span>{{ hoveredBar()!.dayOfWeek }}: </span>
+                  <strong>{{ hoveredBar()!.sessionsCount }} ca hoàn tất</strong>
+                  <span class="text-muted ms-2">| Doanh thu ước tính: {{ formatCurrency(hoveredBar()!.revenue) }} (chỉ tính ca COMPLETED × đơn giá khám)</span>
+                </div>
+              }
+
+              <!-- Scaled Weekly Bars -->
+              <div class="weekly-chart-bars">
+                @for (point of d.weeklyChartData; track point.dayOfWeek) {
+                  <div
+                    class="chart-bar-col"
+                    (mouseenter)="onBarHover(point)"
+                    (mouseleave)="onBarLeave()"
+                  >
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        [style.height.%]="getBarHeightPercent(point.sessionsCount)"
+                        [class.zero-bar]="point.sessionsCount === 0"
+                        [attr.title]="point.dayOfWeek + ': ' + point.sessionsCount + ' ca hoàn tất | Doanh thu ước tính: ' + formatCurrency(point.revenue)"
+                      ></div>
                     </div>
-                  </td>
-                  <td>
-                    <div class="patient-cell">
-                      <strong class="patient-name">{{ s.patientName }}</strong>
-                      <small class="text-muted d-block">{{ s.patientPhone || 'Chưa cập nhật SĐT' }}</small>
+                    <span class="bar-count" [class.text-muted]="point.sessionsCount === 0">{{ point.sessionsCount }}</span>
+                    <span class="bar-day">{{ point.dayOfWeek }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Chart Footer Note -->
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top text-muted small flex-wrap gap-2">
+                <span><i class="fa-solid fa-circle text-teal me-1" style="font-size: 0.6rem; color: #0f766e;"></i>Chỉ tính ca khám đã hoàn tất (COMPLETED). Doanh thu ước tính = số ca COMPLETED × đơn giá khám.</span>
+                <span>Đơn vị: Ca hoàn tất</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột Phải: Lịch hẹn sắp tới & Phân bổ Thân chủ -->
+        <div class="dashboard-side-col">
+          <!-- Upcoming Sessions -->
+          <div class="content-card">
+            <div class="card-header-bar">
+              <h4 class="card-title">
+                <i class="fa-solid fa-calendar-days text-purple me-2"></i> Lịch Hẹn Sắp Tới
+              </h4>
+              <a routerLink="/appointment" class="view-all-link">Xem tất cả &rarr;</a>
+            </div>
+
+            @if (d.upcomingAppointments.length === 0) {
+              <div class="text-center py-4 text-muted small">
+                <i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block opacity-50"></i>
+                <span>Chưa có lịch hẹn mới sắp tới</span>
+              </div>
+            } @else {
+              <div class="upcoming-list">
+                @for (item of d.upcomingAppointments; track item.id) {
+                  <div class="upcoming-item">
+                    <div class="item-date-badge">
+                      <i class="fa-regular fa-calendar me-1"></i> {{ item.timeRange }}
                     </div>
-                  </td>
-                  <td>
-                    <span class="mode-badge" [class.online]="s.consultationMode === 'ONLINE'" [class.offline]="s.consultationMode === 'OFFLINE'">
-                      <i [class]="s.consultationMode === 'ONLINE' ? 'fa-solid fa-video' : 'fa-solid fa-building'"></i>
-                      {{ s.consultationMode === 'ONLINE' ? 'Trực Tuyến' : 'Tại Phòng Khám' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="reason-preview" [title]="s.reason || 'Khám tham vấn tâm lý'">
-                      {{ s.reason || 'Khám tham vấn tâm lý' | slice:0:30 }}...
-                    </span>
-                  </td>
-                  <td>
-                    <span class="status-pill" [class]="s.status.toLowerCase()">
-                      {{ s.status }}
-                    </span>
-                  </td>
-                  <td class="text-end">
-                    <a [routerLink]="['/appointment', s.id, 'view']" class="btn btn-sm btn-outline-teal me-1">
-                      <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                    </a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Biểu đồ Xu hướng số ca khám trong tuần -->
-        <div class="content-card mt-3">
-          <div class="card-header-bar">
-            <h4 class="card-title">
-              <i class="fa-solid fa-chart-simple text-blue me-2"></i> Tần Suất Ca Khám Trong Tuần
-            </h4>
-          </div>
-          <div class="weekly-chart-bars">
-            <div *ngFor="let point of d.weeklyChartData" class="chart-bar-col">
-              <div class="bar-track">
-                <div class="bar-fill" [style.height.%]="(point.sessionsCount / 8) * 100"></div>
+                    <div class="item-details">
+                      <strong class="item-patient">{{ item.patientName }}</strong>
+                      <span class="item-mode" [class.online]="item.consultationMode === 'ONLINE'">
+                        {{ item.consultationMode === 'ONLINE' ? 'Khám Online' : 'Tại Clinic' }}
+                      </span>
+                    </div>
+                  </div>
+                }
               </div>
-              <span class="bar-count">{{ point.sessionsCount }}</span>
-              <span class="bar-day">{{ point.dayOfWeek }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cột Phải: Lịch hẹn sắp tới & Phân bổ Thân chủ -->
-      <div class="dashboard-side-col">
-        <!-- Upcoming Sessions -->
-        <div class="content-card">
-          <div class="card-header-bar">
-            <h4 class="card-title">
-              <i class="fa-solid fa-calendar-days text-purple me-2"></i> Lịch Hẹn Sắp Tới
-            </h4>
-            <a routerLink="/appointment" class="view-all-link">Xem tất cả</a>
+            }
           </div>
 
-          <div class="upcoming-list">
-            <div *ngFor="let item of d.upcomingAppointments" class="upcoming-item">
-              <div class="item-date-badge">
-                <i class="fa-regular fa-calendar me-1"></i> {{ item.timeRange }}
-              </div>
-              <div class="item-details">
-                <strong class="item-patient">{{ item.patientName }}</strong>
-                <span class="item-mode">{{ item.consultationMode === 'ONLINE' ? 'Khám Online' : 'Tại Clinic' }}</span>
+          <!-- Patient Retention Distribution -->
+          <div class="content-card mt-4">
+            <div class="card-header-bar">
+              <div>
+                <h4 class="card-title">
+                  <i class="fa-solid fa-pie-chart text-amber me-2"></i> Phân Loại Thân Chủ
+                </h4>
+                <div class="text-muted small mt-0.5">Tỷ lệ gắn kết và đồng hành trị liệu tâm lý</div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Patient Retention Distribution -->
-        <div class="content-card mt-3">
-          <div class="card-header-bar">
-            <h4 class="card-title">
-              <i class="fa-solid fa-chart-pie text-amber me-2"></i> Phân Loại Thân Chủ
-            </h4>
-          </div>
-          <div class="retention-breakdown">
-            <div class="retention-row">
-              <span>Thân chủ mới (1 buổi):</span>
-              <strong>{{ d.singleVisitPercent }}%</strong>
-            </div>
-            <div class="progress mb-3" style="height: 6px;">
-              <div class="progress-bar bg-info" [style.width.%]="d.singleVisitPercent"></div>
-            </div>
+            <div class="p-3">
+              <div class="retention-breakdown">
+                <div class="retention-row d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-dark small">Thân chủ mới (1 buổi):</span>
+                  <strong class="text-teal" style="color: #0f766e;">{{ d.singleVisitPercent }}%</strong>
+                </div>
+                <div class="progress mb-3" style="height: 7px; border-radius: 4px; background: #e2e8f0;">
+                  <div class="progress-bar bg-info" [style.width.%]="d.singleVisitPercent" role="progressbar"></div>
+                </div>
 
-            <div class="retention-row">
-              <span>Trị liệu trung hạn (2-3 buổi):</span>
-              <strong>{{ d.repeat2To3Percent }}%</strong>
-            </div>
-            <div class="progress mb-3" style="height: 6px;">
-              <div class="progress-bar bg-teal" [style.width.%]="d.repeat2To3Percent"></div>
-            </div>
+                <div class="retention-row d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-dark small">Trị liệu trung hạn (2-3 buổi):</span>
+                  <strong class="text-teal" style="color: #0f766e;">{{ d.repeat2To3Percent }}%</strong>
+                </div>
+                <div class="progress mb-3" style="height: 7px; border-radius: 4px; background: #e2e8f0;">
+                  <div class="progress-bar bg-teal" [style.width.%]="d.repeat2To3Percent" role="progressbar"></div>
+                </div>
 
-            <div class="retention-row">
-              <span>Đồng hành dài hạn (4+ buổi):</span>
-              <strong>{{ d.loyal4PlusPercent }}%</strong>
-            </div>
-            <div class="progress" style="height: 6px;">
-              <div class="progress-bar bg-purple" [style.width.%]="d.loyal4PlusPercent"></div>
+                <div class="retention-row d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-dark small">Đồng hành dài hạn (4+ buổi):</span>
+                  <strong class="text-teal" style="color: #0f766e;">{{ d.loyal4PlusPercent }}%</strong>
+                </div>
+                <div class="progress mb-2" style="height: 7px; border-radius: 4px; background: #e2e8f0;">
+                  <div class="progress-bar bg-purple" [style.width.%]="d.loyal4PlusPercent" role="progressbar"></div>
+                </div>
+              </div>
+
+              <!-- API Transparency & Suggestion Note -->
+              <div class="mt-3 pt-2 border-top small text-muted">
+                <i class="fa-solid fa-circle-info text-teal me-1" style="color: #0f766e;"></i>
+                <span>{{ d.retentionNote || 'Số liệu phân loại tự động dựa trên tổng số ca khám hoàn tất của từng thân chủ với bác sĩ.' }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  }
 </div>

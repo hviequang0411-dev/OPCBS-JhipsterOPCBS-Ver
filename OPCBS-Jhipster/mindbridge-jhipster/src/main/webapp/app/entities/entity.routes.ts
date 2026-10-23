@@ -138,7 +138,17 @@ const routes: Routes = [
   },
   {
     path: 'doctor/subscriptions',
-    title: 'Gói Dịch Vụ Bác Sĩ',
+    title: 'Gói Dịch Vụ Bác Sĩ & Cổng VNPay',
+    loadComponent: () => import('./payment/doctor-subscription.component').then(m => m.DoctorSubscriptionComponent),
+  },
+  {
+    path: 'doctor/subscription/callback',
+    title: 'Kết Quả Thanh Toán VNPay',
+    loadComponent: () => import('./payment/doctor-subscription.component').then(m => m.DoctorSubscriptionComponent),
+  },
+  {
+    path: 'doctor/subscriptions/callback',
+    title: 'Kết Quả Thanh Toán VNPay',
     loadComponent: () => import('./payment/doctor-subscription.component').then(m => m.DoctorSubscriptionComponent),
   },
   {
@@ -150,6 +160,26 @@ const routes: Routes = [
     path: 'messages',
     title: 'Hộp Thư Tư Vấn Trực Tuyến',
     loadComponent: () => import('./message/chat-inbox.component').then(m => m.ChatInboxComponent),
+  },
+  {
+    path: 'blogs',
+    title: 'Góc Nhìn Chuyên Gia & Blog Y Khoa',
+    loadComponent: () => import('./blog/public/blog-catalog.component').then(m => m.BlogCatalogComponent),
+  },
+  {
+    path: 'blogs/:id',
+    title: 'Chi Tiết Bài Viết Chuyên Môn',
+    loadComponent: () => import('./blog/public/blog-detail.component').then(m => m.BlogDetailComponent),
+  },
+  {
+    path: 'doctor/blogs',
+    title: 'Quản Lý Bài Viết Bác Sĩ',
+    loadComponent: () => import('./blog/doctor/doctor-blogs.component').then(m => m.DoctorBlogsComponent),
+  },
+  {
+    path: 'admin/blogs',
+    title: 'Kiểm Duyệt & Xuất Bản Blog Y Khoa',
+    loadComponent: () => import('./blog/admin/admin-blogs.component').then(m => m.AdminBlogsComponent),
   },
   // jhipster-needle-add-entity-route - JHipster will add entity modules routes here
 ];

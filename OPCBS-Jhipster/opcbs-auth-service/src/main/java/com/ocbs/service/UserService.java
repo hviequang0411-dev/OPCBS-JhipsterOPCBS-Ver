@@ -367,6 +367,14 @@ public class UserService {
         if (existingUser.isActivated()) {
             return false;
         }
+        patientProfileRepository.findByUser(existingUser).ifPresent(patient -> {
+            patientProfileRepository.delete(patient);
+            patientProfileRepository.flush();
+        });
+        doctorProfileRepository.findByUser(existingUser).ifPresent(doctor -> {
+            doctorProfileRepository.delete(doctor);
+            doctorProfileRepository.flush();
+        });
         userRepository.delete(existingUser);
         userRepository.flush();
         return true;

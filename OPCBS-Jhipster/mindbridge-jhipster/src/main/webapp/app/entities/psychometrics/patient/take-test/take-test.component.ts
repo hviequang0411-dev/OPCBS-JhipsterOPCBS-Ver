@@ -24,6 +24,7 @@ export class TakeTestComponent implements OnInit {
   isLoading = false;
   isSubmitting = false;
   errorMessage = '';
+  assignedSubmissionId: number | null = null;
 
   // Standard Likert 0-3 scale options for DASS-21, PHQ-9, GAD-7
   scaleOptions = [
@@ -35,6 +36,10 @@ export class TakeTestComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.params['id'];
+    const subId = this.route.snapshot.queryParams['submissionId'];
+    if (subId) {
+      this.assignedSubmissionId = +subId;
+    }
     if (id) {
       this.loadTest(+id);
     }
@@ -83,12 +88,16 @@ export class TakeTestComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
 
-    const payload = {
+    const payload: any = {
       answers: this.questions.map(q => ({
         questionId: q.id!,
         score: this.answers[q.id!] !== undefined ? this.answers[q.id!] : 0
       }))
     };
+
+    if (this.assignedSubmissionId) {
+      payload.assignedSubmissionId = this.assignedSubmissionId;
+    }
 
     this.psychometricsService.submitTest(this.test.id, payload).subscribe({
       next: res => {

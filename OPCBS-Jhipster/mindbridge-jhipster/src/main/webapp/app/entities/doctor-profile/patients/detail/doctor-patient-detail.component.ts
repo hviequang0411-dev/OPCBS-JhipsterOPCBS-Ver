@@ -25,7 +25,23 @@ export class DoctorPatientDetailComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
-  readonly activeTab = signal<'OVERVIEW' | 'CLINICAL'>('CLINICAL');
+  readonly activeTab = signal<'CLINICAL' | 'ANALYTICS' | 'TESTS' | 'JOURNALS' | 'PACKAGES' | 'OVERVIEW'>('CLINICAL');
+  readonly Math = Math;
+
+  // Modal / Form state for Creating Package
+  readonly isCreatingPackage = signal<boolean>(false);
+  readonly isSavingPackage = signal<boolean>(false);
+  packageForm = {
+    name: '',
+    description: '',
+    sessionQuantity: 6,
+    validityDays: 60,
+    price: 1800000,
+    recommendedSessionsPerWeek: 1,
+    targetOutcome: '',
+    recommendedExercises: '',
+    instructions: '',
+  };
 
   // Modal / Form state for Consultation Note
   readonly isEditingNote = signal<boolean>(false);
@@ -72,8 +88,99 @@ export class DoctorPatientDetailComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: 'OVERVIEW' | 'CLINICAL'): void {
+  setActiveTab(tab: 'CLINICAL' | 'ANALYTICS' | 'TESTS' | 'JOURNALS' | 'PACKAGES' | 'OVERVIEW'): void {
     this.activeTab.set(tab);
+  }
+
+  openCreatePackageModal(): void {
+    const pName = this.patientRecord()?.patient?.fullName || 'Bệnh nhân';
+    this.packageForm = {
+      name: `Gói Trị Liệu Tâm Lý Chuyên Sâu - ${pName}`,
+      description: 'Liệu trình tâm lý cá nhân hóa can thiệp hành vi nhận thức và phục hồi cảm xúc',
+      sessionQuantity: 6,
+      validityDays: 60,
+      price: 1800000,
+      recommendedSessionsPerWeek: 1,
+      targetOutcome: 'Kiểm soát căng thẳng, cải thiện giấc ngủ và thuyên giảm lo âu',
+      recommendedExercises: 'Ghi nhật ký cảm xúc hàng ngày và thực hành bài tập chánh niệm',
+      instructions: 'Tham gia đầy đủ các buổi tham vấn theo lịch hẹn đã thống nhất với bác sĩ',
+    };
+    this.isCreatingPackage.set(true);
+  }
+
+  closeCreatePackageModal(): void {
+    this.isCreatingPackage.set(false);
+  }
+
+  saveTreatmentPackage(): void {
+    const id = this.patientId();
+    if (!id) return;
+
+    this.isSavingPackage.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    const payload = {
+      ...this.packageForm,
+      remainingSessions: this.packageForm.sessionQuantity,
+      patient: { id },
+    };
+
+    this.doctorPatientService.createPackageForPatient(id, payload).subscribe({
+      next: (createdPkg: any) => {
+        this.isSavingPackage.set(false);
+        this.isCreatingPackage.set(false);
+        this.successMessage.set(`Đã tạo và gán gói trị liệu "${createdPkg.name || 'mới'}" cho bệnh nhân thành công!`);
+        this.loadPatientDetail();
+        setTimeout(() => this.successMessage.set(null), 5000);
+      },
+      error: (err: any) => {
+        this.isSavingPackage.set(false);
+        this.errorMessage.set(err?.error?.message || 'Có lỗi khi tạo gói trị liệu cho bệnh nhân.');
+      },
+    });
+  }
+
+  getMoodDistributionEntries(): { label: string; count: number; percentage: number; color: string }[] {
+    const dist = this.patientRecord()?.moodDistribution || {};
+    const total = Object.values(dist).reduce((a, b) => a + (b as number), 0) || 1;
+    const colors: Record<string, string> = {
+      'Rất tệ (1⭐)': '#ef4444',
+      'Tệ (2⭐)': '#f97316',
+      'Bình thường (3⭐)': '#eab308',
+      'Tốt (4⭐)': '#10b981',
+      'Rất tốt (5⭐)': '#06b6d4',
+    };
+    return Object.entries(dist).map(([label, count]) => ({
+      label,
+      count: count as number,
+      percentage: Math.round(((count as number) / total) * 100),
+      color: colors[label] || '#0f766e',
+    }));
+  }
+
+  getTestSeverityEntries(): { label: string; count: number; percentage: number; color: string }[] {
+    const dist = this.patientRecord()?.testSeverityDistribution || {};
+    const total = Object.values(dist).reduce((a, b) => a + (b as number), 0) || 1;
+    const colors: Record<string, string> = {
+      'Bình thường': '#10b981',
+      'Nhẹ (Mild)': '#06b6d4',
+      'Vừa (Moderate)': '#f59e0b',
+      'Nặng / Rất Nặng (Severe)': '#ef4444',
+    };
+    return Object.entries(dist).map(([label, count]) => ({
+      label,
+      count: count as number,
+      percentage: Math.round(((count as number) / total) * 100),
+      color: colors[label] || '#6366f1',
+    }));
+  }
+
+  getAverageMood(): number {
+    const journals = this.patientRecord()?.sharedJournals || [];
+    if (journals.length === 0) return 0;
+    const sum = journals.reduce((acc: number, j: any) => acc + (j.moodScale || 3), 0);
+    return Math.round((sum / journals.length) * 10) / 10;
   }
 
   openNoteEditor(appointment: IAppointment): void {

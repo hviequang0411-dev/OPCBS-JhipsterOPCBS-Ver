@@ -62,6 +62,13 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
         this.env = env;
     }
 
+    @ExceptionHandler(BadRequestAlertException.class)
+    public ResponseEntity<Object> handleBadRequestAlertException(BadRequestAlertException ex, NativeWebRequest request) {
+        LOG.warn("Handling BadRequestAlertException: key={}, msg={}", ex.getErrorKey(), ex.getMessage());
+        ProblemDetailWithCause pdCause = wrapAndCustomizeProblem(ex, request);
+        return handleExceptionInternal(ex, pdCause, buildHeaders(ex), HttpStatusCode.valueOf(pdCause.getStatus()), request);
+    }
+
     @ExceptionHandler
     public ResponseEntity<Object> handleAnyException(Throwable ex, NativeWebRequest request) {
         LOG.debug("Converting Exception to Problem Details:", ex);
@@ -79,8 +86,9 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
         HttpStatusCode statusCode,
         WebRequest request
     ) {
-        body = body == null ? wrapAndCustomizeProblem(ex, (NativeWebRequest) request) : body;
-        return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        ProblemDetailWithCause customizedBody = wrapAndCustomizeProblem(ex, (NativeWebRequest) request);
+        HttpHeaders customizedHeaders = headers != null && !headers.isEmpty() ? headers : buildHeaders(ex);
+        return super.handleExceptionInternal(ex, customizedBody, customizedHeaders, statusCode, request);
     }
 
     protected ProblemDetailWithCause wrapAndCustomizeProblem(Throwable ex, NativeWebRequest request) {
@@ -110,10 +118,20 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
         if (problem.getType() == null || problem.getType().equals(URI.create("about:blank"))) problem.setType(getMappedType(err));
 
         // higher precedence to Custom/ResponseStatus types
-        String title = extractTitle(err, problem.getStatus());
-        String problemTitle = problem.getTitle();
-        if (problemTitle == null || !problemTitle.equals(title)) {
-            problem.setTitle(title);
+        if (err instanceof BadRequestAlertException badReq) {
+            String customTitle = badReq.getBody().getTitle();
+            if (customTitle != null && !customTitle.isBlank()) {
+                problem.setTitle(customTitle);
+                problem.setDetail(customTitle);
+            }
+            problem.setProperty("errorKey", badReq.getErrorKey());
+            problem.setProperty("defaultMessage", customTitle);
+        } else {
+            String title = extractTitle(err, problem.getStatus());
+            String problemTitle = problem.getTitle();
+            if (problemTitle == null || !problemTitle.equals(title)) {
+                problem.setTitle(title);
+            }
         }
 
         if (problem.getDetail() == null) {
@@ -234,15 +252,20 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
     }
 
     private HttpHeaders buildHeaders(Throwable err) {
-        return err instanceof BadRequestAlertException badRequestAlertException
-            ? HeaderUtil.createFailureAlert(
-                  applicationName,
-                  true,
-                  badRequestAlertException.getEntityName(),
-                  badRequestAlertException.getErrorKey(),
-                  badRequestAlertException.getMessage()
-              )
-            : null;
+        if (err instanceof BadRequestAlertException badRequestAlertException) {
+            HttpHeaders headers = HeaderUtil.createFailureAlert(
+                applicationName,
+                true,
+                badRequestAlertException.getEntityName(),
+                badRequestAlertException.getErrorKey(),
+                badRequestAlertException.getMessage()
+            );
+            headers.add("x-opcbs-error", "error." + badRequestAlertException.getErrorKey());
+            headers.add("x-auth-service-error", "error." + badRequestAlertException.getErrorKey());
+            headers.add("x-opcbs-params", badRequestAlertException.getEntityName());
+            return headers;
+        }
+        return null;
     }
 
     public Optional<ProblemDetailWithCause> buildCause(final Throwable throwable, NativeWebRequest request) {

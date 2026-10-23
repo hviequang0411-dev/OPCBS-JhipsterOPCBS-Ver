@@ -1,3 +1,4 @@
+import dayjs from 'dayjs/esm';
 import { Component, OnInit, effect, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -49,10 +50,13 @@ export class DoctorProfileDetail implements OnInit {
 
   loadDoctorSlots(doctorId: number): void {
     this.isLoadingSlots.set(true);
+    const startOfTodayIso = dayjs().startOf('day').toISOString();
     this.slotService
       .query({
         'doctorId.equals': doctorId,
         'status.equals': 'AVAILABLE',
+        'startTime.greaterThanOrEqual': startOfTodayIso,
+        size: 100,
         sort: ['startTime,asc'],
       })
       .subscribe({

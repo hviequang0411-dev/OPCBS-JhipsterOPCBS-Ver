@@ -1,0 +1,192 @@
+.admin-dash-container {
+  padding: 1.5rem;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.kpi-stat-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(15, 118, 110, 0.08);
+    border-color: #cbd5e1;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+    margin: 0;
+  }
+}
+
+.dash-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+
+  .card-header-custom {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-title-custom {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* SVG Chart Styles */
+.chart-container-svg {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+.chart-point {
+  fill: #0f766e;
+  stroke: #ffffff;
+  stroke-width: 3;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    r: 7;
+    fill: #14b8a6;
+  }
+}
+
+.chart-tooltip-box {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.donut-segment {
+  transition: stroke-width 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    stroke-width: 26;
+  }
+}
+
+.shortcut-btn {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #0f766e;
+    color: #0f766e;
+    transform: translateX(3px);
+  }
+
+  i {
+    font-size: 1.1rem;
+    color: #0f766e;
+  }
+}
+
+.spin-anim {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spec-legend-item {
+  transition: all 0.15s ease;
+  cursor: pointer;
+
+  &:hover,
+  &.active {
+    background: #f1f5f9 !important;
+    transform: translateX(2px);
+  }
+}
+
+.status-card-item {
+  transition: all 0.15s ease;
+
+  &:hover,
+  &.highlight {
+    border-color: #0f766e !important;
+    background: #f0fdfa !important;
+  }
+}
+
+.empty-chart-state {
+  padding: 2.5rem 1rem;
+}
+
+.text-teal {
+  color: #0f766e !important;
+}
+

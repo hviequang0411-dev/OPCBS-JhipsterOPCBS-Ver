@@ -1,0 +1,271 @@
+<div class="service-pkg-container">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge bg-dark text-white text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px; padding: 4px 8px;">Role: Quản Trị Viên</span>
+        <span class="text-muted" style="font-size: 0.8rem;">&bull;</span>
+        <span class="text-muted" style="font-size: 0.8rem;">Dịch Vụ Kinh Doanh Nền Tảng</span>
+      </div>
+      <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-gem-fill" style="color: #0f766e;"></i>
+        <span>Gói Dịch Vụ Nền Tảng (Platform Service Packages)</span>
+      </h1>
+      <p class="text-muted mb-0" style="font-size: 0.88rem;">
+        Quản lý các gói hội viên và quyền lợi tài khoản dành cho Bác sĩ trên hệ thống MindBridge
+      </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1.5" (click)="loadData()" title="Làm mới dữ liệu">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Làm mới</span>
+      </button>
+      <a routerLink="/admin/service-package/new" class="btn btn-primary btn-sm d-flex align-items-center gap-1.5" style="background: #0f766e; border-color: #0f766e; font-weight: 600;">
+        <i class="bi bi-plus-lg"></i>
+        <span>Tạo Gói Dịch Vụ Mới</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-check-circle-fill fs-5"></i>
+      <div>{{ successMessage() }}</div>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+  }
+
+  <!-- KPIs Metric Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(15, 118, 110, 0.1); color: #0f766e;">
+          <i class="bi bi-gem"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Tổng Số Gói Cước</div>
+          <div class="kpi-value">{{ stats().totalPackages || packages().length }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+          <i class="bi bi-check2-circle"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Đang Kích Hoạt</div>
+          <div class="kpi-value text-success">{{ stats().activePackages }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+          <i class="bi bi-pause-circle"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Tạm Dừng / Lưu Trữ</div>
+          <div class="kpi-value text-danger">{{ stats().inactivePackages }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #d97706;">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <div>
+          <div class="kpi-label">Giá Bình Quân</div>
+          <div class="kpi-value text-dark" style="font-size: 1.15rem;">{{ formatPrice(stats().averagePrice) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Data Panel -->
+  <div class="data-panel">
+    <!-- Header with Search & Filter -->
+    <div class="panel-header">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="fw-bold text-dark small text-uppercase" style="letter-spacing: 0.5px;">
+          <i class="bi bi-funnel me-1 text-teal"></i>Bộ Lọc:
+        </div>
+        <button type="button" class="filter-chip" [class.active]="statusFilter === 'ALL'" (click)="onStatusFilterChange('ALL')">
+          Tất cả ({{ packages().length }})
+        </button>
+        <button type="button" class="filter-chip" [class.active]="statusFilter === 'ACTIVE'" (click)="onStatusFilterChange('ACTIVE')">
+          <i class="bi bi-check-circle-fill me-1 text-success"></i>Đang chạy
+        </button>
+        <button type="button" class="filter-chip" [class.active]="statusFilter === 'INACTIVE'" (click)="onStatusFilterChange('INACTIVE')">
+          <i class="bi bi-pause-fill me-1 text-muted"></i>Tạm dừng
+        </button>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width: 280px;">
+          <span class="input-group-text bg-white text-muted border-end-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0 ps-0"
+            placeholder="Tìm tên hoặc mô tả gói..."
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 table-pkg">
+        <thead>
+          <tr>
+            <th style="width: 50px;" class="text-center">#</th>
+            <th>Tên Gói Dịch Vụ</th>
+            <th>Giá Niêm Yết (VND)</th>
+            <th>Thời Hạn (Ngày)</th>
+            <th>Giới Hạn Khung Giờ</th>
+            <th>Trạng Thái</th>
+            <th class="text-end pe-3" style="width: 180px;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <div class="spinner-border text-teal spinner-border-sm me-2" role="status"></div>
+                <span>Đang tải danh sách gói dịch vụ...</span>
+              </td>
+            </tr>
+          } @else if (filteredPackages().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <i class="bi bi-inbox text-muted d-block mb-2" style="font-size: 2.5rem;"></i>
+                <div class="fw-semibold text-dark">Không tìm thấy gói dịch vụ nào phù hợp</div>
+                <small class="text-muted">Hãy thử thay đổi từ khóa tìm kiếm hoặc tạo mới một gói dịch vụ</small>
+              </td>
+            </tr>
+          } @else {
+            @for (pkg of filteredPackages(); track pkg.id; let idx = $index) {
+              <tr>
+                <td class="text-center text-muted fw-semibold">{{ pkg.displayOrder || idx + 1 }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2.5">
+                    <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background: rgba(15, 118, 110, 0.08); color: #0f766e;">
+                      <i class="bi bi-box-seam fs-6"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold text-dark">{{ pkg.name }}</div>
+                      <div class="text-muted small text-truncate" style="max-width: 280px;">
+                        {{ pkg.description || 'Chưa có mô tả chi tiết' }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="fw-bold" style="color: #0f766e; font-size: 0.95rem;">
+                    {{ formatPrice(pkg.price) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border" style="font-size: 0.78rem;">
+                    <i class="bi bi-clock me-1 text-primary"></i>{{ pkg.durationDays }} ngày
+                  </span>
+                </td>
+                <td>
+                  @if (pkg.maxDailySlotsCapacity) {
+                    <span class="text-dark fw-medium">
+                      <i class="bi bi-calendar-check me-1 text-teal"></i>{{ pkg.maxDailySlotsCapacity }} slot / ngày
+                    </span>
+                  } @else {
+                    <span class="badge bg-info bg-opacity-10 text-info fw-semibold" style="font-size: 0.72rem;">
+                      <i class="bi bi-infinity me-1"></i>Không giới hạn
+                    </span>
+                  }
+                </td>
+                <td>
+                  <div class="form-check form-switch d-inline-block">
+                    <input
+                      class="form-check-input cursor-pointer"
+                      type="checkbox"
+                      role="switch"
+                      [checked]="pkg.isActive"
+                      (change)="toggleActive(pkg)"
+                      title="Bấm để bật/tắt kích hoạt gói"
+                    />
+                    <span class="ms-1 small fw-semibold" [class.text-success]="pkg.isActive" [class.text-muted]="!pkg.isActive">
+                      {{ pkg.isActive ? 'Kích hoạt' : 'Tạm dừng' }}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-end pe-3">
+                  <div class="btn-group btn-group-sm">
+                    <a [routerLink]="['/admin/service-package', pkg.id, 'view']" class="btn btn-outline-secondary" title="Xem chi tiết gói">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a [routerLink]="['/admin/service-package', pkg.id, 'edit']" class="btn btn-outline-primary" title="Chỉnh sửa gói">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-outline-danger" (click)="confirmDelete(pkg)" title="Xóa gói dịch vụ">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Delete Modal Backdrop -->
+  @if (packageToDelete) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-dialog modal-dialog-centered" style="width: 100%; max-width: 440px; margin: 1rem;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+          <div class="modal-header bg-danger text-white py-3">
+            <h5 class="modal-title fs-6 fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>Xác Nhận Xóa Gói Dịch Vụ</span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="cancelDelete()"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <i class="bi bi-trash3 text-danger d-block mb-3" style="font-size: 2.8rem;"></i>
+            <p class="mb-2 text-dark">
+              Bạn có chắc chắn muốn xóa gói dịch vụ <strong>"{{ packageToDelete.name }}"</strong>?
+            </p>
+            <p class="text-muted small mb-0">
+              Hành động này không thể hoàn tác. Nếu đã có bác sĩ đăng ký gói này, hệ thống sẽ bảo vệ toàn vẹn dữ liệu.
+            </p>
+          </div>
+          <div class="modal-footer bg-light py-2.5 px-3 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="cancelDelete()" [disabled]="isDeleting">
+              Hủy bỏ
+            </button>
+            <button type="button" class="btn btn-sm btn-danger px-3 d-flex align-items-center gap-1.5" (click)="executeDelete()" [disabled]="isDeleting">
+              @if (isDeleting) {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+              }
+              <span>Xác nhận xóa</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Bổ sung cột next_retry_at để hỗ trợ exponential backoff cho Outbox relay -->
+    <changeSet id="20261020170000-1" author="opcbs">
+        <addColumn tableName="outbox_event">
+            <column name="next_retry_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <createIndex indexName="idx_outbox_retry_poll" tableName="outbox_event">
+            <column name="status"/>
+            <column name="next_retry_at"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

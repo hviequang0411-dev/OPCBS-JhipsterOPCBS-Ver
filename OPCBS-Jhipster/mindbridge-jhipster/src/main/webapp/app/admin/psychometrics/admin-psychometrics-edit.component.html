@@ -1,0 +1,490 @@
+<div class="psy-edit-container">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <a routerLink="/admin/psychometrics" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold text-dark mb-0">
+          {{ isEditMode ? 'Chỉnh Sửa Bộ Đề: ' + test.title : 'Thiết Lập Bộ Đề Trắc Nghiệm Tâm Lý Mới' }}
+        </h1>
+        <p class="text-muted small mb-0">Hỗ trợ trắc nghiệm y khoa tiêu chuẩn, tải đề từ File (Excel, Word) hoặc trích xuất từ Link</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a routerLink="/admin/psychometrics" class="btn btn-outline-secondary btn-sm px-3">
+        Hủy Bỏ
+      </a>
+      <button type="button" class="btn btn-primary btn-sm px-4 d-flex align-items-center gap-1.5" (click)="save()" [disabled]="isSaving()" style="background: #0f766e; border-color: #0f766e; font-weight: 600;">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm" role="status"></span>
+        }
+        <i class="bi bi-check-lg"></i>
+        <span>{{ isEditMode ? 'Lưu Cập Nhật' : 'Tạo Đề Trắc Nghiệm' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notices -->
+  @if (successNotice()) {
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-check-circle-fill fs-5"></i>
+      <div>{{ successNotice() }}</div>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+  }
+
+  <div class="row g-4">
+    <!-- Left Column: Form & Question Builder -->
+    <div class="col-lg-8">
+      <!-- General Metadata Card -->
+      <div class="form-panel mb-4">
+        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+          <i class="bi bi-info-circle text-teal"></i>
+          <span>Thông Tin Nhận Diện Thang Đo</span>
+        </h5>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold text-dark small">
+              Tên Bộ Trắc Nghiệm / Thang Đo <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ví dụ: DASS-21 Thang đo Trầm cảm, Lo âu, Căng thẳng"
+              [(ngModel)]="test.title"
+              required
+            />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold text-dark small">
+              Mã Định Danh (Code) <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              class="form-control text-uppercase"
+              placeholder="Ví dụ: DASS21, GAD7, PHQ9"
+              [(ngModel)]="test.testType"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              Chuyên Mục Sàng Lọc
+            </label>
+            <select class="form-select" [(ngModel)]="test.category">
+              <option value="General Wellbeing">Sức khỏe tâm thần chung (General Wellbeing)</option>
+              <option value="Depression">Trầm cảm (Depression)</option>
+              <option value="Anxiety">Rối loạn lo âu (Anxiety)</option>
+              <option value="Stress">Căng thẳng thần kinh (Stress)</option>
+              <option value="Sleep">Rối loạn giấc ngủ (Sleep)</option>
+              <option value="Post-Trauma">Chấn thương tâm lý (PTSD)</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              <i class="bi bi-link-45deg text-teal me-1"></i>Đường Dẫn Tài Liệu Gốc / Source URL
+            </label>
+            <input
+              type="url"
+              class="form-control"
+              placeholder="https://... (Ví dụ trang tài liệu lâm sàng)"
+              [(ngModel)]="test.sourceUrl"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small">
+            Mô Tả &amp; Hướng Dẫn Thực Hiện
+          </label>
+          <textarea
+            class="form-control"
+            rows="2"
+            placeholder="Hướng dẫn bệnh nhân cách làm bài, khoảng thời gian đánh giá (2 tuần qua)..."
+            [(ngModel)]="test.description"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="form-label fw-semibold text-dark small">
+            Mục Đích Lâm Sàng &amp; Ý Nghĩa Điểm Số
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ví dụ: Sàng lọc định lượng mức độ trầm cảm, lo âu và căng thẳng để bác sĩ hội chẩn"
+            [(ngModel)]="test.purpose"
+          />
+        </div>
+      </div>
+
+      <!-- Question Items Builder -->
+      <div class="form-panel">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div>
+            <h5 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+              <i class="bi bi-list-ol text-teal"></i>
+              <span>Danh Sách Câu Hỏi Khảo Sát</span>
+              <span class="badge bg-teal text-white rounded-pill ms-1" style="background: #0f766e; font-size: 0.72rem;">
+                {{ test.questions?.length || 0 }} câu hỏi
+              </span>
+            </h5>
+            <div class="text-muted small">Cấu hình câu hỏi trắc nghiệm, phân loại chuyên mục con</div>
+          </div>
+
+          <!-- Feature Action Badges: Link Import, File Upload, Standard Templates -->
+          <div class="d-flex align-items-center gap-1.5 flex-wrap">
+            <button
+              type="button"
+              class="btn btn-sm btn-primary d-flex align-items-center gap-1.5"
+              style="background: #0f766e; border-color: #0f766e; font-size: 0.78rem; font-weight: 600;"
+              (click)="openLinkImportModal()"
+              title="Nhập đề tự động từ Link trực tuyến (Khuyến khích)"
+            >
+              <i class="bi bi-link-45deg fs-6"></i>
+              <span>Nhập Từ Link (URL)</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-teal d-flex align-items-center gap-1.5"
+              style="border-color: #0f766e; color: #0f766e; font-size: 0.78rem; font-weight: 600;"
+              (click)="openFileUploadModal()"
+              title="Upload đề từ file Excel, Word, CSV, JSON"
+            >
+              <i class="bi bi-file-earmark-arrow-up fs-6"></i>
+              <span>Upload Từ File</span>
+            </button>
+
+            <div class="dropdown">
+              <button
+                class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                style="font-size: 0.78rem; font-weight: 600;"
+              >
+                <i class="bi bi-magic me-1"></i>Mẫu Y Khoa
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 0.82rem;">
+                <li>
+                  <a class="dropdown-item py-2" href="javascript:void(0)" (click)="loadTemplate('DASS21')">
+                    <i class="bi bi-clipboard2-pulse me-2 text-info"></i>Mẫu DASS-21 (21 câu hỏi)
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" href="javascript:void(0)" (click)="loadTemplate('GAD7')">
+                    <i class="bi bi-activity me-2 text-warning"></i>Mẫu GAD-7 (7 câu lo âu)
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" href="javascript:void(0)" (click)="loadTemplate('PHQ9')">
+                    <i class="bi bi-heart-pulse me-2 text-danger"></i>Mẫu PHQ-9 (9 câu trầm cảm)
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a class="dropdown-item py-2 text-danger" href="javascript:void(0)" (click)="loadTemplate('CLEAR')">
+                    <i class="bi bi-trash me-2"></i>Xóa toàn bộ câu hỏi
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions List Container -->
+        <div class="questions-list">
+          @if (!test.questions || test.questions.length === 0) {
+            <div class="text-center py-5 border rounded-3 bg-light">
+              <i class="bi bi-clipboard-plus text-muted d-block mb-2" style="font-size: 2rem;"></i>
+              <div class="fw-semibold text-dark">Chưa có câu hỏi nào</div>
+              <small class="text-muted">Bấm "Thêm câu hỏi mới" hoặc chọn "Nhập từ Link / File / Mẫu y khoa" ở trên</small>
+            </div>
+          } @else {
+            @for (q of test.questions; track q.questionNumber; let idx = $index) {
+              <div class="question-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="q-badge">{{ q.questionNumber }}</div>
+                    <span class="fw-bold text-dark small">Câu hỏi số {{ q.questionNumber }}</span>
+                    <span class="badge" [ngClass]="getCategoryBadgeClass(q.category)" style="font-size: 0.68rem;">
+                      {{ q.category || 'General' }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm text-danger p-0 border-0 bg-transparent"
+                    (click)="removeQuestion(idx)"
+                    title="Xóa câu hỏi này"
+                  >
+                    <i class="bi bi-trash3 fs-6"></i>
+                  </button>
+                </div>
+
+                <div class="row g-2">
+                  <div class="col-md-9">
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="Nhập nội dung triệu chứng hoặc câu hỏi cho bệnh nhân..."
+                      [(ngModel)]="q.questionText"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select form-select-sm" [(ngModel)]="q.category">
+                      <option value="General">Chung (General)</option>
+                      <option value="Depression">Trầm cảm (Depression)</option>
+                      <option value="Anxiety">Lo âu (Anxiety)</option>
+                      <option value="Stress">Căng thẳng (Stress)</option>
+                      <option value="Sleep">Giấc ngủ (Sleep)</option>
+                      <option value="Somatic">Thể chất (Somatic)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Add Question Button -->
+        <button
+          type="button"
+          class="btn btn-outline-secondary w-100 py-2.5 mt-3 d-flex align-items-center justify-content-center gap-2"
+          style="border-radius: 8px; border-style: dashed; font-weight: 600; font-size: 0.85rem;"
+          (click)="addQuestion('', 'General')"
+        >
+          <i class="bi bi-plus-circle text-teal"></i>
+          <span>Thêm Một Câu Hỏi Mới</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Rating Scale & Settings -->
+    <div class="col-lg-4">
+      <!-- Active Switch -->
+      <div class="form-panel mb-4 p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <div class="fw-bold text-dark small">Trạng Thái Đề Thi</div>
+          <div class="text-muted" style="font-size: 0.76rem;">Bệnh nhân &amp; Bác sĩ có thể làm bài</div>
+        </div>
+        <div class="form-check form-switch fs-5 mb-0">
+          <input class="form-check-input cursor-pointer" type="checkbox" role="switch" [(ngModel)]="test.isActive" />
+        </div>
+      </div>
+
+      <!-- Standard 4-point Likert scale info -->
+      <div class="form-panel mb-4">
+        <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.92rem;">
+          <i class="bi bi-sliders text-teal"></i>
+          <span>Thang Đo Điểm Chuẩn 4 Mức (0–3)</span>
+        </h6>
+        <p class="text-muted mb-3" style="font-size: 0.78rem;">
+          Tất cả các trắc nghiệm tâm lý học trên MindBridge tuân thủ thang điểm y khoa chuẩn quốc tế:
+        </p>
+
+        <div class="rating-scale-box">
+          <span><strong>0</strong> &bull; Hoàn toàn không</span>
+          <span class="badge bg-light text-dark border">0 điểm</span>
+        </div>
+        <div class="rating-scale-box">
+          <span><strong>1</strong> &bull; Thỉnh thoảng / Vài ngày</span>
+          <span class="badge bg-light text-dark border">1 điểm</span>
+        </div>
+        <div class="rating-scale-box">
+          <span><strong>2</strong> &bull; Hơn một nửa số ngày</span>
+          <span class="badge bg-light text-dark border">2 điểm</span>
+        </div>
+        <div class="rating-scale-box">
+          <span><strong>3</strong> &bull; Hầu như mỗi ngày</span>
+          <span class="badge bg-light text-dark border">3 điểm</span>
+        </div>
+      </div>
+
+      <!-- Best Practice Tips -->
+      <div class="form-panel" style="background: #f8fafc;">
+        <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-1.5" style="font-size: 0.92rem;">
+          <i class="bi bi-lightbulb-fill text-warning"></i>
+          <span>Lưu Ý Cho Nhà Quản Trị</span>
+        </h6>
+        <ul class="text-muted ps-3 mb-0" style="font-size: 0.78rem; line-height: 1.6;">
+          <li class="mb-1.5"><strong>Nhập từ Link:</strong> Dán link JSON API hoặc trang tài liệu thang đo, hệ thống sẽ tự động quét và bóc tách câu hỏi.</li>
+          <li class="mb-1.5"><strong>Upload từ File:</strong> Hỗ trợ file Excel (.xlsx, .csv), Word (.docx text), JSON câu hỏi.</li>
+          <li class="mb-1.5">Phân loại đúng <strong>Category</strong> cho từng câu để hệ thống tính sub-scores (Trầm cảm / Lo âu / Căng thẳng).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1: Upload Từ File (Excel, Word, CSV, JSON, TXT) -->
+  @if (showFileUploadModal) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-dialog modal-dialog-centered" style="width: 100%; max-width: 600px; margin: 1rem;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+          <div class="modal-header py-3 px-4" style="background: #0f766e; color: #ffffff;">
+            <h5 class="modal-title fs-6 fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-arrow-up"></i>
+              <span>Tải Đề Trắc Nghiệm Từ File (Excel / Word / CSV / JSON)</span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="closeFileUploadModal()"></button>
+          </div>
+
+          <div class="modal-body p-4">
+            <div class="upload-dropzone mb-3" (click)="fileInput.click()">
+              <input #fileInput type="file" accept=".xlsx,.xls,.docx,.doc,.csv,.tsv,.json,.txt" class="d-none" (change)="onFileSelected($event)" />
+              <i class="bi bi-cloud-arrow-up text-teal d-block mb-2" style="font-size: 2.6rem; color: #0f766e;"></i>
+              <div class="fw-bold text-dark mb-1">Nhấp hoặc Kéo thả file đề trắc nghiệm vào đây</div>
+              <div class="text-muted small">Hỗ trợ các định dạng: .xlsx, .xls, .docx, .doc, .csv, .json, .txt</div>
+            </div>
+
+            @if (selectedFile) {
+              <div class="p-3 bg-light rounded-3 border mb-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-file-earmark-check text-success fs-4"></i>
+                  <div>
+                    <div class="fw-bold text-dark small">{{ selectedFile.name }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">{{ (selectedFile.size / 1024).toFixed(1) }} KB</div>
+                  </div>
+                </div>
+                <span class="badge bg-success" style="font-size: 0.72rem;">Đã đọc file</span>
+              </div>
+            }
+
+            @if (isFileParsing) {
+              <div class="text-center py-3 text-muted small">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <span>Đang phân tích và bóc tách câu hỏi...</span>
+              </div>
+            }
+
+            @if (parsedQuestionsPreview.length > 0) {
+              <div class="mb-3">
+                <div class="fw-bold text-dark small mb-2 d-flex justify-content-between align-items-center">
+                  <span>Trích xuất được {{ parsedQuestionsPreview.length }} câu hỏi:</span>
+                  <span class="badge bg-info text-dark" style="font-size: 0.72rem;">Tự động phân loại danh mục</span>
+                </div>
+                <div class="border rounded-3 p-2 bg-white" style="max-height: 200px; overflow-y: auto;">
+                  @for (pq of parsedQuestionsPreview; track pq.questionNumber) {
+                    <div class="p-2 border-bottom d-flex align-items-center justify-content-between small">
+                      <div class="text-truncate me-2">
+                        <strong>{{ pq.questionNumber }}.</strong> {{ pq.questionText }}
+                      </div>
+                      <span class="badge" [ngClass]="getCategoryBadgeClass(pq.category)" style="font-size: 0.65rem; flex-shrink: 0;">
+                        {{ pq.category }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer bg-light py-2.5 px-4 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="closeFileUploadModal()">
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary px-3 d-flex align-items-center gap-1.5"
+              style="background: #0f766e; border-color: #0f766e; font-weight: 600;"
+              (click)="applyParsedFile()"
+              [disabled]="parsedQuestionsPreview.length === 0"
+            >
+              <i class="bi bi-check-lg"></i>
+              <span>Áp Dụng Vào Đề Thi ({{ parsedQuestionsPreview.length }} câu)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 2: Nhập Đề Từ Link URL (Khuyến khích) -->
+  @if (showLinkImportModal) {
+    <div class="modal-backdrop-custom">
+      <div class="modal-dialog modal-dialog-centered" style="width: 100%; max-width: 560px; margin: 1rem;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+          <div class="modal-header py-3 px-4" style="background: #0f766e; color: #ffffff;">
+            <h5 class="modal-title fs-6 fw-bold mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-link-45deg fs-5"></i>
+              <span>Nhập Đề Trắc Nghiệm Từ Link URL (Khuyến Khích)</span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" (click)="closeLinkImportModal()"></button>
+          </div>
+
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label fw-semibold text-dark small">
+                Đường dẫn URL / Liên kết tài liệu trắc nghiệm trực tuyến:
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-white text-muted"><i class="bi bi-globe2"></i></span>
+                <input
+                  type="url"
+                  class="form-control"
+                  placeholder="https://example.com/api/psychometrics/dass21.json"
+                  [(ngModel)]="importUrl"
+                  (keyup.enter)="executeLinkImport()"
+                />
+              </div>
+              <div class="form-text small mt-1">
+                Hệ thống hỗ trợ quét link tài liệu y khoa chuẩn (DASS, GAD, PHQ) hoặc API feed JSON chứa mảng câu hỏi.
+              </div>
+            </div>
+
+            @if (linkImportError) {
+              <div class="alert alert-danger py-2 px-3 small mb-3">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ linkImportError }}
+              </div>
+            }
+
+            <div class="p-3 bg-light rounded-3 border">
+              <div class="fw-bold text-dark small mb-1">
+                <i class="bi bi-magic text-teal me-1"></i>Ví dụ liên kết gợi ý thử nghiệm:
+              </div>
+              <div class="d-flex flex-column gap-1.5 small">
+                <a href="javascript:void(0)" class="text-decoration-none text-teal text-truncate" (click)="importUrl = 'http://www2.psy.unsw.edu.au/dass/'">
+                  &bull; <code>http://www2.psy.unsw.edu.au/dass/</code> (DASS-21 Chuẩn Lâm Sàng)
+                </a>
+                <a href="javascript:void(0)" class="text-decoration-none text-teal text-truncate" (click)="importUrl = 'https://adaa.org/understanding-anxiety/gad-7'">
+                  &bull; <code>https://adaa.org/understanding-anxiety/gad-7</code> (GAD-7 Lo Âu)
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light py-2.5 px-4 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-3" (click)="closeLinkImportModal()">
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-primary px-3 d-flex align-items-center gap-1.5"
+              style="background: #0f766e; border-color: #0f766e; font-weight: 600;"
+              (click)="executeLinkImport()"
+              [disabled]="isLinkFetching"
+            >
+              @if (isLinkFetching) {
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+              }
+              <i class="bi bi-box-arrow-in-down"></i>
+              <span>Trích Xuất &amp; Nhập Đề</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

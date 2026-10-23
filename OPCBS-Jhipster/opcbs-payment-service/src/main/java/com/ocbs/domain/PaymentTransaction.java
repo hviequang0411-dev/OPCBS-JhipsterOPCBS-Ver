@@ -36,6 +36,18 @@ public class PaymentTransaction extends AbstractAuditingEntity<Long> implements 
     @Column(name = "payment_method", nullable = false, length = 50)
     private String paymentMethod = "VNPAY"; // VNPAY, MOCK_BANK
 
+    @Column(name = "doctor_id")
+    private Long doctorId;
+
+    @Column(name = "doctor_login", length = 100)
+    private String doctorLogin;
+
+    @Column(name = "payment_url", length = 1000)
+    private String paymentUrl;
+
+    @Column(name = "vnp_transaction_no", length = 100)
+    private String vnpTransactionNo;
+
     @Column(name = "response_code", length = 50)
     private String responseCode;
 
@@ -117,5 +129,37 @@ public class PaymentTransaction extends AbstractAuditingEntity<Long> implements 
 
     public void setPaidAt(Instant paidAt) {
         this.paidAt = paidAt;
+    }
+
+    public Long getDoctorId() {
+        return doctorId;
+    }
+
+    public void setDoctorId(Long doctorId) {
+        this.doctorId = doctorId;
+    }
+
+    public String getDoctorLogin() {
+        return doctorLogin;
+    }
+
+    public void setDoctorLogin(String doctorLogin) {
+        this.doctorLogin = doctorLogin;
+    }
+
+    public String getPaymentUrl() {
+        return paymentUrl;
+    }
+
+    public void setPaymentUrl(String paymentUrl) {
+        this.paymentUrl = paymentUrl;
+    }
+
+    public String getVnpTransactionNo() {
+        return vnpTransactionNo;
+    }
+
+    public void setVnpTransactionNo(String vnpTransactionNo) {
+        this.vnpTransactionNo = vnpTransactionNo;
     }
 }

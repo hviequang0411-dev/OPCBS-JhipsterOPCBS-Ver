@@ -867,3 +867,305 @@ ode_modules/, .angular/, *.log, .idea/.
   - Đồng bộ mã nguồn hoàn chỉnh của toàn bộ 8 Microservices, Eureka Server và Angular SPA lên remote repo: https://github.com/hviequang0411-dev/OPCBS-JhipsterOPCBS-Ver.git.
 - **HỌC ĐƯỢC GÌ**:
   - Khi GitHub bật Secret Scanning Push Protection, bất kỳ commit nào chứa regex trùng khớp với pattern secret của Google, AWS, Stripe... sẽ bị từ chối ở tầng remote hook. Cần đưa về biến môi trường placeholder ${GOOGLE_CLIENT_ID:your-google-client-id} trước khi commit.
+
+---
+
+### Phân Tầng 28: Tái Cấu Trúc Sidebar Footer & Thanh Điều Hướng Đồng Bộ 3 Module Quản Trị (Admin Navbar)
+- **Vị trí tệp**:
+  - Frontend Sidebar: [`sidebar.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/sidebar/sidebar.html), [`sidebar.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/sidebar/sidebar.scss).
+  - Frontend Admin Navbar: [`admin-navbar.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/admin/admin-nav/admin-navbar.component.ts), [`admin-navbar.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/admin/admin-nav/admin-navbar.component.html), [`admin-navbar.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/admin/admin-nav/admin-navbar.component.scss).
+  - Main Layout Routing: [`main.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/main/main.html), [`main.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/main/main.ts).
+- **DÙNG GÌ**:
+  - Angular 19 Standalone Component, Flexbox CSS (`margin-top: auto`), CSS Pulse Keyframe Animation, Angular Router Navigation Events (`NavigationEnd`), `serverApiUrl` Endpoint Configuration.
+- **TẠI SAO**:
+  - Giải quyết tình trạng bất cập cũ: Thẻ người dùng và Nút Về Trang Chủ chèn ép ở đỉnh sidebar khiến menu bị đẩy xuống, trong khi chân sidebar trống trải.
+  - Cung cấp thanh điều hướng cấp cao (Top Navigation Sub-Navbar) đồng bộ cho 3 module quản trị cốt lõi: **Admin Dashboard** (`/admin/dashboard`), **Gói Dịch Vụ Nền Tảng** (`/admin/service-package`), và **Ngân Hàng Đề Trắc Nghiệm Tâm Lý** (`/admin/psychometrics`). Giúp quản trị viên có cái nhìn toàn cảnh về đường dẫn (Breadcrumb), trạng thái cơ sở dữ liệu thời gian thực (Live DB), và dễ dàng chuyển đổi qua lại giữa các module chỉ bằng 1 cú nhấp chuột.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Tắc Fitts's Law & Session Controls Hub*: Gom các thành phần định danh (User Identity Card), chuyển đổi ngữ cảnh (Return to Home) và kết thúc phiên (Sign Out) xuống đáy Sidebar vừa tăng tính công thái học vừa tương thích hoàn hảo với trải nghiệm của các SaaS hàng đầu (Linear, Slack, Notion).
+  2. *Layout-Level Injection thay vì Component Duplication*: Bằng cách nhúng `<jhi-admin-navbar />` ngay trên `<router-outlet />` trong `main.html` với guard `isAdminModule()`, mọi trang quản trị hiện tại và tương lai (kể cả form thêm mới, sửa, chi tiết) đều tự động kế thừa thanh điều hướng mượt mà mà không làm ảnh hưởng đến portal của Bác Sĩ hay Bệnh Nhân.
+  3. *Loại Bỏ Deprecated Import trong JHipster 8*: Thay thế hoàn toàn `ApplicationConfigService` lỗi thời bằng hằng số `serverApiUrl` từ `app/config`, bảo đảm `npx tsc -p tsconfig.app.json --noEmit` đạt 0 lỗi biên dịch.
+
+---
+
+### Phân Tầng 29: Nâng Cấp Toàn Diện Sidebar Doctor & Patient, Module Gói Trị Liệu, Event Producer Psychometrics Sang Clinical & Cấu Hình Cổng Thanh Toán VNPay Sandbox
+- **Vị trí tệp**:
+  - **Sidebar Navigation**: [`sidebar.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/sidebar/sidebar.ts), [`sidebar.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/sidebar/sidebar.html).
+  - **Gói Trị Liệu Bác Sĩ**: [`doctor-treatment-packages.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.ts), [`doctor-treatment-packages.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.html), [`doctor-treatment-packages.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.scss).
+  - **Trắc Nghiệm Tâm Lý & Event Producer**: [`doctor-psychometrics.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/psychometrics/doctor/doctor-psychometrics.component.ts), [`doctor-psychometrics.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/psychometrics/doctor/doctor-psychometrics.component.html), [`doctor-psychometrics.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/psychometrics/doctor/doctor-psychometrics.component.scss), [`PsychometricEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-psychometric-service/src/main/java/com/ocbs/event/PsychometricEventProducer.java), [`PsychometricAlertEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-psychometric-service/src/main/java/com/ocbs/event/PsychometricAlertEvent.java), [`ClinicalManagementResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-clinical-service/src/main/java/com/ocbs/web/rest/ClinicalManagementResource.java).
+  - **Gói Hội Viên Bác Sĩ & Cổng VNPay**: [`doctor-subscription.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.ts), [`doctor-subscription.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.html), [`payment.service.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/payment.service.ts), [`entity.routes.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/entity.routes.ts).
+- **DÙNG GÌ**:
+  - Event-Driven Architecture (Spring Kafka topic `opcbs-clinical-events` + HTTP Sync Fallback qua `POST /api/clinical/psychometrics-alert`).
+  - VNPay Sandbox Payment Gateway: Chữ ký số HMAC-SHA512, Dynamic Return URL configuration, Pessimistic Locking (`SELECT FOR UPDATE`), Idempotency Guard (`isIdempotentReplay`).
+  - Angular 19 Standalone Signals & Bootstrap 5 UI: Segmented Pill Buttons (`#dcfce7` active green style), KPI Stat Counters, Clinical Protocol Preset Templates, Session Progress Bars.
+- **TẠI SAO**:
+  - Khắc phục triệt để lỗi Sidebar trống cho Bệnh nhân bằng cách kiểm tra quyền ưu tiên `Admin -> Doctor -> Patient` và hỗ trợ cả `ROLE_PATIENT` lẫn `ROLE_USER`.
+  - Nâng cấp trải nghiệm bác sĩ trong quản lý phác đồ điều trị (`/doctor/treatment-packages`), trang bị 4 mẫu phác đồ chuẩn y khoa 1-click (Anxiety, Depression, Crisis, Mindfulness).
+  - Đồng bộ module Trắc nghiệm tâm lý theo thiết kế chuẩn từ C# Razor (`Index.cshtml`), bổ sung khả năng phát sự kiện cảnh báo y tế khẩn cấp sang Clinical Service khi điểm DASS-21, PHQ-9, GAD-7 rơi vào mức độ Nặng / Rất nặng.
+  - Cấu hình hoàn thiện quy trình thanh toán VNPay Sandbox: Loại bỏ nguy cơ 404 callback, tự động xử lý và kích hoạt gói tức thì khi thanh toán thành công, hỗ trợ bảng thông tin thẻ test NCB tiện lợi cho người kiểm thử.
+---
+
+### Phân Tầng 30: Chuẩn Hóa & Đồng Bộ Giao Diện Layout-Level Cổng Bác Sĩ (Doctor Portal) & Quản Trị Viên (Admin Portal)
+- **Vị trí tệp**:
+  - **Doctor Top Sub-Navbar**: [`doctor-navbar.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/doctor-nav/doctor-navbar.component.ts), [`doctor-navbar.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/doctor-nav/doctor-navbar.component.html), [`doctor-navbar.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/doctor-nav/doctor-navbar.component.scss).
+  - **Main Layout Injection**: [`main.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/main/main.ts), [`main.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/layouts/main/main.html).
+  - **Doctor Modules Upgraded**:
+    - Gói Trị Liệu: [`doctor-treatment-packages.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.html), [`doctor-treatment-packages.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.scss).
+    - Trắc Nghiệm Tâm Lý: [`doctor-psychometrics.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/psychometrics/doctor/doctor-psychometrics.component.html), [`doctor-psychometrics.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/psychometrics/doctor/doctor-psychometrics.component.scss).
+    - Gói Hội Viên & VNPay: [`doctor-subscription.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.html), [`doctor-subscription.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.scss).
+    - Dashboard Tổng Quan: [`doctor-dashboard.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/dashboard/doctor-dashboard.component.html), [`doctor-dashboard.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/dashboard/doctor-dashboard.component.scss).
+- **DÙNG GÌ**:
+  - Layout-Level Sub-Navbar Injection: `main.html` điều kiện `@else if (isDoctorModule())` nhúng `<jhi-doctor-navbar />` sticky top.
+  - Clinical Design Tokens: Teal `#0f766e`, Emerald `#059669`, Slate `#0f172a`, border `1.5px solid #e2e8f0`, soft shadows, card hover lift, glowing status pills.
+  - Visual Indicators: Thanh tiến độ sử dụng số buổi hai màu (`session-progress-track`), cờ cảnh báo rủi ro nhấp nháy (`pulse-dot`), hộp mô phỏng thẻ test ATM VNPay Sandbox (NCB).
+- **TẠI SAO**:
+  - Khắc phục sự phân mảnh khi mỗi trang bác sĩ tự nhúng `.doc-nav-bar` nội bộ với icon và kích thước container lệch nhau.
+  - Tạo nên diện mạo đồng bộ, chuyên nghiệp chuẩn y tế quốc tế và cực kỳ trực quan khi bác sĩ tra cứu bệnh án, phác đồ điều trị, kết quả DASS-21 hoặc nâng cấp gói qua VNPay.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Tắc Single Source of Navigation*: Đưa thanh menu chuyên môn lên cấp layout trung tâm (`main.html`) giúp loại bỏ hàng trăm dòng code trùng lặp, triệt tiêu hiện tượng layout shift và đảm bảo các đường link, icon, badge luôn đồng bộ 100%.
+  2. *Thiết Kế Cảnh Báo Trực Quan Cho Nhân Viên Y Tế*: Các ca bệnh nhân có điểm trắc nghiệm nghiêm trọng không chỉ hiển thị chữ số mà cần có điểm nhấn thị giác mạnh (như chấm đỏ nhịp tim `pulse-dot`) để bác sĩ nhận biết tức thì trong danh sách hàng chục ca khám mỗi ngày.
+  3. *Zero Compilation Errors Verification*: Mọi thay đổi template đều phải được xác minh thông qua `npm run webapp:build` (`exit code 0`) để đảm bảo không còn lỗi biến hoặc phương thức thiếu (như `loadData()`).
+
+---
+
+### Phân Tầng 31: Khắc Phục Triệt Để 5 Lỗi Giao Diện Thô & Màu Sắc Chói Lóa Trên Màn Gói Dịch Vụ & Phác Đồ Trị Liệu Bác Sĩ
+- **Vị trí tệp**:
+  - **Màn Gói Dịch Vụ & Thanh Toán VNPay (`/doctor/subscriptions`)**: [`doctor-subscription.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.ts), [`doctor-subscription.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.html), [`doctor-subscription.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/payment/doctor-subscription.component.scss).
+  - **Màn Gói Trị Liệu & Phác Đồ (`/doctor/treatment-packages`)**: [`doctor-treatment-packages.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.html), [`doctor-treatment-packages.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/treatment-package/doctor/doctor-treatment-packages.component.scss).
+- **DÙNG GÌ**:
+  - Loại bỏ hoàn toàn sự phụ thuộc vào `$primary` của Bootswatch Brite (`#a2e436` lime). Override trực tiếp bằng token cao cấp: Deep Slate `#0f172a`, Clinical Teal `#0f766e`, Emerald `#059669`.
+  - Charset Sanitization Logic: Phương thức `getSanitizedDescription(pkg)` tự động lọc ký tự lỗi encoding `??` và fallback về mô tả lâm sàng chuyên sâu.
+  - Clinical Perk Injection: Phương thức `getFeaturesList(pkg)` bù đắp 5-6 đặc quyền y tế nổi bật theo phân khúc giá khi trường `features` trong database bị rỗng, đi kèm icon check circle xanh ngọc.
+  - Flexbox `price-container`: Loại bỏ hiện tượng text overflow và cắt chữ `đ/ 30 ngày` ở mép phải thẻ.
+  - Balanced Dashed Placeholder Card (`create-placeholder-card`): Thẻ nét đứt gợi ý tạo thêm phác đồ mới khi danh sách có dưới 3 gói, lấp đầy 75% không gian trống trải phía bên phải.
+- **TẠI SAO**:
+  - Ảnh chụp thực tế của người dùng phản ánh giao diện cũ có màu xanh nõn chuối rất chói mắt, font chữ vỡ nát (`G??i d???ch...`), mục quyền lợi trống trơn, giá tiền bị tràn mép và màn hình phác đồ chỉ có 1 thẻ duy nhất nằm lệch sang trái khiến tổng thể giao diện trông rất sơ sài và thiếu thẩm mỹ y khoa.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Tránh "Theme Trap" Của Bootstrap Themes*: Bootswatch themes có thể gán màu `$primary` thành các màu cá tính mạnh (như lime neon `#a2e436`). Với các hệ thống Y Tế / Ngân Hàng / SaaS, luôn cần override màu chữ và màu nút bấm trong scoped component SCSS sang các tone màu tin cậy (Deep Teal, Navy, Emerald).
+  2. *Defensive Frontend Data Fallback*: Không bao giờ tin tưởng tuyệt đối vào việc DB seed luôn có đầy đủ text sạch. Luôn chuẩn bị hàm sanitize lọc ký tự lạ và mảng fallback tính năng mặc định để giao diện không bao giờ bị rỗng hay vỡ trước mắt khách hàng.
+  3. *Empty Space Balance trong Grid Layout*: Khi một giao diện lưới (card grid) có ít phần tử, việc thêm 1 thẻ dashed action placeholder là giải pháp UX kinh điển giúp bố cục cân đối và kích thích người dùng hành động (Call to Action).
+
+---
+
+### Phân Tầng 32: Ổn Định Toàn Hệ Thống - Đồng Bộ Payment Schema, Siết Chặt Phân Quyền Message, Loại Bỏ Hardcoded Secrets, Chuẩn Hóa Kafka & Eureka
+- **Vị trí tệp**:
+  - **Payment Service**: [`PaymentTransaction.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/domain/PaymentTransaction.java), [`PaymentResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/web/rest/PaymentResource.java), [`VnPayUtil.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/service/util/VnPayUtil.java), [`20261016120000_added_entity_Payment_Tables.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/resources/config/liquibase/changelog/20261016120000_added_entity_Payment_Tables.xml), [`create_tables.sql`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/create_tables.sql).
+  - **Message Service**: [`ConversationResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-message-service/src/main/java/com/ocbs/web/rest/ConversationResource.java), [`conversation-security.md`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/conversation-security.md).
+  - **Booking & Clinical & Notification Services**: [`CloudinaryStorageService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/service/CloudinaryStorageService.java), [`AppointmentEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/event/AppointmentEventProducer.java), [`AppointmentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/event/AppointmentEventConsumer.java), [`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java).
+  - **Configuration & Infrastructure**: [`docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml), [`.env.example`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env.example), [`kafka-eureka-decision.md`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/kafka-eureka-decision.md), [`data-ownership.md`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/data-ownership.md).
+- **DÙNG GÌ**:
+  - Liquibase Preconditions Migration: Sử dụng `<preConditions onFail="MARK_RAN">` để hỗ trợ an toàn cả database mới và database cũ có sẵn dữ liệu mà không gây lỗi hoặc xung đột schema.
+  - Zero Client Trust & Participant Access Control (PAC): Xác thực JWT Principal cho mọi thao tác đọc/gửi tin nhắn, cấm client mạo danh `senderId` / `role`, loại bỏ hoàn toàn fallback `findAll()` trả rò rỉ dữ liệu y tế.
+  - Fail-fast Configuration Pattern: Đưa toàn bộ secrets (VNPay, Cloudinary, Mail SMTP, JWT) sang biến môi trường, loại bỏ fallback demo trong profile `prod`. Cung cấp `.env.example` với placeholder chuẩn.
+  - Kiến trúc Service Discovery qua Docker DNS + Nginx Upstream: Dọn dẹp Eureka Server không dùng, tiết kiệm 512MB RAM.
+  - Conditional Kafka Listener (`autoStartup = "${application.kafka.enabled:false}"`): Ngăn chặn listener spam log lỗi khi broker chưa bật; producer phản ánh trung thực giữa Standalone Mode và Real Broker Mode.
+- **TẠI SAO**:
+  - Khắc phục nguy cơ lệch pha schema thanh toán (`payment_status`, `response_code`, `response_message`, `paid_at`), ngăn chặn lỗi sập giao dịch khi thanh toán qua VNPay hoặc Mock Checkout.
+  - Ngăn ngừa rò rỉ thông tin bệnh án và tin nhắn nhạy cảm giữa các bệnh nhân và bác sĩ (lỗi IDOR).
+  - Bảo vệ an toàn tài khoản và dữ liệu sản xuất khỏi việc để lộ secrets/passwords trong Git repo.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Tắc Backward-Compatible Schema Migration*: Khi cập nhật schema trong microservices, luôn sử dụng migration có kiểm tra điều kiện tồn tại cột (`columnExists`) và đồng bộ dữ liệu cũ (`UPDATE table SET new_col = old_col`) để đảm bảo không phá hủy dữ liệu của người dùng.
+  2. *Bảo Mật Tin Nhắn Y Tế*: Danh tính của người gửi tin nhắn y tế phải luôn được xác minh từ Token/Session đã được ký điện tử, tuyệt đối không được tin tưởng payload của client.
+  3. *Tính Trung Thực Của Hệ Thống Sự Kiện (Event Integrity)*: Không được để mã nguồn ghi log như thể sự kiện đã được gửi lên Message Broker khi broker thực tế chưa tồn tại. Phải phân định rõ ràng giữa In-Memory Dispatching và Real Broker Publishing.
+
+---
+
+### Phân Tầng 33: Chuẩn Hóa Nền Tảng Backend (Ưu tiên 2) & Cải Tiến Toàn Diện Từng Service (Ưu tiên 3)
+- **Vị trí tệp**:
+  - **Dependency & Kafka**: `pom.xml` của 5 service (auth, blog, clinical, message, payment) đã gỡ bỏ `spring-kafka`. `opcbs-booking-service` ([`AppointmentEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/event/AppointmentEventProducer.java)), `opcbs-treatment-service` ([`AppointmentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/event/AppointmentEventConsumer.java)), `opcbs-notification-service` ([`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java)).
+  - **Hạ Tầng & Gateway**: [`docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml), [`deploy.sh`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/deploy.sh), [`deploy.ps1`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/deploy.ps1), [`nginx.conf`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/nginx.conf).
+  - **Auth Service**: [`TokenBlacklistService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/security/TokenBlacklistService.java), [`application-prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/resources/config/application-prod.yml), [`auth-key-rotation-and-oidc-roadmap.md`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docs/auth-key-rotation-and-oidc-roadmap.md).
+  - **Booking Service**: [`Appointment.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/domain/Appointment.java), [`AppointmentRepository.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/repository/AppointmentRepository.java), [`AppointmentManagementResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/web/rest/AppointmentManagementResource.java), [`FileStorageService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/service/FileStorageService.java), [`20261016140000_added_idempotency_key_to_appointment.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/resources/config/liquibase/changelog/20261016140000_added_idempotency_key_to_appointment.xml).
+  - **Clinical Service**: [`ClinicalManagementResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-clinical-service/src/main/java/com/ocbs/web/rest/ClinicalManagementResource.java).
+  - **Treatment Service**: [`TreatmentPackageResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/web/rest/TreatmentPackageResource.java), [`AppointmentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/event/AppointmentEventConsumer.java).
+  - **Psychometric Service**: [`PsychometricResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-psychometric-service/src/main/java/com/ocbs/web/rest/PsychometricResource.java).
+  - **Notification Service**: [`Notification.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/domain/Notification.java), [`NotificationRepository.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/repository/NotificationRepository.java), [`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java), [`20261016141000_added_channel_status_to_notification.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/resources/config/liquibase/changelog/20261016141000_added_channel_status_to_notification.xml).
+  - **Payment Service**: [`PaymentResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/web/rest/PaymentResource.java).
+  - **Blog Service**: [`HtmlSanitizerUtil.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/service/util/HtmlSanitizerUtil.java), [`DoctorBlogResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/web/rest/DoctorBlogResource.java), [`AdminBlogResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-blog-service/src/main/java/com/ocbs/web/rest/AdminBlogResource.java).
+- **DÙNG GÌ**:
+  - Gỡ bỏ `spring-kafka` khỏi các service không cần thiết; chuẩn hóa log trung thực cho standalone/real broker.
+  - Fail-Closed Redis Token Blacklist trên production (`blacklist-fail-closed = true`); Redis container cấu hình `--maxmemory-policy noeviction`.
+  - Pessimistic write lock trên `AvailabilitySlot` và `Idempotency-Key` header cho API đặt lịch khám; gửi event sau commit transaction (`TransactionSynchronizationManager`).
+  - Gỡ bỏ fallback `/tmp` cho lưu trữ tài liệu y khoa.
+  - Sửa lỗi IDOR và triệt tiêu fallback rò rỉ dữ liệu y tế trên `ClinicalManagementResource`, `TreatmentPackageResource`, `PsychometricResource`. Bổ sung Audit log không chứa PHI.
+  - Trừ buổi điều trị đúng thời điểm hoàn tất ca khám (`APPOINTMENT_COMPLETED`), kiểm tra trùng lặp chống trừ buổi lần 2.
+  - Tách biệt `channel`, `deliveryStatus`, `retryCount` cho `Notification`.
+  - Xác thực chữ ký HMAC-SHA512, đối chiếu số tiền và merchant code VNPay; chặn mock checkout trên profile `prod`.
+  - Bộ lọc HTML Sanitizer chống XSS trên Blog service; bảo vệ quy trình xuất bản bài viết theo trạng thái.
+  - Tài liệu lộ trình chuyển đổi cặp khóa bất đối xứng RS256/JWKS và OIDC Keycloak.
+- **TẠI SAO**:
+  - Tối ưu hóa tài nguyên phần cứng, xóa bỏ các phụ thuộc ảo; đảm bảo an toàn tuyệt đối cho dữ liệu y tế nhạy cảm (PHI) và tính toàn vẹn của giao dịch thanh toán.
+  - Bảo vệ hệ thống khỏi race condition đặt trùng lịch, lỗi trừ buổi sớm, rò rỉ bệnh án, tấn công XSS và gian lận thanh toán qua webhook giả mạo.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Fail-Closed vs Fail-Open Security*: Trong hệ thống y tế và tài chính, cơ chế kiểm tra thu hồi quyền truy cập (Token Blacklist) trên môi trường production phải luôn là Fail-Closed để đảm bảo token đã bị thu hồi không thể tiếp tục truy cập dữ liệu khi cache gặp sự cố.
+  2. *Transactional Event Publishing*: Tuyệt đối không phát event ra ngoài khi database transaction chưa commit. Sử dụng `TransactionSynchronizationManager.registerSynchronization(afterCommit)` để đảm bảo tính nhất quán dữ liệu (ACID).
+  3. *IDOR Defense In Depth*: Mọi thao tác truy cập dữ liệu bệnh án, kết quả trắc nghiệm và phác đồ điều trị phải được kiểm tra chặt chẽ quan hệ điều trị giữa Bác sĩ và Bệnh nhân tại tầng Controller/Service, không dựa vào client-side filtering.
+
+---
+
+### Phân Tầng 34: Nâng Cấp Bảo Mật JWT Toàn Diện Sang Khóa Bất Đối Xứng RSA (RS256), Chuẩn RFC 7517 JWKS & Hỗ Trợ Key Rotation Không Downtime
+- **Vị trí tệp**:
+  - **Auth Service (Ký Token & JWKS Endpoint)**:
+    - [`SecurityJwtConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/config/SecurityJwtConfiguration.java) (Ký bằng `NimbusJwtEncoder` với `RSAKey`, quản lý Private/Public Key, kiểm tra fail-fast trên `prod`, fallback DEV key an toàn trên `dev`).
+    - [`AuthenticateController.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/web/rest/AuthenticateController.java) (Gắn header `JwsHeader.with(JWT_ALGORITHM).keyId(keyId).build()`).
+    - [`JwkSetEndpoint.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/web/rest/JwkSetEndpoint.java) (Cung cấp `GET /.well-known/jwks.json` và `GET /api/jwks` theo chuẩn RFC 7517).
+    - [`SecurityConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/config/SecurityConfiguration.java) (Mở permitAll cho JWKS endpoints).
+    - [`AuthJwtRS256Test.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/test/java/com/ocbs/security/jwt/AuthJwtRS256Test.java) (8 bài kiểm thử tự động xác minh phát hành RS256, JWKS không rò rỉ private key, từ chối token chữ ký sai, token hết hạn, token HS512 và token alg none).
+  - **RsaKeyHelper Utility (Toàn bộ 10 modules)**:
+    - `RsaKeyHelper.java` tại `auth`, `booking`, `clinical`, `treatment`, `psychometric`, `notification`, `payment`, `message`, `blog`, `mindbridge-jhipster` (Hỗ trợ parse PKCS#8 PEM/Base64, X.509 PEM/Base64, và derive Public Key từ Private Key CRT).
+    - `SecurityUtils.java` chuyển hằng số `JWT_ALGORITHM = SignatureAlgorithm.RS256`.
+  - **8 Downstream Verifying Microservices**:
+    - [`SecurityJwtConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/config/SecurityJwtConfiguration.java) trong tất cả 8 service: Gỡ bỏ `jwtEncoder` và `base64-secret`; chỉ cấu hình `NimbusJwtDecoder` với RSA Public Key hoặc JWKS URI; thực thi giải thuật bắt buộc `RS256` (strict algorithm enforcement), fail-fast trên `prod` nếu thiếu public key/JWKS URL.
+  - **Frontend & Integration Tests**:
+    - [`JwtAuthenticationTestUtils.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/test/java/com/ocbs/security/jwt/JwtAuthenticationTestUtils.java), [`TokenAuthenticationIT.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/test/java/com/ocbs/security/jwt/TokenAuthenticationIT.java), [`TokenAuthenticationSecurityMetersIT.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/test/java/com/ocbs/security/jwt/TokenAuthenticationSecurityMetersIT.java).
+    - [`proxy.config.mjs`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/proxy.config.mjs) (Thêm proxy cho `/.well-known/jwks.json` và `/api/jwks`).
+  - **Hạ Tầng Docker & Cấu Hình Triển Khai**:
+    - [`docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml) (Xóa `JHIPSTER_SECURITY_AUTHENTICATION_JWT_BASE64_SECRET`; Auth service mount `/secrets/jwt/private.pem:ro`; 8 verifying services nhận `JWT_JWK_SET_URI=http://opcbs-auth-service:8081/.well-known/jwks.json` và depend on auth service).
+    - [`docker/.env`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env), [`docker/.env.example`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env.example) (Hướng dẫn sinh RSA 2048-bit `openssl genpkey...`, cấu hình `JWT_SECRET_DIR`, `JWT_KEY_ID`, `JWT_JWK_SET_URI`).
+    - [`docker/nginx/nginx.conf`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/nginx/nginx.conf) (Thêm route `location ~ ^/(.well-known/jwks.json|api/jwks)` chuyển tiếp đến `auth_backend`).
+- **DÙNG GÌ**:
+  - Chữ ký số bất đối xứng RSA-SHA256 (`RS256`) thay thế hoàn toàn thuật toán đối xứng HMAC-SHA512 (`HS512`).
+  - Key ID (`kid`) đính kèm trong mọi JWT Header (`JwsHeader.with(RS256).keyId(kid).build()`).
+  - Chuẩn RFC 7517 JSON Web Key Set (JWKS) công khai danh sách khóa công khai (`kty: RSA`, `use: sig`, `alg: RS256`, `n`, `e`, `kid`) mà không bao giờ làm lộ số mũ bí mật (`d`, `p`, `q`).
+  - Spring Security `NimbusJwtDecoder.withPublicKey(publicKey).signatureAlgorithm(RS256).build()` và `NimbusJwtDecoder.withJwkSetUri(uri).jwsAlgorithm(RS256).build()`.
+- **TẠI SAO**:
+  - **Thu hẹp bán kính tổn thương (Blast Radius Minimization)**: Với thuật toán đối xứng cũ (HS512), toàn bộ 8 services đều phải lưu cùng một chuỗi `base64-secret`. Nếu một service vệ tinh (như blog, notification) bị xâm nhập, kẻ tấn công có thể dùng secret để tự ký token đóng giả `ROLE_ADMIN` hoặc `ROLE_DOCTOR` cho toàn hệ thống. Với RS256, chỉ duy nhất `opcbs-auth-service` giữ Private Key để ký; kẻ tấn công dù chiếm quyền điều khiển service vệ tinh cũng chỉ có Public Key và không thể ký mạo danh token.
+  - **Hỗ trợ luân chuyển khóa không gián đoạn (Zero-Downtime Key Rotation)**: Thông qua header `kid`, Auth service có thể phát hành khóa mới ($K_2$) trong khi vẫn giữ khóa cũ ($K_1$) trong JWK Set. Các service vệ tinh tự động nhận diện `kid` để thẩm định token mà không cần khởi động lại.
+  - **Tương thích hoàn toàn chuẩn OIDC/OAuth2**: Sẵn sàng tích hợp các Identity Provider bên ngoài (Keycloak, Okta, Azure AD).
+- **HỌC ĐƯỢC GÌ**:
+  1. *Phòng chống tấn công Algorithm Confusion*: Trong Spring Security / Nimbus, việc chỉ cung cấp Public Key mà không chỉ định rõ ràng `signatureAlgorithm(RS256)` có thể khiến decoder bị lừa chấp nhận token HMAC ký bằng chính chuỗi RSA Public Key. Bắt buộc phải khóa cứng thuật toán mong muốn bằng `.signatureAlgorithm(RS256)` hoặc `.jwsAlgorithm(RS256)`.
+  2. *Fail-Fast vs Silent Fallback trong Production*: Ở môi trường `dev`/local, hệ thống có thể dùng cặp khóa kiểm thử dev định sẵn để các lập trình viên làm việc trơn tru offline; nhưng trên môi trường `prod`, nếu thiếu cấu hình Private Key hoặc Public Key/JWKS URI, ứng dụng **phải fail-fast ngay lập tức khi khởi động (`throw new IllegalStateException`)**, tuyệt đối không fallback âm thầm sang khóa mặc định.
+  3. *Tách biệt mục đích sử dụng khóa*: Khóa dùng để ký JWT (`RS256`) phục vụ tầng ứng dụng và định danh (Application Identity Layer), độc lập hoàn toàn với Keystore SSL/TLS dùng để mã hóa kết nối mạng HTTPS (Transport Layer Security). Không được nhầm lẫn hoặc dùng chung hai loại khóa này.
+
+---
+
+### Phân Tầng 35: Thiết Kế & Triển Khai Phân Bổ Message Broker & Event Toàn Diện Cho Toàn Bộ Microservices (Kafka vs RabbitMQ, Outbox/Inbox, Idempotency, Dữ Liệu Nhạy Cảm)
+- **Vị trí tệp**:
+  - **Payment Service**: [`PaymentResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/web/rest/PaymentResource.java), [`PaymentEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/event/PaymentEvent.java), [`PaymentEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/event/PaymentEventProducer.java), [`KafkaProducerConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/java/com/ocbs/config/KafkaProducerConfiguration.java), [`pom.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/pom.xml), [`application.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-payment-service/src/main/resources/config/application.yml).
+  - **Auth Service**: [`AccountResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/web/rest/AccountResource.java), [`UserEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/event/UserEvent.java), [`UserEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/event/UserEventProducer.java), [`KafkaProducerConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/config/KafkaProducerConfiguration.java), [`MailService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/java/com/ocbs/service/MailService.java), [`pom.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/pom.xml), [`application.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-auth-service/src/main/resources/config/application.yml).
+  - **Notification Service**: [`RabbitMqConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/config/RabbitMqConfiguration.java), [`EmailTaskDTO.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/service/dto/EmailTaskDTO.java), [`EmailTaskProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/service/EmailTaskProducer.java), [`EmailTaskConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/service/EmailTaskConsumer.java), [`PaymentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/PaymentEventConsumer.java), [`UserEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/UserEventConsumer.java), [`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java), [`pom.xml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/pom.xml), [`application.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/resources/config/application.yml).
+  - **Booking & Treatment & Clinical**: [`AppointmentEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/event/AppointmentEvent.java), [`AppointmentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-treatment-service/src/main/java/com/ocbs/event/AppointmentEventConsumer.java), [`PsychometricEventProducer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-psychometric-service/src/main/java/com/ocbs/event/PsychometricEventProducer.java).
+  - **Docker & Infrastructure**: [`docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml), [`docker/.env`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env), [`docker/.env.example`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env.example).
+- **DÙNG GÌ**:
+  - **Phân định rõ ràng trách nhiệm hai Message Broker**:
+    - **Apache Kafka** dùng riêng cho **Domain Event Streams** cần phân vùng theo khóa thực thể (`aggregateId`: `appointmentId`, `subscriptionId`, `userId`), hỗ trợ nhiều nhóm consumer độc lập, lưu trữ bền vững (durable replay log), và kiểm toán (audit). Các topic: `opcbs-appointment-events`, `opcbs-payment-events`, `opcbs-user-events`.
+    - **RabbitMQ** dùng riêng cho **Asynchronous Task/Command Worker Queues**: Điều phối gửi email (`opcbs.email.dispatch.queue`), xác nhận từng tác vụ (`basic.ack`/`basic.nack`), giới hạn lưu lượng tránh nghẽn SMTP (`prefetch=10`), cấu hình Dead-Letter Exchange/Queue (`opcbs.dlx.exchange` -> `opcbs.email.dlq`).
+  - **Chuẩn hóa Envelope Message**: Mọi event đều bao gồm `eventId` (UUID), `eventType`, `eventVersion`, `occurredAt`, `aggregateId`, `idempotencyKey`, `correlationId`, và `payload`.
+  - **Transactional Outbox**: Booking, Auth và Payment ghi domain event vào bảng outbox trong cùng transaction nghiệp vụ; relay chỉ đánh dấu `SENT` sau khi Kafka broker ACK. Callback `afterCommit` best-effort không còn là phương thức phát chính.
+  - **Consumer Idempotency**: Bảng `notification_inbox` với ràng buộc `UNIQUE(idempotency_key)` và bảng `payment_inbox` ngăn chặn xử lý trùng lặp khi broker replay message.
+  - **Bảo Vệ Dữ Liệu Sức Khỏe Tâm Thần & Thông Tin Nhạy Cảm**:
+    - Tuyệt đối không truyền bệnh án điện tử, câu trả lời trắc nghiệm tâm lý thô, chẩn đoán chi tiết hoặc nội dung chat riêng tư qua topic broadcast của Kafka.
+    - Cảnh báo nguy cơ cao (Severe/Extremely Severe từ DASS-21, PHQ-9) được định tuyến trực tiếp qua endpoint HTTP đồng bộ an toàn (`POST /api/clinical/psychometrics-alert`) với xác thực JWT để ghi nhận intake tức thì.
+    - Không phát thông tin thẻ tín dụng, API secrets hoặc mã hash VNPay lên broker.
+  - **Dọn dẹp mã nguồn & thông tin nhạy cảm hardcode**: Xóa toàn bộ tài khoản email sinh viên cá nhân và app password hardcoded, thay thế bằng biến môi trường `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `SPRING_MAIL_FROM` với fallback an toàn `no-reply@mindbridge.local`.
+- **TẠI SAO**:
+  - Tránh sai lầm chọn broker theo phong trào; phân định rõ giữa "Sự kiện đã xảy ra trong quá khứ" (Domain Event -> Kafka) và "Yêu cầu thực hiện một tác vụ nền" (Task/Command Queue -> RabbitMQ).
+  - Tách rời luồng gửi email chậm chạp (phụ thuộc vào Google SMTP 1-3 giây/lượt) ra khỏi chu trình xử lý nghiệp vụ chính của người dùng, ngăn chặn tình trạng thắt cổ chai và timeout kết nối.
+  - Đảm bảo tuân thủ tiêu chuẩn bảo mật y tế HIPAA/GDPR về bảo vệ thông tin sức khỏe cá nhân (PHI).
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Tắc Phân Định Broker Trong Microservices*: Không bao giờ biến RabbitMQ thành event log hay bắt Kafka làm worker queue đơn lẻ với manual ack từng message nhỏ. Kafka tối ưu cho throughput cao và phân vùng theo aggregate; RabbitMQ tối ưu cho task queue linh hoạt, routing key và cơ chế retry/dead-letter tinh vi.
+  2. *Single Source of Truth*: Mỗi luồng nghiệp vụ chỉ có đúng một broker chịu trách nhiệm chính. Không bao giờ phát cùng một sự kiện lên cả Kafka lẫn RabbitMQ để tránh xung đột trạng thái và rủi ro race condition.
+  3. *Nguyên Tắc Tối Thiểu Hóa Dữ Liệu Trên Message Broker*: Event phát đi chỉ nên chứa ID thực thể, trạng thái nghiệp vụ và metadata tối thiểu cần thiết để downstream service phản ứng, không biến message broker thành kho dữ liệu chứa toàn bộ bệnh án hoặc thông tin bí mật.
+
+### Phân Tầng 36: Làm Bền Vững Outbox, Tách Consumer Kafka Theo Contract Và Hoàn Thiện Rabbit Email Worker
+- **Auth / Payment Outbox**: Thay publish sau commit kiểu best-effort bằng hai bảng `user_event_outbox` và `payment_event_outbox`. Sự kiện được serialize và ghi trong cùng transaction cập nhật tài khoản/thanh toán; relay chỉ đánh dấu `SENT` sau Kafka ACK, retry theo backoff và giữ các bản ghi quá giới hạn ở trạng thái `FAILED` để vận hành kiểm tra.
+- **Kafka Notification Consumers**: Tạo deserializer/listener factory riêng cho Appointment, Payment và User, mỗi stream đi vào DLT tương ứng. Trước đây cả ba consumer có thể dùng DTO mặc định `AppointmentEvent` và chung appointment DLT, nên Payment/User không có contract xử lý đúng.
+- **Appointment Atomicity**: Nếu ghi outbox thất bại thì ném lỗi để rollback thay đổi lịch. Không còn bắt rồi chỉ ghi log trong các điểm chuyển trạng thái.
+- **Rabbit Email**: Bật publisher confirms, chờ broker ACK; retry SMTP tối đa ba lần với exponential backoff, sau đó reject sang DLQ. Worker gọi đường gửi mail đồng bộ và chỉ ACK khi SMTP trả về thành công; lỗi SMTP được ném ra thay vì bị nuốt.
+- **Email nghiệp vụ**: Notification tạo task email cho yêu cầu đặt lịch, xác nhận/hủy lịch, thanh toán thành công và kích hoạt tài khoản. Nội dung chỉ chứa thông tin nghiệp vụ an toàn; không chuyển OTP hoặc lý do riêng tư.
+- **Hợp đồng event**: Tên event xác nhận lịch mới là `APPOINTMENT_CONFIRMED`; consumer vẫn chấp nhận `APPOINTMENT_ACCEPTED` để tương thích bản tin cũ. Payment thành công dùng `PAYMENT_SUCCESS`; consumer vẫn đọc tên cũ `PAYMENT_COMPLETED` trong giai đoạn tương thích.
+- **Compose**: RabbitMQ giữ network backend, volume, healthcheck và resource limits; credential production phải được cung cấp qua `.env`, không còn mật khẩu mặc định trong Compose.
+- **Phạm vi giữ đồng bộ theo quyết định**: Cảnh báo Psychometric → Clinical tiếp tục HTTP nội bộ vì chứa PHI và cần intake response; Message giữ STOMP + MySQL cho một instance; Clinical, Treatment và Blog không phát event mới khi chưa có consumer nghiệp vụ cụ thể. Quy trình hoàn tiền chưa có trong Payment nên chưa phát `PAYMENT_REFUNDED`.
+- **Kiểm chứng**: Không chạy test/build theo yêu cầu; thay đổi được rà soát tĩnh.
+
+---
+
+### Phân Tầng 37: Khắc Phục Lỗi 502 Bad Gateway Do Nginx Cache Lệch IP Upstream Sau Khi Tái Khởi Động Container & Tích Hợp Dynamic Docker DNS Resolver
+- **Vị trí tệp**:
+  - [`docker/nginx/nginx.conf`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/nginx/nginx.conf) (Bổ sung `resolver 127.0.0.11 valid=10s ipv6=off;`).
+  - [`docker/deploy.sh`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/deploy.sh) (Bổ sung tự động reload Nginx sau khi container dịch vụ khởi chạy).
+  - [`docker/deploy.ps1`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/deploy.ps1) (Bổ sung tự động reload Nginx trong PowerShell script).
+- **DÙNG GÌ**:
+  - `resolver 127.0.0.11 valid=10s ipv6=off;` trong khối `http` của `nginx.conf`: Sử dụng máy chủ DNS nội bộ của Docker daemon (`127.0.0.11`) với TTL 10 giây để Nginx tự động phân giải lại địa chỉ IP của các container microservices.
+  - Lệnh `docker compose exec opcbs-nginx-prod nginx -s reload` được đưa vào quy trình triển khai tự động sau bước `docker compose up -d`.
+- **TẠI SAO (NGUYÊN NHÂN GỐC CỦA 502 BAD GATEWAY)**:
+  - Khi container `opcbs-booking-service` và `opcbs-notification-service` được tái tạo hoặc khởi động lại, Docker IPAM cấp phát lại dải IP bridge khiến hai dịch vụ bị tráo đổi địa chỉ IP (Booking chuyển sang `172.18.0.12`, Notification nhận `172.18.0.9`).
+  - Trong khi đó, container Nginx đã chạy từ trước và giữ nguyên bảng phân giải DNS tĩnh từ lúc boot. Khi client gọi `/api/specializations` hay `/api/doctor/my-slots`, Nginx chuyển tiếp đến `http://172.18.0.9:8082` (thực chất đã thành Notification service). Do port 8082 không mở trên container Notification, Linux kernel trả về `connect() failed (111: Connection refused)`, dẫn đến phản hồi **502 Bad Gateway**.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Lý Caching DNS Trong Nginx Upstream*: Nginx mặc định chỉ phân giải tên miền trong khối `upstream { server ...; }` đúng một lần lúc khởi động. Trong môi trường Docker động với việc recreate container thường xuyên, bắt buộc phải khai báo Docker DNS Resolver (`127.0.0.11`) và tự động gửi tín hiệu `nginx -s reload` sau mỗi lần cập nhật container.
+  2. *Chẩn Đoán Nhanh Lỗi 502*: Khi gặp 502 trong cụm microservices với Nginx, luôn đối chiếu IP trong `error.log` của Nginx với lệnh `docker inspect -f '{{.NetworkSettings.Networks...}}'` của các container để phát hiện ngay hiện tượng lệch IP upstream.
+
+---
+
+### Phân Tầng 38: Tích Hợp RabbitMQ Email Notification Toàn Diện Theo Trạng Thái Appointment, Mở Rộng Hồ Sơ Lâm Sàng Trực Quan Hóa (Biểu Đồ Cảm Xúc & Bài Test, Cảnh Báo Đỏ Nguy Cơ, Gán Gói Bệnh Nhân), Khắc Phục Cloudinary Upload & Doctor Certificate Fallback
+- **Vị trí tệp**:
+  - **Notification Service (RabbitMQ Worker Queue cho Email Trạng Thái Lịch Khám)**:
+    - [`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java) (Đẩy toàn bộ sự kiện lịch khám `BOOKED`, `ACCEPTED`/`CONFIRMED`, `STARTED`, `COMPLETED`, `CANCELLED`, `REJECTED`, `RESCHEDULED` vào RabbitMQ `opcbs.email.dispatch.queue`; xây dựng HTML template thương hiệu MindBridge đáp ứng; tra cứu bổ sung email qua `UserRepository`).
+    - [`NotificationEventConsumerTest.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/test/java/com/ocbs/event/NotificationEventConsumerTest.java) (Cập nhật test mock `UserRepository`).
+  - **Clinical Service & Backend (Hồ Sơ Chi Tiết, Thống Kê, Cảnh Báo Rủi Ro & Gán Gói)**:
+    - [`BookingVM.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-clinical-service/src/main/java/com/ocbs/web/rest/vm/BookingVM.java) (Mở rộng `PatientDetailRecordVM` với `psychometricSubmissions`, `sharedJournals`, `treatmentPackages`, `hasNegativeRisk`, `warningMessage`, `moodDistribution`, `testSeverityDistribution`).
+    - [`ClinicalManagementResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-clinical-service/src/main/java/com/ocbs/web/rest/ClinicalManagementResource.java) (Tính toán nguy cơ lâm sàng cao `hasNegativeRisk`, tổng hợp tỷ lệ phân bố cảm xúc/mức độ nghiêm trọng bài test, endpoint `POST /api/doctor/patients/{patientId}/treatment-packages`).
+  - **Frontend SPA (Giao Diện Bác Sĩ & Trực Quan Hóa Dữ Liệu Bệnh Nhân)**:
+    - [`doctor-patient.service.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/service/doctor-patient.service.ts) (Cập nhật interface và method `createPackageForPatient`).
+    - [`doctor-patient-detail.component.ts`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/patients/detail/doctor-patient-detail.component.ts) (Bổ sung tab `ANALYTICS`, `TESTS`, `JOURNALS`, `PACKAGES`, tính toán phân bổ, modal gán gói).
+    - [`doctor-patient-detail.component.html`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/patients/detail/doctor-patient-detail.component.html) (Nút "Gán Gói Trị Liệu", Banner đỏ viền cảnh báo nguy cơ cao, Thẻ thống kê KPI, Biểu đồ thanh tỷ lệ cảm xúc & bài test, Bảng trắc nghiệm, Nhật ký tâm sự bệnh nhân, Danh sách gói điều trị & Modal).
+    - [`doctor-patient-detail.component.scss`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/mindbridge-jhipster/src/main/webapp/app/entities/doctor-profile/patients/detail/doctor-patient-detail.component.scss) (Animation nhịp đập viền cảnh báo đỏ, styling KPI card, chart progress bars).
+  - **Booking Service & Cấu Hình Đám Mây (Sửa Lỗi Chứng Chỉ 400 & Upload Cloudinary)**:
+    - [`FileStorageService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/service/FileStorageService.java) (Khởi tạo sẵn file PDF mẫu `sample_certificate.pdf`, `chung_chi_*.pdf` và fallback động sinh byte PDF 1.4 hợp lệ on-the-fly, trả lời 200 OK thay vì 400 Bad Request).
+    - [`SecurityConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/config/SecurityConfiguration.java) (Mở quyền upload avatar cho authenticated users).
+    - [`docker/.env`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/.env) (Cấu hình Cloudinary API credentials trích xuất từ dự án gốc: `CLOUDINARY_CLOUD_NAME=jqhp5g23`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`).
+- **DÙNG GÌ**:
+  - **RabbitMQ Asynchronous Email Worker Queue (`opcbs.email.dispatch.queue`)**:
+    - Điều phối gửi email cho tất cả các trạng thái lịch hẹn y tế (đặt lịch mới, bác sĩ xác nhận, bắt đầu buổi khám, hoàn thành, hủy lịch, từ chối, đổi lịch) với mẫu HTML responsive cao cấp, bảo mật thông tin và giới hạn tải SMTP.
+  - **Clinical Decision Support & Risk Assessment Engine**:
+    - Tự động phân tích ma trận dữ liệu chéo giữa kết quả trắc nghiệm tâm lý (`PsychometricSubmission` có severity `SEVERE` / `EXTREMELY_SEVERE`) và chỉ số cảm xúc (`EmotionJournal` có `moodScale <= 2`) để xác định trạng thái rủi ro khẩn cấp (`hasNegativeRisk = true`).
+    - Hiển thị banner cảnh báo đỏ nổi bật với animation nhịp đập (`pulse-danger-border`) ngay đầu trang chi tiết của bác sĩ.
+  - **Dynamic In-Memory PDF Generator**:
+    - Cơ chế fallback tạo luồng byte PDF 1.4 tuân thủ chuẩn ISO 32000 giúp giải quyết triệt để lỗi 400 `FileNotFoundException` khi xem chứng chỉ bác sĩ.
+- **TẠI SAO**:
+  - **Nâng cao an toàn bệnh nhân (Patient Safety First)**: Trong chăm sóc sức khỏe tâm thần, bệnh nhân có xu hướng suy sụp cảm xúc hoặc có kết quả trắc nghiệm trầm cảm/lo âu nặng cần được bác sĩ phát hiện tức thì tại thời điểm mở hồ sơ để có phác đồ can thiệp hoặc xử lý khủng hoảng kịp thời.
+  - **Tối ưu trải nghiệm tham vấn & gắn kết điều trị**: Việc hiển thị trực quan tỷ lệ cảm xúc, tiến độ số buổi đã khám và cho phép bác sĩ tạo/gán gói điều trị trực tiếp giúp quá trình đồng hành trị liệu giữa bác sĩ và bệnh nhân liền mạch, minh bạch.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Nguyên Tắc Thiết Kế Cảnh Báo Lâm Sàng (Clinical Alert Usability)*: Cảnh báo nguy hiểm không được để ẩn trong các tab sâu mà phải xuất hiện trực tiếp tại Hero View với màu sắc nổi bật (đỏ cảnh báo), tóm tắt nguyên nhân và có nút bấm chuyển tiếp nhanh sang phần phân tích chi tiết.
+  2. *Resilient Static Asset Serving Trong Microservices*: Với các tệp tài liệu mẫu (demo certificates/samples), không nên phụ thuộc hoàn toàn vào filesystem volume mà luôn xây dựng cơ chế tự phục hồi (Self-healing / Dynamic Byte Generator) để hệ thống hoạt động trơn tru trong môi trường container hóa vô trạng thái (stateless containers).
+
+---
+
+### Phân Tầng 39: Nâng Cấp Hệ Thống Gửi Email Trong Service Notification, Khắc Phục Topic Kafka Bị Thiếu, Đồng Bộ Payload Event & Định Tuyến Email Đa Tầng Qua RabbitMQ Worker
+- **Vị trí tệp**:
+  - **Docker & Kafka Provisioning**:
+    - [`docker/docker-compose.prod.yml`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/docker/docker-compose.prod.yml) (Sửa cú pháp bash loop khởi tạo topic: escape `$$topic` thay vì `$topic`).
+  - **Contract & Event DTO (Booking & Notification)**:
+    - [`AppointmentEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/event/AppointmentEvent.java) (Bổ sung thuộc tính `patientEmail` và `doctorEmail` kèm `@JsonProperty`).
+    - [`AppointmentEvent.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/AppointmentEvent.java) (Đồng bộ `patientEmail` và `doctorEmail`).
+    - [`AppointmentOutboxService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-booking-service/src/main/java/com/ocbs/service/AppointmentOutboxService.java) (Điền trực tiếp email bệnh nhân và bác sĩ từ thực thể User khi tạo outbox event).
+  - **Consumer & Multi-tier Recipient Resolution**:
+    - [`NotificationEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/NotificationEventConsumer.java) (Chiến lược phân giải địa chỉ email đa tầng: Event Payload -> Profile Repo -> User Repo -> Login Regex; log cảnh báo chi tiết khi email không tìm thấy).
+    - [`PaymentEventConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/event/PaymentEventConsumer.java) (Inject `UserRepository`, phân giải `doctorEmail` đa tầng, log cảnh báo).
+  - **Email Worker & Observability**:
+    - [`MailService.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/service/MailService.java) (Nâng cấp cấp độ log từ `DEBUG` lên `INFO` cho các sự kiện gửi email SMTP thành công/thất bại).
+    - [`EmailTaskConsumer.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/service/EmailTaskConsumer.java) (Kiểm tra định dạng email `isValidEmailAddress`, log xác nhận email dispatch trước và sau khi gọi `MailService`).
+  - **Chẩn Đoán & Healthcheck Endpoint**:
+    - [`NotificationResource.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/web/rest/NotificationResource.java) (Thêm REST API `POST /api/notifications/test-email` hỗ trợ kiểm tra gửi email đồng bộ hoặc bất đồng bộ qua RabbitMQ worker queue).
+    - [`SecurityConfiguration.java`](file:///c:/SEP_G32/SEP_G32/OPCBS-Jhipster/OPCBS-Jhipster/opcbs-notification-service/src/main/java/com/ocbs/config/SecurityConfiguration.java) (Mở quyền `permitAll()` cho endpoint test-email chẩn đoán).
+- **DÙNG GÌ**:
+  - **Docker Compose Escaping (`$$topic`)**:
+    - Ngăn chặn Docker Compose client nuốt biến `$topic` thành chuỗi rỗng trong quá trình parse YAML, đảm bảo vòng lặp shell trong container `kafka-init-topics` tạo đủ các topic `opcbs-appointment-events`, `opcbs-payment-events`, `opcbs-user-events` với partition = 3.
+  - **Multi-tier Recipient Resolution Strategy**:
+    - Tầng 1: Đọc trực tiếp từ payload `AppointmentEvent` (`patientEmail`, `doctorEmail`).
+    - Tầng 2: Tra cứu profile tương ứng (`PatientProfileRepository`, `DoctorProfileRepository`) lấy `User.getEmail()`.
+    - Tầng 3: Tra cứu bảng `jhi_user` qua `UserRepository.findOneByLoginIgnoreCase()`.
+    - Tầng 4: Kiểm tra định dạng `login` (nếu chứa ký tự `@` thì dùng chính `login` làm email người nhận).
+  - **RabbitMQ Asynchronous Task Dispatch & Worker Queue**:
+    - Nhận event từ Kafka -> Lưu `Notification` vào MySQL -> Đóng gói `EmailTaskDTO` đưa vào RabbitMQ queue `opcbs.email.dispatch.queue`.
+    - Worker `EmailTaskConsumer` tiêu thụ message, kiểm tra cú pháp, gọi `MailService.sendEmailSync` qua Gmail SMTP và ghi log xác thực `INFO` phục vụ giám sát production.
+  - **Transactional Outbox Recovery Mechanism**:
+    - Khôi phục các event bị kẹt ở trạng thái `FAILED` trong bảng `outbox_event` (do Kafka topic trước đó chưa tồn tại khiến quá 5 lần retry) về `PENDING`, giúp `OutboxRelayService` tự động phát lại mà không làm mất mát dữ liệu nghiệp vụ.
+- **TẠI SAO (NGUYÊN NHÂN GỐC CỦA LỖI KHÔNG GỬI ĐƯỢC EMAIL & CÁCH KHẮC PHỤC)**:
+  - **Nguyên nhân 1 - Kafka Topic Không Tồn Tại**: Lệnh `kafka-topics --create` trong Compose bị lỗi do `$topic` bị Compose hiểu nhầm là biến môi trường và thay bằng chuỗi rỗng. Consumer Kafka trong `opcbs-notification-service` liên tục gặp lỗi `UNKNOWN_TOPIC_OR_PARTITION`, không thể lắng nghe được sự kiện.
+  - **Nguyên nhân 2 - Sự Kiện Bị Kẹt Ở Outbox**: Do topic Kafka không tồn tại thời điểm tạo lịch hẹn, `OutboxRelayService` thử gửi 5 lần thất bại và đánh dấu các event (ID 1-5) thành `FAILED`. Mặc dù dịch vụ chạy bình thường nhưng event không còn được đẩy lên broker.
+  - **Nguyên nhân 3 - Thất Thoát Địa Chỉ Email Người Nhận**: Payload sự kiện trước đây chỉ chứa `patientLogin`/`doctorLogin` hoặc ID. Khi service Notification tra cứu sang database nội bộ, nếu user chưa được đồng bộ hoặc `login` khác email thì trường `to` bị `null`, khiến logic gửi email bị bỏ qua âm thầm mà không có cảnh báo.
+  - **Nguyên nhân 4 - Thiếu Khả Năng Quan Sát (Observability)**: `MailService` cấu hình log ở mức `DEBUG`, dẫn đến môi trường Production không hiển thị bất kỳ log nào xác nhận email đã được gửi thành công đến SMTP server hay chưa.
+- **HỌC ĐƯỢC GÌ**:
+  1. *Cú Pháp Biến Môi Trường Trong Docker Compose Shell Command*: Khi viết script shell inline bên trong file `docker-compose.yml`, các biến của shell (ví dụ `$topic`, `$item`) bắt buộc phải được escape thành `$$topic` để Docker Compose không thay thế bằng chuỗi rỗng của host.
+  2. *Cơ Chế Phân Giải Fallback Cho Thông Tin Liên Lạc*: Trong kiến trúc microservices phân tán, không bao giờ phụ thuộc vào duy nhất một nguồn dữ liệu để lấy email/SĐT người nhận. Cần ưu tiên đưa email vào ngay payload của Domain Event lúc phát ra, đồng thời duy trì các tầng fallback tra cứu repository và login fallback.
+  3. *Thiết Kế Endpoint Chẩn Đoán Healthcheck SMTP/Queue*: Luôn trang bị một endpoint chẩn đoán độc lập (như `/api/notifications/test-email`) hỗ trợ cả chế độ đồng bộ và qua hàng đợi để đội ngũ vận hành có thể kiểm tra sức khỏe SMTP và broker trong vòng 5 giây mà không cần tạo giả lập toàn bộ quy trình đặt lịch.

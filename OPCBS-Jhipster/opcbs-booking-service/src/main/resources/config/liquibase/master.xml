@@ -29,4 +29,8 @@
     <include file="config/liquibase/changelog/20261001122000_added_entity_Psychometrics.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+    <include file="config/liquibase/changelog/20261016140000_added_idempotency_key_to_appointment.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261020160000_added_outbox_event.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261020170000_add_next_retry_at_to_outbox_event.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261022130000_added_entity_DoctorVerification.xml" relativeToChangelogFile="false"/>
 </databaseChangeLog>

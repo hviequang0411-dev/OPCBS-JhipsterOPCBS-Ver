@@ -46,8 +46,23 @@ spring:
   liquibase:
     contexts: prod
   mail:
-    host: localhost
-    port: 25
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}
+    password: ${SPRING_MAIL_PASSWORD:pjhq xpdx sxil qbcs}
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
   thymeleaf:
     cache: true
 
@@ -95,7 +110,8 @@ jhipster:
         token-validity-in-seconds: 86400
         token-validity-in-seconds-for-remember-me: 2592000
   mail: # specific JHipster mail property, for standard properties see MailProperties
-    base-url: http://my-server-url-to-change # Modify according to your server's URL
+    from: ${SPRING_MAIL_FROM:${SPRING_MAIL_USERNAME:quanghvhe161464@fpt.edu.vn}}
+    base-url: ${APPLICATION_BASE_URL:http://localhost:8081}
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
@@ -112,4 +128,15 @@ jhipster:
 # https://www.jhipster.tech/common-application-properties/
 # ===================================================================
 
-# application:
+application:
+  security:
+    jwt:
+      blacklist-fail-closed: true
+
+opcbs:
+  jwt:
+    key-id: ${JWT_KEY_ID:opcbs-jwt-key-prod-1}
+    private-key-path: ${JWT_PRIVATE_KEY_PATH:}
+    private-key: ${JWT_PRIVATE_KEY:}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+    public-key: ${JWT_PUBLIC_KEY:}

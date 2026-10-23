@@ -65,6 +65,7 @@ export class AvailabilitySlot implements OnInit {
   // Messages
   readonly successMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
+  readonly quota = signal<any>(null);
 
   // Forms
   singleSlotForm: FormGroup = this.fb.group({
@@ -162,6 +163,14 @@ export class AvailabilitySlot implements OnInit {
 
   ngOnInit(): void {
     this.loadSlots();
+    this.loadQuota();
+  }
+
+  loadQuota(): void {
+    this.doctorScheduleService.getMySubscriptionQuota().subscribe({
+      next: q => this.quota.set(q),
+      error: () => this.quota.set(null),
+    });
   }
 
   loadSlots(): void {

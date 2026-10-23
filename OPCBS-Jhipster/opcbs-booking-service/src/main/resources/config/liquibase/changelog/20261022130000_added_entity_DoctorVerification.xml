@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Added the entity DoctorVerification (Quản lý và duyệt chứng chỉ hành nghề bác sĩ).
+    -->
+    <changeSet id="20261022130000-1" author="mindbridge">
+        <createTable tableName="doctor_verification" remarks="Quản lý hồ sơ xác thực và duyệt chứng chỉ hành nghề bác sĩ">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="doctor_profile_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="doctor_name" type="varchar(160)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="license_number" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="specialization" type="varchar(150)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="experience_years" type="integer">
+                <constraints nullable="true"/>
+            </column>
+            <column name="education" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="status" type="varchar(50)" defaultValue="DRAFT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notes" type="${clobType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="certificate_url" type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="certificate_public_id" type="varchar(200)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="certificate_file_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="certificate_content_type" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="certificate_uploaded_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="submitted_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="reviewed_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="reviewed_by" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="rejection_reason" type="${clobType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+            <column name="updated_at" type="${datetimeType}">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_doc_verif_doc_id" tableName="doctor_verification">
+            <column name="doctor_profile_id"/>
+        </createIndex>
+        <createIndex indexName="idx_doc_verif_status" tableName="doctor_verification">
+            <column name="status"/>
+        </createIndex>
+
+        <addForeignKeyConstraint baseColumnNames="doctor_profile_id"
+                                 baseTableName="doctor_verification"
+                                 constraintName="fk_doc_verif__doctor_profile_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="doctor_profile"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Seed initial verification data based on existing doctors -->
+    <changeSet id="20261022130000-2" author="mindbridge">
+        <!-- Doctor 1: Approved -->
+        <insert tableName="doctor_verification">
+            <column name="doctor_profile_id" valueNumeric="1"/>
+            <column name="doctor_name" value="Dr. Sarah Jenkins"/>
+            <column name="license_number" value="VN-MED-100001"/>
+            <column name="specialization" value="Clinical Psychologist, Ph.D"/>
+            <column name="experience_years" valueNumeric="12"/>
+            <column name="education" value="Đại Học Y Hà Nội - Bác sĩ Chuyên khoa Tâm thần"/>
+            <column name="status" value="APPROVED"/>
+            <column name="notes" value="Hồ sơ đã được thẩm định hợp lệ đầy đủ chứng chỉ chuyên khoa."/>
+            <column name="certificate_url" value="/api/doctor/certificates/sample_certificate.pdf"/>
+            <column name="certificate_file_name" value="chung_chi_sarah_jenkins.pdf"/>
+            <column name="certificate_uploaded_at" valueDate="2026-10-10T08:00:00"/>
+            <column name="submitted_at" valueDate="2026-10-10T08:30:00"/>
+            <column name="reviewed_at" valueDate="2026-10-11T09:15:00"/>
+            <column name="reviewed_by" value="admin"/>
+            <column name="created_at" valueDate="2026-10-10T08:00:00"/>
+            <column name="updated_at" valueDate="2026-10-11T09:15:00"/>
+        </insert>
+
+        <!-- Doctor 2: Approved -->
+        <insert tableName="doctor_verification">
+            <column name="doctor_profile_id" valueNumeric="2"/>
+            <column name="doctor_name" value="Dr. Michael Chen"/>
+            <column name="license_number" value="VN-MED-100002"/>
+            <column name="specialization" value="Family &amp; Marriage Counselor, M.D."/>
+            <column name="experience_years" valueNumeric="9"/>
+            <column name="education" value="Đại Học Y Dược TP.HCM - Tâm thần học"/>
+            <column name="status" value="APPROVED"/>
+            <column name="notes" value="Chứng chỉ hành nghề gia đình và hôn nhân đã thẩm định."/>
+            <column name="certificate_url" value="/api/doctor/certificates/sample_certificate.pdf"/>
+            <column name="certificate_file_name" value="chung_chi_michael_chen.pdf"/>
+            <column name="certificate_uploaded_at" valueDate="2026-10-12T10:00:00"/>
+            <column name="submitted_at" valueDate="2026-10-12T10:30:00"/>
+            <column name="reviewed_at" valueDate="2026-10-13T14:20:00"/>
+            <column name="reviewed_by" value="admin"/>
+            <column name="created_at" valueDate="2026-10-12T10:00:00"/>
+            <column name="updated_at" valueDate="2026-10-13T14:20:00"/>
+        </insert>
+
+        <!-- Doctor 3: Submitted / Pending Review (Đang chờ Admin duyệt) -->
+        <insert tableName="doctor_verification">
+            <column name="doctor_profile_id" valueNumeric="3"/>
+            <column name="doctor_name" value="Dr. Elena Rostova"/>
+            <column name="license_number" value="VN-MED-100003"/>
+            <column name="specialization" value="Trauma &amp; PTSD Specialist"/>
+            <column name="experience_years" valueNumeric="15"/>
+            <column name="education" value="Saint Petersburg State Medical University - Ph.D in Psychiatry"/>
+            <column name="status" value="SUBMITTED"/>
+            <column name="notes" value="Hồ sơ xin gia nhập nền tảng điều trị sang chấn tâm lý PTSD, đã đính kèm bằng tiến sĩ y khoa và giấy phép hành nghề quốc tế."/>
+            <column name="certificate_url" value="/api/doctor/certificates/sample_certificate.pdf"/>
+            <column name="certificate_file_name" value="chung_chi_elena_rostova.pdf"/>
+            <column name="certificate_uploaded_at" valueDate="2026-10-20T14:00:00"/>
+            <column name="submitted_at" valueDate="2026-10-20T14:30:00"/>
+            <column name="created_at" valueDate="2026-10-20T14:00:00"/>
+            <column name="updated_at" valueDate="2026-10-20T14:30:00"/>
+        </insert>
+
+        <!-- Doctor 4: Requires Additional Info (Cần bổ sung thông tin) -->
+        <insert tableName="doctor_verification">
+            <column name="doctor_profile_id" valueNumeric="4"/>
+            <column name="doctor_name" value="BS.CKII Nguyễn Văn An"/>
+            <column name="license_number" value="VN-MED-100004"/>
+            <column name="specialization" value="Neuropsychiatrist &amp; Wellness Coach"/>
+            <column name="experience_years" valueNumeric="8"/>
+            <column name="education" value="Đại Học Y Khoa Phạm Ngọc Thạch - Bác sĩ CKII"/>
+            <column name="status" value="REQUIRES_ADDITIONAL_INFO"/>
+            <column name="notes" value="Hồ sơ đăng ký ca khám chuyên khoa Thần kinh - Tâm thần."/>
+            <column name="certificate_url" value="/api/doctor/certificates/sample_certificate.pdf"/>
+            <column name="certificate_file_name" value="chung_chi_nguyen_van_an.pdf"/>
+            <column name="certificate_uploaded_at" valueDate="2026-10-18T09:00:00"/>
+            <column name="submitted_at" valueDate="2026-10-18T09:20:00"/>
+            <column name="reviewed_at" valueDate="2026-10-19T11:00:00"/>
+            <column name="reviewed_by" value="admin"/>
+            <column name="rejection_reason" value="Vui lòng bổ sung bản scan công chứng giấy phép hành nghề có dấu đỏ mới nhất trong vòng 6 tháng của Sở Y Tế."/>
+            <column name="created_at" valueDate="2026-10-18T09:00:00"/>
+            <column name="updated_at" valueDate="2026-10-19T11:00:00"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

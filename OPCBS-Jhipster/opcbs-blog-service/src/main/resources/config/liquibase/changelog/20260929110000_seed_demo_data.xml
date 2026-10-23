@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Seed Demo Data: 4 Doctors, 2 Patients, 6 Specializations, and Availability Slots
+        Default password for all accounts: "user"
+    -->
+    <changeSet id="20260929110000-1" author="mindbridge">
+        <!-- 1. Seed Specializations -->
+        <sql>SET FOREIGN_KEY_CHECKS = 0;</sql>
+        <delete tableName="appointment" />
+        <delete tableName="rel_doctor_profile__specializations" />
+        <delete tableName="availability_slot" />
+        <delete tableName="doctor_profile" />
+        <delete tableName="patient_profile" />
+        <delete tableName="specialization" />
+        <sql>SET FOREIGN_KEY_CHECKS = 1;</sql>
+
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="1"/>
+            <column name="name" value="Anxiety &amp; Depression"/>
+            <column name="description" value="Tư vấn và trị liệu chuyên sâu về rối loạn lo âu, căng thẳng cảm xúc và trầm cảm."/>
+        </insert>
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="2"/>
+            <column name="name" value="Couples &amp; Family Therapy"/>
+            <column name="description" value="Tư vấn tâm lý hôn nhân, gia đình và tháo gỡ các mâu thuẫn trong mối quan hệ."/>
+        </insert>
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="3"/>
+            <column name="name" value="Stress &amp; Burnout"/>
+            <column name="description" value="Giải tỏa áp lực công việc, phòng chống kiệt sức và nâng cao sức bền tinh thần."/>
+        </insert>
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="4"/>
+            <column name="name" value="Child &amp; Adolescent"/>
+            <column name="description" value="Đồng hành và hỗ trợ tâm lý phát triển cho trẻ em và lứa tuổi vị thành niên."/>
+        </insert>
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="5"/>
+            <column name="name" value="Trauma &amp; PTSD"/>
+            <column name="description" value="Trị liệu và phục hồi sang chấn tâm lý sau biến cố, khủng hoảng cuộc sống."/>
+        </insert>
+        <insert tableName="specialization">
+            <column name="id" valueNumeric="6"/>
+            <column name="name" value="Career &amp; Life Coaching"/>
+            <column name="description" value="Định hướng phát triển bản thân, sự nghiệp và cân bằng cuộc sống."/>
+        </insert>
+
+        <!-- 2. Seed 4 Doctor Users (Password: "user") -->
+        <!-- Doctor 1 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="10"/>
+            <column name="login" value="doctor1"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Sarah"/>
+            <column name="last_name" value="Jenkins"/>
+            <column name="email" value="doctor1@mindbridge.vn"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="10"/>
+            <column name="authority_name" value="ROLE_DOCTOR"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="10"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- Doctor 2 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="11"/>
+            <column name="login" value="doctor2"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Michael"/>
+            <column name="last_name" value="Chen"/>
+            <column name="email" value="doctor2@mindbridge.vn"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="11"/>
+            <column name="authority_name" value="ROLE_DOCTOR"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="11"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- Doctor 3 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="12"/>
+            <column name="login" value="doctor3"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Elena"/>
+            <column name="last_name" value="Rostova"/>
+            <column name="email" value="doctor3@mindbridge.vn"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="12"/>
+            <column name="authority_name" value="ROLE_DOCTOR"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="12"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- Doctor 4 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="13"/>
+            <column name="login" value="doctor4"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Van An"/>
+            <column name="last_name" value="Nguyen"/>
+            <column name="email" value="doctor4@mindbridge.vn"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="13"/>
+            <column name="authority_name" value="ROLE_DOCTOR"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="13"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- 3. Seed 2 Patient Users (Password: "user") -->
+        <!-- Patient 1 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="20"/>
+            <column name="login" value="patient1"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Thi Mai"/>
+            <column name="last_name" value="Tran"/>
+            <column name="email" value="patient1@gmail.com"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="20"/>
+            <column name="authority_name" value="ROLE_PATIENT"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="20"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- Patient 2 -->
+        <insert tableName="jhi_user">
+            <column name="id" valueNumeric="21"/>
+            <column name="login" value="patient2"/>
+            <column name="password_hash" value="$2a$10$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"/>
+            <column name="first_name" value="Hoang Long"/>
+            <column name="last_name" value="Le"/>
+            <column name="email" value="patient2@gmail.com"/>
+            <column name="activated" valueBoolean="true"/>
+            <column name="lang_key" value="en"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueDate="2026-09-29T11:00:00"/>
+            <column name="last_modified_by" value="system"/>
+            <column name="last_modified_date" valueDate="2026-09-29T11:00:00"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="21"/>
+            <column name="authority_name" value="ROLE_PATIENT"/>
+        </insert>
+        <insert tableName="jhi_user_authority">
+            <column name="user_id" valueNumeric="21"/>
+            <column name="authority_name" value="ROLE_USER"/>
+        </insert>
+
+        <!-- 4. Seed Doctor Profiles -->
+        <insert tableName="doctor_profile">
+            <column name="id" valueNumeric="1"/>
+            <column name="full_name" value="Dr. Sarah Jenkins"/>
+            <column name="title" value="Clinical Psychologist, Ph.D"/>
+            <column name="bio" value="Chuyên gia tâm lý học lâm sàng với hơn 12 năm kinh nghiệm trong trị liệu nhận thức hành vi (CBT), giúp thân chủ thấu hiểu cảm xúc và vượt qua khủng hoảng lo âu kéo dài."/>
+            <column name="experience_years" valueNumeric="12"/>
+            <column name="consultation_fee" valueNumeric="850000"/>
+            <column name="phone" value="0901234561"/>
+            <column name="gender" value="FEMALE"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="user_id" valueNumeric="10"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="1"/>
+            <column name="specializations_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="1"/>
+            <column name="specializations_id" valueNumeric="3"/>
+        </insert>
+
+        <insert tableName="doctor_profile">
+            <column name="id" valueNumeric="2"/>
+            <column name="full_name" value="Dr. Michael Chen"/>
+            <column name="title" value="Family &amp; Marriage Counselor, M.D."/>
+            <column name="bio" value="Bác sĩ chuyên khoa tâm lý gia đình và hôn nhân, đồng hành cùng hơn 500 cặp đôi vượt qua khủng hoảng giao tiếp và xây dựng sự thấu hiểu, gắn kết yêu thương bền chặt."/>
+            <column name="experience_years" valueNumeric="9"/>
+            <column name="consultation_fee" valueNumeric="750000"/>
+            <column name="phone" value="0901234562"/>
+            <column name="gender" value="MALE"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="user_id" valueNumeric="11"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="2"/>
+            <column name="specializations_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="2"/>
+            <column name="specializations_id" valueNumeric="6"/>
+        </insert>
+
+        <insert tableName="doctor_profile">
+            <column name="id" valueNumeric="3"/>
+            <column name="full_name" value="Dr. Elena Rostova"/>
+            <column name="title" value="Trauma &amp; PTSD Specialist"/>
+            <column name="bio" value="Chuyên gia phục hồi sang chấn tâm lý, ứng dụng phương pháp EMDR và trị liệu cảm xúc thân nghiệm, mang đến không gian an toàn cho quá trình tự chữa lành vết thương tinh thần."/>
+            <column name="experience_years" valueNumeric="15"/>
+            <column name="consultation_fee" valueNumeric="1100000"/>
+            <column name="phone" value="0901234563"/>
+            <column name="gender" value="FEMALE"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="user_id" valueNumeric="12"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="3"/>
+            <column name="specializations_id" valueNumeric="5"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="3"/>
+            <column name="specializations_id" valueNumeric="1"/>
+        </insert>
+
+        <insert tableName="doctor_profile">
+            <column name="id" valueNumeric="4"/>
+            <column name="full_name" value="BS.CKII Nguyễn Văn An"/>
+            <column name="title" value="Neuropsychiatrist &amp; Wellness Coach"/>
+            <column name="bio" value="Bác sĩ Chuyên khoa II Thần kinh - Tâm thần với hơn 8 năm nghiên cứu giải pháp cải thiện giấc ngủ, hội chứng kiệt sức công sở và nâng cao hiệu suất làm việc bền vững."/>
+            <column name="experience_years" valueNumeric="8"/>
+            <column name="consultation_fee" valueNumeric="650000"/>
+            <column name="phone" value="0901234564"/>
+            <column name="gender" value="MALE"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="user_id" valueNumeric="13"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="4"/>
+            <column name="specializations_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="rel_doctor_profile__specializations">
+            <column name="doctor_profile_id" valueNumeric="4"/>
+            <column name="specializations_id" valueNumeric="4"/>
+        </insert>
+
+        <!-- 5. Seed Patient Profiles -->
+        <insert tableName="patient_profile">
+            <column name="id" valueNumeric="1"/>
+            <column name="full_name" value="Trần Thị Mai"/>
+            <column name="phone" value="0987654321"/>
+            <column name="gender" value="FEMALE"/>
+            <column name="date_of_birth" valueDate="1995-06-15"/>
+            <column name="address" value="123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"/>
+            <column name="medical_history" value="Từng có triệu chứng khó ngủ do áp lực dự án cuối năm, không có dị ứng thuốc."/>
+            <column name="user_id" valueNumeric="20"/>
+        </insert>
+
+        <insert tableName="patient_profile">
+            <column name="id" valueNumeric="2"/>
+            <column name="full_name" value="Lê Hoàng Long"/>
+            <column name="phone" value="0976543210"/>
+            <column name="gender" value="MALE"/>
+            <column name="date_of_birth" valueDate="1990-11-20"/>
+            <column name="address" value="456 Cầu Giấy, Dịch Vọng, Cầu Giấy, Hà Nội"/>
+            <column name="medical_history" value="Sức khỏe tốt, mong muốn tham vấn cân bằng tâm lý và định hướng công việc."/>
+            <column name="user_id" valueNumeric="21"/>
+        </insert>
+
+        <!-- 6. Seed Availability Slots for Doctors (Next 7 days) -->
+        <!-- Doctor 1 Slots -->
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="1"/>
+            <column name="start_time" value="2026-09-30 09:00:00"/>
+            <column name="end_time" value="2026-09-30 10:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Online Consultation qua Google Meet"/>
+            <column name="doctor_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="2"/>
+            <column name="start_time" value="2026-09-30 14:30:00"/>
+            <column name="end_time" value="2026-09-30 15:30:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="BOTH"/>
+            <column name="notes" value="Khám trực tuyến hoặc tại phòng khám MindBridge"/>
+            <column name="doctor_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="3"/>
+            <column name="start_time" value="2026-10-01 10:00:00"/>
+            <column name="end_time" value="2026-10-01 11:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Tham vấn tâm lý CBT buổi sáng"/>
+            <column name="doctor_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="4"/>
+            <column name="start_time" value="2026-10-02 16:00:00"/>
+            <column name="end_time" value="2026-10-02 17:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="OFFLINE"/>
+            <column name="notes" value="Trị liệu trực tiếp tại phòng tư vấn 102"/>
+            <column name="doctor_id" valueNumeric="1"/>
+        </insert>
+
+        <!-- Doctor 2 Slots -->
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="5"/>
+            <column name="start_time" value="2026-09-30 10:30:00"/>
+            <column name="end_time" value="2026-09-30 11:30:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="BOTH"/>
+            <column name="notes" value="Tư vấn tâm lý hôn nhân &amp; gia đình"/>
+            <column name="doctor_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="6"/>
+            <column name="start_time" value="2026-10-01 15:00:00"/>
+            <column name="end_time" value="2026-10-01 16:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Tư vấn trực tuyến buổi chiều"/>
+            <column name="doctor_id" valueNumeric="2"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="7"/>
+            <column name="start_time" value="2026-10-03 09:00:00"/>
+            <column name="end_time" value="2026-10-03 10:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Khung giờ sáng thứ 7"/>
+            <column name="doctor_id" valueNumeric="2"/>
+        </insert>
+
+        <!-- Doctor 3 Slots -->
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="8"/>
+            <column name="start_time" value="2026-09-30 15:00:00"/>
+            <column name="end_time" value="2026-09-30 16:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="OFFLINE"/>
+            <column name="notes" value="Trị liệu phục hồi sang chấn chuyên sâu"/>
+            <column name="doctor_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="9"/>
+            <column name="start_time" value="2026-10-01 08:30:00"/>
+            <column name="end_time" value="2026-10-01 09:30:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Tham vấn trực tuyến buổi sáng"/>
+            <column name="doctor_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="10"/>
+            <column name="start_time" value="2026-10-02 14:00:00"/>
+            <column name="end_time" value="2026-10-02 15:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="BOTH"/>
+            <column name="notes" value="Tham vấn EMDR"/>
+            <column name="doctor_id" valueNumeric="3"/>
+        </insert>
+
+        <!-- Doctor 4 Slots -->
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="11"/>
+            <column name="start_time" value="2026-09-30 18:00:00"/>
+            <column name="end_time" value="2026-09-30 19:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Tư vấn buổi tối sau giờ làm việc"/>
+            <column name="doctor_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="12"/>
+            <column name="start_time" value="2026-10-01 19:00:00"/>
+            <column name="end_time" value="2026-10-01 20:00:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="ONLINE"/>
+            <column name="notes" value="Tư vấn rối loạn giấc ngủ &amp; stress"/>
+            <column name="doctor_id" valueNumeric="4"/>
+        </insert>
+        <insert tableName="availability_slot">
+            <column name="id" valueNumeric="13"/>
+            <column name="start_time" value="2026-10-03 14:30:00"/>
+            <column name="end_time" value="2026-10-03 15:30:00"/>
+            <column name="status" value="AVAILABLE"/>
+            <column name="consultation_mode" value="OFFLINE"/>
+            <column name="notes" value="Khám trực tiếp tại phòng khám"/>
+            <column name="doctor_id" valueNumeric="4"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

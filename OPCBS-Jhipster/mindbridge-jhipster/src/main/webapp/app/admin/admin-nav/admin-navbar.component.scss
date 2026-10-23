@@ -1,0 +1,181 @@
+.admin-top-navbar {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.85rem 1.25rem 0.65rem 1.25rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+  backdrop-filter: blur(8px);
+
+  .top-util-bar {
+    .portal-badge {
+      background: rgba(15, 118, 110, 0.08);
+      border: 1px solid rgba(15, 118, 110, 0.18);
+
+      .portal-badge-text {
+        font-size: 0.72rem;
+        font-weight: 850;
+        color: #0f766e;
+        letter-spacing: 0.06em;
+      }
+    }
+
+    .current-module-title {
+      font-size: 0.88rem;
+      color: #0f172a;
+
+      i {
+        color: #0f766e;
+      }
+    }
+
+    .live-status-pill {
+      font-size: 0.75rem;
+      font-weight: 650;
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+
+      .pulse-indicator {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background-color: #10b981;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulseLiveIndicator 2s infinite;
+      }
+    }
+
+    .quick-home-btn {
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 0.28rem 0.65rem;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #0f766e;
+      }
+    }
+  }
+
+  .admin-tabs-nav {
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+
+    &::-webkit-scrollbar {
+      height: 3px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    .tab-divider {
+      width: 1px;
+      height: 22px;
+      background: #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .admin-nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.95rem;
+      border-radius: 9px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #475569;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      flex-shrink: 0;
+
+      i {
+        font-size: 1.05rem;
+        color: #64748b;
+        transition: color 0.2s ease;
+      }
+
+      .tab-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #64748b;
+        transition: all 0.2s ease;
+      }
+
+      &:hover {
+        background: #f1f5f9;
+        color: #0f766e;
+
+        i {
+          color: #0f766e;
+        }
+
+        .tab-badge {
+          background: #e2e8f0;
+          color: #0f766e;
+        }
+      }
+
+      &.active {
+        background: #0f766e;
+        color: #ffffff !important;
+        box-shadow: 0 3px 10px rgba(15, 118, 110, 0.25);
+
+        i {
+          color: #ffffff !important;
+        }
+
+        .tab-badge {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+        }
+      }
+
+      &.secondary-tab {
+        color: #64748b;
+        font-weight: 600;
+
+        &:hover {
+          color: #0f766e;
+        }
+
+        &.active {
+          background: #1e293b;
+          color: #ffffff !important;
+
+          i {
+            color: #ffffff !important;
+          }
+        }
+      }
+    }
+  }
+
+  .text-teal {
+    color: #0f766e !important;
+  }
+}
+
+@keyframes pulseLiveIndicator {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}

@@ -4,6 +4,8 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 
 import { AccountService } from 'app/core/auth';
+import AdminNavbarComponent from 'app/admin/admin-nav/admin-navbar.component';
+import DoctorNavbarComponent from '../doctor-nav/doctor-navbar.component';
 import Footer from '../footer/footer';
 import PageRibbon from '../profiles/page-ribbon';
 import Sidebar from '../sidebar/sidebar';
@@ -12,7 +14,7 @@ import Sidebar from '../sidebar/sidebar';
   selector: 'jhi-main',
   templateUrl: './main.html',
   styleUrl: './main.scss',
-  imports: [CommonModule, RouterOutlet, Footer, PageRibbon, Sidebar],
+  imports: [CommonModule, RouterOutlet, Footer, PageRibbon, Sidebar, AdminNavbarComponent, DoctorNavbarComponent],
 })
 export default class Main implements OnInit {
   readonly currentUrl = signal<string>('');
@@ -80,5 +82,22 @@ export default class Main implements OnInit {
     ];
 
     return dashboardPrefixes.some(prefix => url.startsWith(prefix));
+  }
+
+  isAdminModule(): boolean {
+    if (this.isAuthPage()) return false;
+    const url = (this.currentUrl() || '').split('?')[0].toLowerCase();
+    return url.startsWith('/admin') || url.startsWith('/user-management');
+  }
+
+  isDoctorModule(): boolean {
+    if (this.isAuthPage()) return false;
+    const url = (this.currentUrl() || '').split('?')[0].toLowerCase();
+    const acc = this.account();
+    const isDoctor = acc?.authorities?.includes('ROLE_DOCTOR');
+
+    if (url.startsWith('/doctor')) return true;
+    if (isDoctor && (url.startsWith('/appointment') || url.startsWith('/availability-slot'))) return true;
+    return false;
   }
 }

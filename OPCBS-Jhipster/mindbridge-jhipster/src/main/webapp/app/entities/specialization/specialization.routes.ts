@@ -26,6 +26,9 @@ const specializationRoute: Routes = [
     resolve: {
       specialization: SpecializationResolve,
     },
+    data: {
+      authorities: ['ROLE_ADMIN'],
+    },
     canActivate: [userRouteAccessService],
   },
   {
@@ -33,6 +36,9 @@ const specializationRoute: Routes = [
     loadComponent: () => import('./update/specialization-update').then(m => m.SpecializationUpdate),
     resolve: {
       specialization: SpecializationResolve,
+    },
+    data: {
+      authorities: ['ROLE_ADMIN'],
     },
     canActivate: [userRouteAccessService],
   },

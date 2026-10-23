@@ -112,12 +112,16 @@ export default class RegisterDoctor implements OnInit {
     };
 
     this.registerService.saveDoctor(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.success.set(true);
+        const otpHint = res?.otp || '';
+        if (otpHint) {
+          sessionStorage.setItem('mb_dev_otp_hint', otpHint);
+        }
         // Tự động chuyển sang xác thực OTP
         setTimeout(() => {
           this.router.navigate(['/account/verify-otp'], {
-            queryParams: { email: values.email, username: values.login },
+            queryParams: { email: values.email, username: values.login, ...(otpHint ? { devOtp: otpHint } : {}) },
           });
         }, 1200);
       },

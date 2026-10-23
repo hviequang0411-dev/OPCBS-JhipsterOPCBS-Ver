@@ -43,6 +43,9 @@ public class ChatMessage implements Serializable {
     @Column(name = "is_read")
     private Boolean isRead = false;
 
+    @Column(name = "client_message_id", length = 100)
+    private String clientMessageId;
+
     @Column(name = "created_date")
     private Instant createdDate = Instant.now();
 
@@ -108,6 +111,14 @@ public class ChatMessage implements Serializable {
 
     public void setIsRead(Boolean isRead) {
         this.isRead = isRead;
+    }
+
+    public String getClientMessageId() {
+        return clientMessageId;
+    }
+
+    public void setClientMessageId(String clientMessageId) {
+        this.clientMessageId = clientMessageId;
     }
 
     public Instant getCreatedDate() {

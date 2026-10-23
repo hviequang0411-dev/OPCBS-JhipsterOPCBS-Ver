@@ -74,12 +74,16 @@ export default class Register implements AfterViewInit {
       this.registerService
         .save({ login, email, password, langKey: 'en', firstName, lastName } as any)
         .subscribe({
-          next: () => {
+          next: (res: any) => {
             this.success.set(true);
-            // Tự động chuyển hướng sang trang xác thực OTP sau 1.5s
+            const otpHint = res?.otp || '';
+            if (otpHint) {
+              sessionStorage.setItem('mb_dev_otp_hint', otpHint);
+            }
+            // Tự động chuyển hướng sang trang xác thực OTP sau 1.2s
             setTimeout(() => {
               this.router.navigate(['/account/verify-otp'], {
-                queryParams: { email, username: login },
+                queryParams: { email, username: login, ...(otpHint ? { devOtp: otpHint } : {}) },
               });
             }, 1200);
           },

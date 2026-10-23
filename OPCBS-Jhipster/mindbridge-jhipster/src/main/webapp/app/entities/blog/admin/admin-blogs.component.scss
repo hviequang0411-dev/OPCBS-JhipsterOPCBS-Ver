@@ -1,0 +1,19 @@
+.btn-teal {
+  background: #0d9488;
+  border-color: #0d9488;
+  color: #fff;
+  &:hover {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
+  }
+}
+
+.btn-outline-teal {
+  color: #0d9488;
+  border-color: #0d9488;
+  &:hover {
+    background: #0d9488;
+    color: #fff;
+  }
+}

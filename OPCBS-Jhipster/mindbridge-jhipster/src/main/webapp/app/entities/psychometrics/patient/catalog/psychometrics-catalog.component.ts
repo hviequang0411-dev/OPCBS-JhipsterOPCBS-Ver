@@ -17,8 +17,10 @@ export class PsychometricsCatalogComponent implements OnInit {
 
   tests: IPsychometricTest[] = [];
   mySubmissions: IPsychometricSubmission[] = [];
+  assignedSubmissions: IPsychometricSubmission[] = [];
+  completedSubmissions: IPsychometricSubmission[] = [];
   isLoading = false;
-  activeTab: 'catalog' | 'history' = 'catalog';
+  activeTab: 'assigned' | 'catalog' | 'history' = 'catalog';
 
   ngOnInit(): void {
     this.loadData();
@@ -42,6 +44,11 @@ export class PsychometricsCatalogComponent implements OnInit {
     this.psychometricsService.getMySubmissions().subscribe({
       next: res => {
         this.mySubmissions = res || [];
+        this.assignedSubmissions = this.mySubmissions.filter(s => s.status === 'ASSIGNED');
+        this.completedSubmissions = this.mySubmissions.filter(s => s.status === 'COMPLETED');
+        if (this.assignedSubmissions.length > 0) {
+          this.activeTab = 'assigned';
+        }
         this.cdr.markForCheck();
       },
       error: () => {

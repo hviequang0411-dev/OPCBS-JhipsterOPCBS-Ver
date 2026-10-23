@@ -32,6 +32,13 @@ export interface IPatientDetailRecord {
   totalAppointments: number;
   completedAppointments: number;
   appointments: IAppointment[];
+  psychometricSubmissions?: any[];
+  sharedJournals?: any[];
+  treatmentPackages?: any[];
+  hasNegativeRisk?: boolean;
+  warningMessage?: string | null;
+  moodDistribution?: Record<string, number>;
+  testSeverityDistribution?: Record<string, number>;
 }
 
 export interface ISaveConsultationNoteRequest {
@@ -72,8 +79,19 @@ export class DoctorPatientService {
           dateOfBirth: res.patient?.dateOfBirth ? dayjs(res.patient.dateOfBirth) : undefined,
         },
         appointments: (res.appointments || []).map((app: RestAppointment) => this.convertAppointmentFromServer(app)),
+        psychometricSubmissions: res.psychometricSubmissions || [],
+        sharedJournals: res.sharedJournals || [],
+        treatmentPackages: res.treatmentPackages || [],
+        hasNegativeRisk: res.hasNegativeRisk ?? false,
+        warningMessage: res.warningMessage ?? null,
+        moodDistribution: res.moodDistribution || {},
+        testSeverityDistribution: res.testSeverityDistribution || {},
       }))
     );
+  }
+
+  createPackageForPatient(patientId: number, pkg: any): Observable<any> {
+    return this.http.post<any>(`${this.doctorUrl}/patients/${patientId}/treatment-packages`, pkg);
   }
 
   exportPatientPdf(patientId: number): Observable<Blob> {

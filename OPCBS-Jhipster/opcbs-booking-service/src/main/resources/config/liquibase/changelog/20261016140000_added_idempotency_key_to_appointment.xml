@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Changelog: Thêm cột idempotency_key vào bảng appointment để hỗ trợ idempotency khi đặt lịch
+        Bảo đảm an toàn cho dữ liệu cũ, chỉ thêm nếu cột chưa tồn tại.
+    -->
+    <changeSet id="20261016140000-1" author="opcbs-team">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="appointment"/>
+            <not>
+                <columnExists tableName="appointment" columnName="idempotency_key"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="appointment">
+            <column name="idempotency_key" type="varchar(100)">
+                <constraints unique="true" uniqueConstraintName="ux_appointment__idempotency_key" nullable="true"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="appointment" columnName="idempotency_key"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

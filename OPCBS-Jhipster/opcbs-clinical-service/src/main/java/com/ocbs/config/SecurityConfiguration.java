@@ -71,6 +71,7 @@ public class SecurityConfiguration {
                     .requestMatchers(HttpMethod.GET, "/api/doctor-profiles", "/api/doctor-profiles/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/availability-slots", "/api/availability-slots/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/psychometrics/tests", "/api/psychometrics/tests/**").permitAll()
+                    .requestMatchers("/api/clinical/psychometrics-alert").hasAuthority(AuthoritiesConstants.PATIENT)
                     .requestMatchers("/api/patient/**").hasAnyAuthority(AuthoritiesConstants.PATIENT, AuthoritiesConstants.ADMIN)
                     .requestMatchers("/api/doctor/**").hasAnyAuthority(AuthoritiesConstants.DOCTOR, AuthoritiesConstants.ADMIN)
                     .requestMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)

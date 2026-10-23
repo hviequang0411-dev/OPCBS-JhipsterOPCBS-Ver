@@ -1,0 +1,22 @@
+.blog-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0 !important;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(15, 118, 110, 0.12) !important;
+  }
+}
+
+.hover-teal:hover {
+  color: #0d9488 !important;
+}
+
+.btn-teal {
+  background: #0d9488;
+  border-color: #0d9488;
+  &:hover {
+    background: #0f766e;
+    border-color: #0f766e;
+  }
+}

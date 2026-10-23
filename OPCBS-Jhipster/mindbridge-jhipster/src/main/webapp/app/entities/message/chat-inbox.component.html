@@ -112,8 +112,19 @@
             <div>
               <div class="msg-chat-header-name">{{ getInterlocutorName(active) }}</div>
               <div class="msg-chat-header-subtitle">
-                <span class="msg-status-dot active"></span>
-                <span>{{ getInterlocutorRole(active) }} • Đang trực tuyến</span>
+                @if (wsStatus() === 'connected') {
+                  <span class="msg-status-dot active"></span>
+                  <span>{{ getInterlocutorRole(active) }} • Kênh Real-time sẵn sàng</span>
+                } @else if (wsStatus() === 'connecting') {
+                  <span class="msg-status-dot" style="background-color: #f59e0b;"></span>
+                  <span>{{ getInterlocutorRole(active) }} • Đang kết nối real-time...</span>
+                } @else {
+                  <span class="msg-status-dot" style="background-color: #f97316;"></span>
+                  <span>{{ getInterlocutorRole(active) }} • Ngoại tuyến (Dự phòng REST)</span>
+                  <button type="button" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" style="font-size: 0.72rem; color: #0f766e;" (click)="reconnectWebSocket()" title="Bấm để thử kết nối lại">
+                    <i class="bi bi-arrow-clockwise"></i> Kết nối lại
+                  </button>
+                }
               </div>
             </div>
           </div>
@@ -140,13 +151,24 @@
           <span>Cuộc trò chuyện bảo mật y tế tiêu chuẩn MindBridge giữa Chuyên gia &amp; Bệnh nhân</span>
         </div>
 
+        <!-- Send Error Alert -->
+        @if (sendErrorAlert()) {
+          <div class="alert alert-danger py-2 px-3 mx-4 mt-3 mb-0 d-flex align-items-center justify-content-between" style="font-size: 0.8rem; border-radius: 8px;">
+            <div>
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span>{{ sendErrorAlert() }}</span>
+            </div>
+            <button type="button" class="btn-close ms-2" style="font-size: 0.65rem;" (click)="sendErrorAlert.set(null)" aria-label="Đóng"></button>
+          </div>
+        }
+
         <!-- Messages Stream -->
         <div class="msg-messages" #messagesScrollContainer>
           <div class="date-divider">
             <span>Hôm nay</span>
           </div>
 
-          @for (msg of messages(); track msg.id || msg.createdDate) {
+          @for (msg of messages(); track msg.clientMessageId || msg.id || msg.createdDate) {
             @let isMine = isMyMessage(msg);
             <div class="msg-bubble-row" [class.sent]="isMine" [class.received]="!isMine">
               @if (!isMine) {
@@ -156,7 +178,7 @@
               }
 
               <div class="msg-bubble-wrapper">
-                <div class="msg-bubble" [class.sent]="isMine" [class.received]="!isMine">
+                <div class="msg-bubble" [class.sent]="isMine" [class.received]="!isMine" [class.sending]="msg.status === 'sending'" [class.failed]="msg.status === 'failed'">
                   @if (!isMine && msg.senderName) {
                     <div class="fw-bold mb-1" style="font-size: 0.72rem; color: #0f766e;">{{ msg.senderName }}</div>
                   }
@@ -165,7 +187,18 @@
                 <div class="msg-bubble-time">
                   <span>{{ msg.createdDate | date:'HH:mm' }}</span>
                   @if (isMine) {
-                    <i class="bi bi-check2-all msg-read-icon"></i>
+                    @if (msg.status === 'sending') {
+                      <span class="spinner-border spinner-border-sm text-secondary ms-1" style="width: 0.65rem; height: 0.65rem; border-width: 1.5px;" title="Đang gửi..."></span>
+                    } @else if (msg.status === 'failed') {
+                      <span class="text-danger d-inline-flex align-items-center ms-1" title="Gửi thất bại">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-1 text-decoration-underline" style="font-size: 0.68rem; font-weight: 600;" (click)="retryMessage(msg)">
+                          Thử lại
+                        </button>
+                      </span>
+                    } @else {
+                      <i class="bi bi-check2-all msg-read-icon" title="Đã gửi"></i>
+                    }
                   }
                 </div>
               </div>

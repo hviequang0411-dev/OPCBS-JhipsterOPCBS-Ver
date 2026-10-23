@@ -29,6 +29,15 @@
       </div>
     </div>
 
+    <!-- Doctor Assignment Notification Banner -->
+    <div *ngIf="assignedSubmissionId" class="alert alert-info border-0 shadow-sm mb-4 d-flex align-items-center gap-3 rounded-3 p-3" style="background: #e0f2fe; color: #0369a1;">
+      <i class="bi bi-info-circle-fill fs-4" style="color: #0f766e;"></i>
+      <div>
+        <strong class="d-block" style="color: #0c4a6e;">Bài trắc nghiệm theo chỉ định lâm sàng của bác sĩ</strong>
+        <span class="small" style="color: #0369a1;">Sau khi bạn nộp bài, kết quả và điểm số sẽ được tự động lưu vào bệnh án để bác sĩ đánh giá và hội chẩn.</span>
+      </div>
+    </div>
+
     <!-- Alert / Error message -->
     <div *ngIf="errorMessage" class="alert alert-danger shadow-sm mb-4">
       <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMessage }}

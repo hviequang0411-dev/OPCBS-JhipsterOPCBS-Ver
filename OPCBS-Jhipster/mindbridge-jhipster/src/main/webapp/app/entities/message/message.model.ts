@@ -24,4 +24,6 @@ export interface IChatMessage {
   attachmentType?: string;
   isRead?: boolean;
   createdDate?: string;
+  clientMessageId?: string;
+  status?: 'sending' | 'sent' | 'failed';
 }

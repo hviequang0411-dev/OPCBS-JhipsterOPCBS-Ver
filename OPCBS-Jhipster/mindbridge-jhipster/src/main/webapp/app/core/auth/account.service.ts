@@ -39,6 +39,18 @@ export class AccountService {
   }
 
   identity(force?: boolean): Observable<Account | null> {
+    // =========================================================================
+    // [CƠ CHẾ MỚI - TRÁNH LỖI 401 KHÔNG CẦN THIẾT KHI CHƯA ĐĂNG NHẬP / ĐÃ LOGOUT]:
+    // Nếu trong Web Storage không có token (đã đăng xuất hoặc chưa đăng nhập),
+    // lập tức trả về of(null), KHÔNG gửi request GET /api/account lên server.
+    // Điều này ngăn chặn triệt để tình trạng trình duyệt báo lỗi đỏ 401 khi F5 hoặc mở tab mới.
+    // =========================================================================
+    if (!this.stateStorageService.getAuthenticationToken()) {
+      this.authenticate(null);
+      this.accountCache$ = null;
+      return of(null);
+    }
+
     if (!this.accountCache$ || force) {
       this.accountCache$ = this.fetch().pipe(
         tap((account: Account) => {
@@ -49,7 +61,14 @@ export class AccountService {
         shareReplay(),
       );
     }
-    return this.accountCache$.pipe(catchError(() => of(null)));
+    return this.accountCache$.pipe(
+      catchError(() => {
+        this.authenticate(null);
+        this.stateStorageService.clearAuthenticationToken();
+        this.accountCache$ = null;
+        return of(null);
+      }),
+    );
   }
 
   isAuthenticated(): boolean {

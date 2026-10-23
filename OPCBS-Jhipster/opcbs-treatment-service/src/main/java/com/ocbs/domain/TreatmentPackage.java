@@ -98,6 +98,43 @@ public class TreatmentPackage extends AbstractAuditingEntity<Long> implements Se
     @Column(name = "cancellation_requested_at")
     private Instant cancellationRequestedAt;
 
+    // === HOLD (BẢO LƯU) LIFECYCLE MANAGEMENT ===
+
+    @Column(name = "is_hold_requested", nullable = false)
+    private Boolean isHoldRequested = false;
+
+    @Column(name = "hold_requested_at")
+    private Instant holdRequestedAt;
+
+    @Column(name = "hold_start_date")
+    private Instant holdStartDate;
+
+    @Column(name = "hold_end_date")
+    private Instant holdEndDate;
+
+    @Column(name = "hold_duration_days")
+    private Integer holdDurationDays;
+
+    @Lob
+    @Column(name = "hold_reason")
+    private String holdReason;
+
+    @Column(name = "hold_approved_at")
+    private Instant holdApprovedAt;
+
+    @Column(name = "hold_approved_by_doctor_id")
+    private Long holdApprovedByDoctorId;
+
+    @Column(name = "hold_rejected_at")
+    private Instant holdRejectedAt;
+
+    @Lob
+    @Column(name = "hold_rejection_reason")
+    private String holdRejectionReason;
+
+    @Column(name = "total_hold_days", nullable = false)
+    private Integer totalHoldDays = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties(value = { "user", "specialization" }, allowSetters = true)
     private DoctorProfile doctor;
@@ -289,6 +326,94 @@ public class TreatmentPackage extends AbstractAuditingEntity<Long> implements Se
 
     public void setPatient(PatientProfile patient) {
         this.patient = patient;
+    }
+
+    public Boolean getIsHoldRequested() {
+        return isHoldRequested;
+    }
+
+    public void setIsHoldRequested(Boolean isHoldRequested) {
+        this.isHoldRequested = isHoldRequested;
+    }
+
+    public Instant getHoldRequestedAt() {
+        return holdRequestedAt;
+    }
+
+    public void setHoldRequestedAt(Instant holdRequestedAt) {
+        this.holdRequestedAt = holdRequestedAt;
+    }
+
+    public Instant getHoldStartDate() {
+        return holdStartDate;
+    }
+
+    public void setHoldStartDate(Instant holdStartDate) {
+        this.holdStartDate = holdStartDate;
+    }
+
+    public Instant getHoldEndDate() {
+        return holdEndDate;
+    }
+
+    public void setHoldEndDate(Instant holdEndDate) {
+        this.holdEndDate = holdEndDate;
+    }
+
+    public Integer getHoldDurationDays() {
+        return holdDurationDays;
+    }
+
+    public void setHoldDurationDays(Integer holdDurationDays) {
+        this.holdDurationDays = holdDurationDays;
+    }
+
+    public String getHoldReason() {
+        return holdReason;
+    }
+
+    public void setHoldReason(String holdReason) {
+        this.holdReason = holdReason;
+    }
+
+    public Instant getHoldApprovedAt() {
+        return holdApprovedAt;
+    }
+
+    public void setHoldApprovedAt(Instant holdApprovedAt) {
+        this.holdApprovedAt = holdApprovedAt;
+    }
+
+    public Long getHoldApprovedByDoctorId() {
+        return holdApprovedByDoctorId;
+    }
+
+    public void setHoldApprovedByDoctorId(Long holdApprovedByDoctorId) {
+        this.holdApprovedByDoctorId = holdApprovedByDoctorId;
+    }
+
+    public Instant getHoldRejectedAt() {
+        return holdRejectedAt;
+    }
+
+    public void setHoldRejectedAt(Instant holdRejectedAt) {
+        this.holdRejectedAt = holdRejectedAt;
+    }
+
+    public String getHoldRejectionReason() {
+        return holdRejectionReason;
+    }
+
+    public void setHoldRejectionReason(String holdRejectionReason) {
+        this.holdRejectionReason = holdRejectionReason;
+    }
+
+    public Integer getTotalHoldDays() {
+        return totalHoldDays;
+    }
+
+    public void setTotalHoldDays(Integer totalHoldDays) {
+        this.totalHoldDays = totalHoldDays;
     }
 
     @Override

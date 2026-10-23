@@ -1,0 +1,13 @@
+.git
+.gitignore
+.idea
+.vscode
+target
+node_modules
+.mvn
+mvnw
+mvnw.cmd
+*.log
+*.tmp
+Dockerfile
+.dockerignore

@@ -1,0 +1,104 @@
+<header class="admin-top-navbar mb-4">
+  <!-- Top Utility Bar: Portal Title, Breadcrumb & Quick Actions -->
+  <div class="top-util-bar d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2.5 mb-2.5 border-bottom">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="portal-badge d-flex align-items-center gap-1.5 px-2.5 py-1 rounded-pill">
+        <i class="bi bi-shield-check text-teal"></i>
+        <span class="portal-badge-text">TRUNG TÂM QUẢN TRỊ MINDBRIDGE</span>
+      </div>
+      <span class="breadcrumb-separator text-muted">/</span>
+      <div class="current-module-title fw-bold text-dark d-flex align-items-center gap-1.5">
+        <i [class]="getModuleIcon()"></i>
+        <span>{{ getModuleTitle() }}</span>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <!-- Live Status Indicator -->
+      <span class="live-status-pill badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1.5">
+        <span class="pulse-indicator"></span>
+        <span class="status-text">Hệ Thống Trực Tuyến (Live DB)</span>
+      </span>
+
+      <!-- View Public Website -->
+      <a routerLink="/" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5 quick-home-btn" title="Quay về trang chủ MindBridge">
+        <i class="bi bi-box-arrow-up-right"></i>
+        <span class="d-none d-sm-inline">Xem Website</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Navigation Tabs: Connects Core Admin Modules -->
+  <nav class="admin-tabs-nav d-flex align-items-center gap-1 overflow-x-auto">
+    <!-- 1. Admin Dashboard -->
+    <a
+      routerLink="/admin/dashboard"
+      routerLinkActive="active"
+      class="admin-nav-tab"
+      title="Báo cáo kinh doanh, doanh thu và các chỉ số vận hành lâm sàng"
+    >
+      <i class="bi bi-speedometer2"></i>
+      <span class="tab-label">Tổng Quan Quản Trị</span>
+      <span class="tab-badge">KPIs</span>
+    </a>
+
+    <!-- 2. Gói Dịch Vụ Nền Tảng (Service Packages) -->
+    <a
+      routerLink="/admin/service-package"
+      routerLinkActive="active"
+      class="admin-nav-tab"
+      title="Quản lý các gói hội viên và quyền lợi của Bác sĩ trên hệ thống"
+    >
+      <i class="bi bi-gem"></i>
+      <span class="tab-label">Gói Dịch Vụ Nền Tảng</span>
+      <span class="tab-badge">Packages</span>
+    </a>
+
+    <!-- 3. Ngân Hàng Đề Trắc Nghiệm Tâm Lý (Psychometrics) -->
+    <a
+      routerLink="/admin/psychometrics"
+      routerLinkActive="active"
+      class="admin-nav-tab"
+      title="Quản lý ngân hàng câu hỏi khảo sát tâm lý lâm sàng (DASS-21, GAD-7, PHQ-9)"
+    >
+      <i class="bi bi-clipboard2-pulse"></i>
+      <span class="tab-label">Đề Trắc Nghiệm Tâm Lý</span>
+      <span class="tab-badge">Bộ Đề Y Khoa</span>
+    </a>
+
+    <div class="tab-divider mx-1"></div>
+
+    <!-- 4. Quản Lý Tài Khoản -->
+    <a
+      routerLink="/user-management"
+      routerLinkActive="active"
+      class="admin-nav-tab secondary-tab"
+      title="Quản lý phân quyền và tài khoản người dùng"
+    >
+      <i class="bi bi-people"></i>
+      <span class="tab-label">Tài Khoản</span>
+    </a>
+
+    <!-- 5. Chuyên Gia Bác Sĩ -->
+    <a
+      routerLink="/doctor-profile"
+      routerLinkActive="active"
+      class="admin-nav-tab secondary-tab"
+      title="Danh sách hồ sơ và xác thực chuyên môn bác sĩ"
+    >
+      <i class="bi bi-person-badge"></i>
+      <span class="tab-label">Bác Sĩ</span>
+    </a>
+
+    <!-- 6. Giám Sát Kỹ Thuật -->
+    <a
+      routerLink="/admin/health"
+      routerLinkActive="active"
+      class="admin-nav-tab secondary-tab"
+      title="Kiểm tra trạng thái server và hạ tầng"
+    >
+      <i class="bi bi-activity"></i>
+      <span class="tab-label">Giám Sát (Health)</span>
+    </a>
+  </nav>
+</header>

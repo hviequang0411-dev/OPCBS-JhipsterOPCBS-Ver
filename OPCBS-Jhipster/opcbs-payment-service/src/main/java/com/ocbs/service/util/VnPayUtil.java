@@ -10,9 +10,14 @@ public final class VnPayUtil {
 
     public static final String VNP_VERSION = "2.1.0";
     public static final String VNP_COMMAND = "pay";
-    public static final String VNP_TMN_CODE = "OPCBSDEMO";
-    public static final String VNP_HASH_SECRET = "OPCBSVNPAYHASHSECRETDEMO202610";
-    public static final String VNP_PAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+    public static final String DEFAULT_TMN_CODE = "OPCBSDEMO";
+    public static final String DEFAULT_HASH_SECRET = "OPCBSVNPAYHASHSECRETDEMO202610";
+    public static final String DEFAULT_PAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+
+    // Backward compatibility constants
+    public static final String VNP_TMN_CODE = DEFAULT_TMN_CODE;
+    public static final String VNP_HASH_SECRET = DEFAULT_HASH_SECRET;
+    public static final String VNP_PAY_URL = DEFAULT_PAY_URL;
 
     private VnPayUtil() {}
 
@@ -37,7 +42,8 @@ public final class VnPayUtil {
         }
     }
 
-    public static String hashAllFields(Map<String, String> fields) {
+    public static String hashAllFields(Map<String, String> fields, String secretKey) {
+        String key = (secretKey != null && !secretKey.isBlank()) ? secretKey : DEFAULT_HASH_SECRET;
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         Collections.sort(fieldNames);
         StringBuilder sb = new StringBuilder();
@@ -54,10 +60,14 @@ public final class VnPayUtil {
                 }
             }
         }
-        return hmacSHA512(VNP_HASH_SECRET, sb.toString());
+        return hmacSHA512(key, sb.toString());
     }
 
-    public static boolean verifyCallbackSignature(Map<String, String> vnpParams) {
+    public static String hashAllFields(Map<String, String> fields) {
+        return hashAllFields(fields, DEFAULT_HASH_SECRET);
+    }
+
+    public static boolean verifyCallbackSignature(Map<String, String> vnpParams, String secretKey) {
         String secureHash = vnpParams.get("vnp_SecureHash");
         if (secureHash == null || secureHash.isBlank()) {
             return false;
@@ -66,7 +76,11 @@ public final class VnPayUtil {
         paramsToHash.remove("vnp_SecureHash");
         paramsToHash.remove("vnp_SecureHashType");
 
-        String calculatedHash = hashAllFields(paramsToHash);
+        String calculatedHash = hashAllFields(paramsToHash, secretKey);
         return secureHash.equalsIgnoreCase(calculatedHash);
+    }
+
+    public static boolean verifyCallbackSignature(Map<String, String> vnpParams) {
+        return verifyCallbackSignature(vnpParams, DEFAULT_HASH_SECRET);
     }
 }

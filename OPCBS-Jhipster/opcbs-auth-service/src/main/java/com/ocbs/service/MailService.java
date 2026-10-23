@@ -72,16 +72,20 @@ public class MailService {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name());
             message.setTo(to);
             String from = jHipsterProperties.getMail().getFrom();
-            if (from == null || from.isBlank() || from.contains("localhost")) {
-                from = "mindbridge.healthcare.system@gmail.com";
+            if (from == null || from.isBlank() || from.contains("localhost") || from.contains("mindbridge.local")) {
+                from = "quanghvhe161464@fpt.edu.vn";
             }
-            message.setFrom(from);
+            try {
+                message.setFrom(from, "MindBridge Healthcare");
+            } catch (Exception ignored) {
+                message.setFrom(from);
+            }
             message.setSubject(subject);
             message.setText(content, isHtml);
             javaMailSender.send(mimeMessage);
             LOG.info("✅ [MailService] Gửi email THỰC TẾ thành công tới: '{}' (Tiêu đề: {})", to, subject);
-        } catch (MailException | MessagingException e) {
-            LOG.warn("❌ [MailService] Không thể gửi email thực tế tới '{}': {}. Vui lòng kiểm tra SPRING_MAIL_USERNAME và SPRING_MAIL_PASSWORD (App Password).", to, e.getMessage());
+        } catch (Exception e) {
+            LOG.error("❌ [MailService] Không thể gửi email thực tế tới '{}': {}. Vui lòng kiểm tra SPRING_MAIL_USERNAME và SPRING_MAIL_PASSWORD (App Password).", to, e.getMessage(), e);
         }
     }
 
@@ -149,12 +153,12 @@ public class MailService {
                   <p class="brand-sub">Nền Tảng Chăm Sóc Sức Khỏe & Tư Vấn Y Tế Tâm Lý</p>
                 </div>
                 <div class="email-body">
-                  <div class="greeting">Xin chào %s,</div>
+                  <div class="greeting">Xin chào {{LOGIN}},</div>
                   <p>Cảm ơn bạn đã đăng ký tài khoản tại MindBridge. Vui lòng sử dụng mã xác thực OTP dưới đây để hoàn tất việc kích hoạt tài khoản của bạn:</p>
-                  
+
                   <div class="otp-box">
                     <div class="otp-label">MÃ XÁC THỰC OTP (Hiệu lực trong 10 phút)</div>
-                    <div class="otp-code">%s</div>
+                    <div class="otp-code">{{OTP}}</div>
                   </div>
 
                   <p class="warning-text">
@@ -167,7 +171,9 @@ public class MailService {
               </div>
             </body>
             </html>
-            """.formatted(user.getLogin(), otp);
+            """
+            .replace("{{LOGIN}}", user.getLogin())
+            .replace("{{OTP}}", otp);
 
         sendEmailSync(user.getEmail(), subject, htmlContent, false, true);
     }

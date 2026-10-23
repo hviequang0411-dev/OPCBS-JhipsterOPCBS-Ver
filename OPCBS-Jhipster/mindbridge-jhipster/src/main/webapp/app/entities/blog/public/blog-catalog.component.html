@@ -1,0 +1,117 @@
+<div class="blog-catalog-container py-4">
+  <!-- Hero Section (Clone C# Gốc) -->
+  <div class="hero-banner rounded-4 p-5 mb-5 text-center text-white" style="background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);">
+    <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill mb-3" style="background: rgba(255,255,255,0.15); font-size: 0.82rem;">
+      <i class="bi bi-journal-medical"></i>
+      <span>GÓC NHÌN CHUYÊN GIA &bull; BÁC SĨ TÂM LÝ</span>
+    </div>
+    <h1 class="display-5 fw-bold mb-3">Kiến Thức Y Khoa &amp; Sức Khỏe Tinh Thần</h1>
+    <p class="lead mx-auto mb-4" style="max-width: 650px; opacity: 0.9; font-size: 1.05rem;">
+      Khám phá các bài viết chuyên sâu về tâm lý học, phương pháp trị liệu nhận thức hành vi (CBT) và lời khuyên y khoa được kiểm duyệt bởi hội đồng chuyên môn.
+    </p>
+
+    <!-- Search Box -->
+    <div class="search-container mx-auto" style="max-width: 540px;">
+      <div class="input-group input-group-lg bg-white rounded-pill p-1 shadow">
+        <span class="input-group-text bg-transparent border-0 text-muted ps-3">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          class="form-control border-0 shadow-none ps-2" 
+          placeholder="Tìm kiếm chủ đề, lo âu, trầm cảm, giấc ngủ..." 
+          [(ngModel)]="searchKeyword" 
+          (keyup.enter)="onSearch()"
+        />
+        <button class="btn btn-teal text-white rounded-pill px-4 fw-semibold" (click)="onSearch()">
+          Tìm kiếm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-teal" style="width: 2.5rem; height: 2.5rem;" role="status"></div>
+    <p class="text-muted mt-3 small">Đang tải danh sách bài viết chuyên môn...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && blogs.length === 0" class="text-center py-5 card border-0 shadow-sm rounded-4">
+    <div class="card-body py-5">
+      <i class="bi bi-journal-x d-block mb-3" style="font-size: 3.5rem; color: #cbd5e1;"></i>
+      <h5 class="fw-bold text-dark mb-1">Không tìm thấy bài viết nào phù hợp</h5>
+      <p class="text-muted small mb-3">Hãy thử tìm kiếm với từ khóa khác hoặc xem tất cả bài viết.</p>
+      <button *ngIf="searchKeyword" class="btn btn-sm btn-outline-teal px-4 py-2" (click)="clearSearch()">
+        Xem tất cả bài viết
+      </button>
+    </div>
+  </div>
+
+  <!-- Blog Cards Grid -->
+  <div *ngIf="!isLoading && blogs.length > 0" class="row g-4 mb-5">
+    <div *ngFor="let blog of blogs" class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden blog-card">
+        <!-- Thumbnail -->
+        <div class="blog-thumb-box position-relative" style="height: 200px; background: #e2e8f0; overflow: hidden;">
+          <img 
+            [src]="blog.thumbnailUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80'" 
+            class="w-100 h-100 object-fit-cover" 
+            alt="{{ blog.title }}"
+          />
+          <span class="badge position-absolute top-0 end-0 m-3 px-2.5 py-1.5 rounded-pill bg-teal text-white" style="font-size: 0.75rem;">
+            Y Khoa Tâm Lý
+          </span>
+        </div>
+
+        <div class="card-body p-4 d-flex flex-column">
+          <!-- Author Info & Date -->
+          <div class="d-flex align-items-center gap-2 mb-2.5 text-muted" style="font-size: 0.8rem;">
+            <div class="avatar-xs rounded-circle bg-light border d-flex align-items-center justify-content-center text-teal fw-bold" style="width: 26px; height: 26px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <span class="fw-semibold text-dark">{{ blog.doctor?.fullName || 'Bác sĩ chuyên khoa' }}</span>
+            <span>&bull;</span>
+            <span>{{ blog.publishedAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <!-- Title -->
+          <h5 class="card-title fw-bold text-dark mb-2 blog-title" style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            <a [routerLink]="['/blogs', blog.id]" class="text-dark text-decoration-none hover-teal">
+              {{ blog.title }}
+            </a>
+          </h5>
+
+          <!-- Excerpt -->
+          <p class="card-text text-secondary small mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+            {{ blog.excerpt || blog.content }}
+          </p>
+
+          <!-- Footer: View count & Link -->
+          <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+              <i class="bi bi-eye"></i> {{ blog.viewCount || 0 }} lượt xem
+            </span>
+            <a [routerLink]="['/blogs', blog.id]" class="fw-bold text-teal text-decoration-none small d-flex align-items-center gap-1">
+              <span>Đọc tiếp</span>
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="totalPages > 1" class="d-flex justify-content-center gap-2 mt-4">
+    <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage === 0" (click)="loadBlogs(currentPage - 1)">
+      <i class="bi bi-chevron-left me-1"></i>Trang trước
+    </button>
+    <span class="d-flex align-items-center px-3 small text-muted">
+      Trang {{ currentPage + 1 }} / {{ totalPages }}
+    </span>
+    <button class="btn btn-sm btn-outline-secondary" [disabled]="currentPage === totalPages - 1" (click)="loadBlogs(currentPage + 1)">
+      Trang sau<i class="bi bi-chevron-right ms-1"></i>
+    </button>
+  </div>
+</div>

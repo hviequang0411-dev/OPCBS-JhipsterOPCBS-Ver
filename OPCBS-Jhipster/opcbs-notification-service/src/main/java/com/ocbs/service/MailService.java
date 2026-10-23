@@ -56,14 +56,18 @@ public class MailService {
         sendEmailSync(to, subject, content, isMultipart, isHtml);
     }
 
+    /** Synchronous entry point used by the Rabbit worker so ACK follows SMTP completion. */
+    public void sendEmailAndWait(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
+        sendEmailSync(to, subject, content, isMultipart, isHtml);
+    }
+
     private void sendEmailSync(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         LOG.debug(
-            "Send email[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
+            "Send email[multipart '{}' and html '{}'] to '{}' with subject '{}'",
             isMultipart,
             isHtml,
             to,
-            subject,
-            content
+            subject
         );
 
         // Prepare message using a Spring helper
@@ -71,13 +75,22 @@ public class MailService {
         try {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name());
             message.setTo(to);
-            message.setFrom(jHipsterProperties.getMail().getFrom());
+            String from = jHipsterProperties.getMail().getFrom();
+            if (from == null || from.isBlank() || from.contains("localhost") || from.contains("mindbridge.local")) {
+                from = "quanghvhe161464@fpt.edu.vn";
+            }
+            try {
+                message.setFrom(from, "MindBridge");
+            } catch (Exception ignored) {
+                message.setFrom(from);
+            }
             message.setSubject(subject);
             message.setText(content, isHtml);
             javaMailSender.send(mimeMessage);
-            LOG.debug("Sent email to User '{}'", to);
+            LOG.info("📧 [JavaMailSender] Successfully sent email to '{}' [Subject: '{}']", to, subject);
         } catch (MailException | MessagingException e) {
-            LOG.warn("Email could not be sent to user '{}'", to, e);
+            LOG.error("❌ [JavaMailSender] Email could not be sent to user '{}' [Subject: '{}']: {}", to, subject, e.getMessage());
+            throw new IllegalStateException("Email delivery failed", e);
         }
     }
 

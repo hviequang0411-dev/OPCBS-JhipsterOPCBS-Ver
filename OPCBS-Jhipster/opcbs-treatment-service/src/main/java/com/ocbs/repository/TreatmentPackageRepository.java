@@ -28,5 +28,9 @@ public interface TreatmentPackageRepository extends JpaRepository<TreatmentPacka
 
     @Query("select tp from TreatmentPackage tp left join fetch tp.doctor d left join fetch tp.patient p where tp.patient.id = :patientId and tp.status = com.ocbs.domain.enumeration.TreatmentPackageStatus.ACTIVE and tp.remainingSessions > 0 order by tp.createdDate asc")
     List<TreatmentPackage> findActivePackagesByPatient(@Param("patientId") Long patientId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select tp from TreatmentPackage tp where tp.id = :id")
+    Optional<TreatmentPackage> findByIdForUpdate(@Param("id") Long id);
 }
 

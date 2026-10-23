@@ -21,7 +21,16 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @Query("SELECT c FROM Conversation c WHERE (c.patientId = :userId OR c.doctorId = :userId) ORDER BY c.lastMessageTime DESC")
     List<Conversation> findAllByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT c FROM Conversation c WHERE (c.patientId IN :ids OR c.doctorId IN :ids) ORDER BY c.lastMessageTime DESC")
+    List<Conversation> findAllByParticipantIds(@Param("ids") java.util.Collection<Long> ids);
+
     Optional<Conversation> findByPatientIdAndDoctorId(Long patientId, Long doctorId);
+
+    @Query("SELECT c FROM Conversation c WHERE (c.doctorId IN :doctorIds AND c.patientId IN :patientIds)")
+    List<Conversation> findExistingConversationsBetween(
+        @Param("doctorIds") java.util.Collection<Long> doctorIds,
+        @Param("patientIds") java.util.Collection<Long> patientIds
+    );
 
     Optional<Conversation> findByAppointmentId(Long appointmentId);
 }

@@ -8,6 +8,11 @@
   <div class="mb-portal-container">
     <jhi-sidebar />
     <main class="mb-portal-main">
+      @if (isAdminModule()) {
+        <jhi-admin-navbar />
+      } @else if (isDoctorModule()) {
+        <jhi-doctor-navbar />
+      }
       <router-outlet />
     </main>
   </div>

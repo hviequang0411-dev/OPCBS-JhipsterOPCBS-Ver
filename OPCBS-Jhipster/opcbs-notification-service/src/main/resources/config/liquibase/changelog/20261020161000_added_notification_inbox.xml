@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Bảng Idempotent Inbox cho Kafka Consumer trong Notification Service -->
+    <changeSet id="20261020161000-1" author="opcbs">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="notification_inbox"/>
+            </not>
+        </preConditions>
+        <createTable tableName="notification_inbox">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="event_id" type="varchar(100)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="ux_notif_inbox_event"/>
+            </column>
+            <column name="idempotency_key" type="varchar(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_type" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="consumer_group" type="varchar(100)" defaultValue="notification-service-group">
+                <constraints nullable="false"/>
+            </column>
+            <column name="processed_at" type="${datetimeType}" defaultValueComputed="CURRENT_TIMESTAMP(6)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="notification_inbox"
+            columnNames="consumer_group, idempotency_key"
+            constraintName="ux_notif_inbox_key"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,417 @@
+<div class="admin-verification-container">
+  <!-- PAGE HEADER -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small fw-semibold">
+          <i class="bi bi-shield-check me-1"></i>Hệ Thống Thẩm Định Y Khoa
+        </span>
+      </div>
+      <h1 class="page-title mt-2 mb-1">
+        <i class="bi bi-patch-check-fill text-primary me-2"></i>Duyệt Chứng Chỉ & Hồ Sơ Bác Sĩ
+      </h1>
+      <p class="text-muted small mb-0">
+        Thẩm định bằng cấp, giấy phép hành nghề y tế và phê duyệt tài khoản bác sĩ trước khi mở lịch khám trên nền tảng
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" (click)="loadVerifications()" [disabled]="isLoading()">
+        <i class="bi bi-arrow-clockwise me-1" [class.spin]="isLoading()"></i>Làm Mới
+      </button>
+    </div>
+  </div>
+
+  <!-- SUCCESS & ERROR ALERTS -->
+  @if (actionSuccess()) {
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 py-2 px-3 small d-flex align-items-center mb-3">
+      <i class="bi bi-check-circle-fill fs-5 text-success me-2"></i>
+      <span class="flex-grow-1">{{ actionSuccess() }}</span>
+      <button type="button" class="btn-close btn-close-sm" (click)="actionSuccess.set(null)"></button>
+    </div>
+  }
+
+  <!-- METRIC SUMMARY CARDS -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card" (click)="onFilterStatus('ALL')" [class.active-filter]="currentStatus() === 'ALL'">
+        <div class="stat-icon bg-primary-subtle text-primary">
+          <i class="bi bi-collection-fill"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-dark">{{ summary().total }}</div>
+          <div class="stat-label text-muted">Tổng Hồ Sơ</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card" (click)="onFilterStatus('SUBMITTED')" [class.active-filter]="currentStatus() === 'SUBMITTED'">
+        <div class="stat-icon bg-warning-subtle text-warning">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-warning-emphasis">{{ summary().submitted }}</div>
+          <div class="stat-label text-muted">Chờ Phê Duyệt</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card" (click)="onFilterStatus('REQUIRES_ADDITIONAL_INFO')" [class.active-filter]="currentStatus() === 'REQUIRES_ADDITIONAL_INFO'">
+        <div class="stat-icon bg-info-subtle text-info">
+          <i class="bi bi-info-circle-fill"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-info-emphasis">{{ summary().requiresAdditionalInfo }}</div>
+          <div class="stat-label text-muted">Cần Bổ Sung</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card" (click)="onFilterStatus('APPROVED')" [class.active-filter]="currentStatus() === 'APPROVED'">
+        <div class="stat-icon bg-success-subtle text-success">
+          <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-success-emphasis">{{ summary().approved }}</div>
+          <div class="stat-label text-muted">Đã Thẩm Định</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR: FILTER TABS & SEARCH -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4 filter-toolbar-card">
+    <div class="card-body p-3">
+      <div class="row g-3 align-items-center">
+        <!-- Search Input -->
+        <div class="col-lg-5 col-md-6">
+          <div class="input-group search-input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted ps-3">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control border-start-0 ps-2"
+              placeholder="Tìm theo tên bác sĩ, số CCHN, chuyên khoa..."
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onSearch()"
+            />
+            @if (searchTerm()) {
+              <button class="btn btn-link text-muted border-0 pe-3" type="button" (click)="clearSearch()">
+                <i class="bi bi-x-circle-fill"></i>
+              </button>
+            }
+            <button class="btn btn-primary px-3 fw-semibold" type="button" (click)="onSearch()">
+              Tìm Kiếm
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Status Tabs -->
+        <div class="col-lg-7 col-md-6 d-flex gap-2 flex-wrap justify-content-md-end">
+          <button
+            class="btn btn-sm rounded-pill px-3 filter-tab-btn"
+            [class.active]="currentStatus() === 'ALL'"
+            (click)="onFilterStatus('ALL')"
+          >
+            Tất Cả
+          </button>
+          <button
+            class="btn btn-sm rounded-pill px-3 filter-tab-btn"
+            [class.active]="currentStatus() === 'SUBMITTED'"
+            (click)="onFilterStatus('SUBMITTED')"
+          >
+            <i class="bi bi-hourglass me-1"></i>Chờ Duyệt
+            @if (summary().submitted > 0) {
+              <span class="badge bg-warning text-dark ms-1 rounded-pill">{{ summary().submitted }}</span>
+            }
+          </button>
+          <button
+            class="btn btn-sm rounded-pill px-3 filter-tab-btn"
+            [class.active]="currentStatus() === 'REQUIRES_ADDITIONAL_INFO'"
+            (click)="onFilterStatus('REQUIRES_ADDITIONAL_INFO')"
+          >
+            <i class="bi bi-question-circle me-1"></i>Cần Bổ Sung
+            @if (summary().requiresAdditionalInfo > 0) {
+              <span class="badge bg-info text-white ms-1 rounded-pill">{{ summary().requiresAdditionalInfo }}</span>
+            }
+          </button>
+          <button
+            class="btn btn-sm rounded-pill px-3 filter-tab-btn"
+            [class.active]="currentStatus() === 'APPROVED'"
+            (click)="onFilterStatus('APPROVED')"
+          >
+            <i class="bi bi-check-lg me-1"></i>Đã Duyệt
+          </button>
+          <button
+            class="btn btn-sm rounded-pill px-3 filter-tab-btn"
+            [class.active]="currentStatus() === 'REJECTED'"
+            (click)="onFilterStatus('REJECTED')"
+          >
+            <i class="bi bi-x-lg me-1"></i>Từ Chối
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VERIFICATION TABLE CARD -->
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 table-card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 verification-table">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4 py-3">Bác Sĩ Ứng Tuyển</th>
+            <th class="py-3">Số Giấy Phép (CCHN)</th>
+            <th class="py-3">Chuyên Khoa & Kinh Nghiệm</th>
+            <th class="py-3">Tài Liệu / Chứng Chỉ</th>
+            <th class="py-3">Trạng Thái</th>
+            <th class="py-3">Ngày Gửi</th>
+            <th class="text-end pe-4 py-3">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                <span class="text-muted small">Đang tải danh sách hồ sơ xác thực...</span>
+              </td>
+            </tr>
+          } @else if (verifications().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <div class="empty-state py-3">
+                  <div class="empty-icon bg-light text-muted rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <i class="bi bi-folder2-open fs-2"></i>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-1">Không Có Hồ Sơ Nào</h6>
+                  <p class="text-muted small mb-0">Không tìm thấy hồ sơ bác sĩ phù hợp với tiêu chí lọc hiện tại.</p>
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (v of verifications(); track v.id) {
+              @let badge = getStatusBadge(v.status);
+              <tr>
+                <!-- Doctor Info Column -->
+                <td class="ps-4 py-3">
+                  <div class="d-flex align-items-center gap-3">
+                    @if (v.avatarUrl) {
+                      <img [src]="v.avatarUrl" [alt]="v.doctorName" class="rounded-circle border shadow-xs avatar-img" />
+                    } @else {
+                      <div class="avatar-placeholder rounded-circle fw-bold text-white shadow-xs">
+                        {{ getInitials(v.doctorName) }}
+                      </div>
+                    }
+                    <div>
+                      <div class="fw-bold text-dark doctor-name">
+                        {{ v.doctorName || 'Bác Sĩ Tâm Lý' }}
+                      </div>
+                      <div class="text-muted small">
+                        {{ v.education || 'Bác Sĩ Chuyên Khoa' }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- License Number -->
+                <td class="py-3">
+                  @if (v.licenseNumber) {
+                    <code class="license-badge px-2 py-1 rounded">
+                      <i class="bi bi-file-earmark-lock me-1"></i>{{ v.licenseNumber }}
+                    </code>
+                  } @else {
+                    <span class="text-muted small">—</span>
+                  }
+                </td>
+
+                <!-- Specialization & Experience -->
+                <td class="py-3">
+                  <div class="fw-semibold text-dark small">{{ v.specialization || 'Tâm Lý Học Lâm Sàng' }}</div>
+                  <div class="text-muted text-xs">
+                    <i class="bi bi-briefcase me-1"></i>{{ v.experienceYears || 0 }} năm kinh nghiệm
+                  </div>
+                </td>
+
+                <!-- Certificate File Preview Badge -->
+                <td class="py-3">
+                  @if (v.certificateUrl) {
+                    <a [href]="v.certificateUrl" target="_blank" rel="noopener noreferrer" class="certificate-pill d-inline-flex align-items-center gap-1 text-decoration-none">
+                      <i class="bi bi-file-earmark-medical-fill text-primary"></i>
+                      <span class="cert-name text-truncate" style="max-width: 140px;">{{ v.certificateFileName || 'Xem Chứng Chỉ' }}</span>
+                      <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.7rem;"></i>
+                    </a>
+                  } @else {
+                    <span class="badge bg-light text-muted border fw-normal small">Chưa đính kèm</span>
+                  }
+                </td>
+
+                <!-- Status Badge -->
+                <td class="py-3">
+                  <span class="status-badge" [ngClass]="badge.class">
+                    <i class="bi me-1" [ngClass]="badge.icon"></i>{{ badge.label }}
+                  </span>
+                </td>
+
+                <!-- Submitted Date -->
+                <td class="py-3 text-muted small">
+                  <div>{{ v.submittedAt ? (v.submittedAt | date:'dd/MM/yyyy') : '—' }}</div>
+                  <div class="text-xs text-secondary">{{ v.submittedAt ? (v.submittedAt | date:'HH:mm') : '' }}</div>
+                </td>
+
+                <!-- Actions -->
+                <td class="text-end pe-4 py-3">
+                  <div class="d-flex justify-content-end align-items-center gap-2">
+                    <!-- View Detail Button -->
+                    <a [routerLink]="['/admin/doctor-verifications', v.id]" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold view-detail-btn shadow-xs">
+                      <i class="bi bi-eye me-1"></i>Xem & Duyệt
+                    </a>
+
+                    <!-- Inline Quick Actions Dropdown (Only for Pending / Info Needed) -->
+                    @if (v.status === 'SUBMITTED' || v.status === 'PENDING' || v.status === 'REQUIRES_ADDITIONAL_INFO') {
+                      <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 dropdown-toggle-no-caret" style="width: 32px; height: 32px;" type="button" data-bs-toggle="dropdown">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2 rounded-3">
+                          <li>
+                            <button class="dropdown-item text-success py-2 d-flex align-items-center gap-2" (click)="openQuickAction(v, 'APPROVE')">
+                              <i class="bi bi-check-circle-fill"></i>Phê Duyệt Nhanh
+                            </button>
+                          </li>
+                          <li>
+                            <button class="dropdown-item text-info py-2 d-flex align-items-center gap-2" (click)="openQuickAction(v, 'REQUEST_INFO')">
+                              <i class="bi bi-question-circle-fill"></i>Yêu Cầu Bổ Sung
+                            </button>
+                          </li>
+                          <li><hr class="dropdown-divider my-1"></li>
+                          <li>
+                            <button class="dropdown-item text-danger py-2 d-flex align-items-center gap-2" (click)="openQuickAction(v, 'REJECT')">
+                              <i class="bi bi-x-circle-fill"></i>Từ Chối Hồ Sơ
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION FOOTER -->
+    @if (totalPages() > 1) {
+      <div class="card-footer bg-white border-top p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="text-muted small">
+          Hiển thị <strong>{{ verifications().length }}</strong> trên tổng số <strong>{{ totalElements() }}</strong> hồ sơ
+        </div>
+        <div class="d-flex gap-1 align-items-center">
+          <button class="btn btn-outline-secondary btn-sm rounded-2" [disabled]="currentPage() === 0" (click)="goToPage(currentPage() - 1)">
+            <i class="bi bi-chevron-left me-1"></i>Trước
+          </button>
+          <span class="px-2 small text-muted">Trang {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+          <button class="btn btn-outline-secondary btn-sm rounded-2" [disabled]="currentPage() >= totalPages() - 1" (click)="goToPage(currentPage() + 1)">
+            Sau<i class="bi bi-chevron-right ms-1"></i>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- QUICK ACTION MODAL (APPROVE / REJECT / REQUEST INFO) -->
+@if (selectedForQuickAction()) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header border-bottom py-3 px-4" [ngClass]="{
+          'bg-success-subtle': quickActionType() === 'APPROVE',
+          'bg-danger-subtle': quickActionType() === 'REJECT',
+          'bg-info-subtle': quickActionType() === 'REQUEST_INFO'
+        }">
+          <h5 class="modal-title fw-bold fs-6 mb-0" [ngClass]="{
+            'text-success-emphasis': quickActionType() === 'APPROVE',
+            'text-danger-emphasis': quickActionType() === 'REJECT',
+            'text-info-emphasis': quickActionType() === 'REQUEST_INFO'
+          }">
+            @if (quickActionType() === 'APPROVE') {
+              <i class="bi bi-check-circle-fill me-2"></i>Xác Nhận Phê Duyệt Hồ Sơ
+            } @else if (quickActionType() === 'REJECT') {
+              <i class="bi bi-x-circle-fill me-2"></i>Từ Chối Hồ Sơ Bác Sĩ
+            } @else {
+              <i class="bi bi-question-circle-fill me-2"></i>Yêu Cầu Bổ Sung Thông Tin
+            }
+          </h5>
+          <button type="button" class="btn-close" (click)="closeQuickAction()" [disabled]="isActionLoading()"></button>
+        </div>
+        <div class="modal-body p-4">
+          @if (actionError()) {
+            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ actionError() }}
+            </div>
+          }
+
+          <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 mb-3">
+            <div class="avatar-placeholder rounded-circle fw-bold text-white" style="width: 44px; height: 44px; font-size: 1rem;">
+              {{ getInitials(selectedForQuickAction()?.doctorName) }}
+            </div>
+            <div>
+              <div class="fw-bold text-dark">{{ selectedForQuickAction()?.doctorName }}</div>
+              <div class="text-muted small">{{ selectedForQuickAction()?.specialization }} • Số CCHN: {{ selectedForQuickAction()?.licenseNumber || '—' }}</div>
+            </div>
+          </div>
+
+          @if (quickActionType() === 'APPROVE') {
+            <p class="small text-muted mb-0">
+              Bạn có chắc chắn muốn phê duyệt chứng chỉ y khoa và kích hoạt tài khoản bác sĩ này? Sau khi duyệt, bác sĩ sẽ xuất hiện công khai trên cổng khám bệnh và có thể mở lịch hẹn tư vấn.
+            </p>
+          } @else if (quickActionType() === 'REJECT') {
+            <label class="form-label small fw-semibold text-dark">Lý do từ chối hồ sơ <span class="text-danger">*</span></label>
+            <textarea
+              class="form-control form-control-sm rounded-3"
+              rows="3"
+              placeholder="Nêu rõ lý do từ chối (bằng cấp không hợp lệ, chứng chỉ hết hạn, v.v.)..."
+              [(ngModel)]="quickActionReason"
+            ></textarea>
+          } @else {
+            <label class="form-label small fw-semibold text-dark">Tài liệu / Thông tin cần bổ sung <span class="text-danger">*</span></label>
+            <textarea
+              class="form-control form-control-sm rounded-3"
+              rows="3"
+              placeholder="Mô tả cụ thể giấy tờ cần bổ sung để bác sĩ cập nhật lại..."
+              [(ngModel)]="quickActionReason"
+            ></textarea>
+          }
+        </div>
+        <div class="modal-footer border-top bg-light p-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" (click)="closeQuickAction()" [disabled]="isActionLoading()">
+            Hủy Bỏ
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm rounded-pill px-4 fw-semibold"
+            [ngClass]="{
+              'btn-success': quickActionType() === 'APPROVE',
+              'btn-danger': quickActionType() === 'REJECT',
+              'btn-info text-white': quickActionType() === 'REQUEST_INFO'
+            }"
+            (click)="executeQuickAction()"
+            [disabled]="isActionLoading()"
+          >
+            @if (isActionLoading()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...
+            } @else {
+              @if (quickActionType() === 'APPROVE') { Phê Duyệt Ngay }
+              @else if (quickActionType() === 'REJECT') { Xác Nhận Từ Chối }
+              @else { Gửi Yêu Cầu }
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

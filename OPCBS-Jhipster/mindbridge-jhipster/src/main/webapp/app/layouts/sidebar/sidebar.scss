@@ -1,23 +1,28 @@
 /* ==========================================================================
    MindBridge Dashboard Sidebar Styles
+   Design: Clinical Healthcare Prime & Synchronized with Original C# Razor UI
    ========================================================================== */
 
 .mb-dash-sidebar {
-  width: 270px;
-  min-width: 270px;
+  --opcbs-brand: #0d766e;
+  --opcbs-brand-dark: #0b625c;
+  --opcbs-brand-soft: #f0fdfa;
+  --opcbs-icon: #0d766e;
+  width: 275px;
+  min-width: 275px;
   height: 100vh;
   position: sticky;
   top: 0;
   background: #ffffff;
   border-right: 1.5px solid #e2e8f0;
-  padding: 1.25rem 0.95rem;
+  padding: 1.15rem 0.95rem;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 1020;
-  box-shadow: 2px 0 10px rgba(15, 23, 42, 0.02);
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.03);
 
   /* Slim scrollbar */
   &::-webkit-scrollbar {
@@ -32,23 +37,37 @@
   }
 
   .sidebar-brand {
-    padding: 0.35rem 0.5rem 0.85rem 0.5rem;
+    padding: 0.25rem 0.5rem 0.85rem 0.5rem;
     border-bottom: 1.5px solid #f1f5f9;
 
+    .sidebar-brand-emblem {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0d766e 0%, #0f766e 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 6px rgba(13, 118, 110, 0.25);
+    }
+
     .sidebar-brand-title {
-      font-size: 1.15rem;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 1.18rem;
       font-weight: 850;
       color: #0f172a;
       letter-spacing: -0.02em;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .sidebar-brand-sub {
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       font-weight: 750;
-      color: #0f766e;
+      color: #0d766e;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
   }
 
@@ -56,84 +75,129 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    flex: 1 1 auto;
+    margin-top: 0.35rem;
+    margin-bottom: 0.5rem;
 
     .sb-section-label {
-      font-size: 0.7rem;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-size: 0.72rem;
       font-weight: 850;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       color: #64748b;
       text-transform: uppercase;
-      padding: 0.75rem 0.75rem 0.25rem 0.75rem;
+      padding: 0.85rem 0.75rem 0.3rem 0.75rem;
     }
+  }
 
-    .sb-divider {
-      height: 1.5px;
-      background: #f1f5f9;
-      margin: 0.5rem 0;
-    }
+  .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
 
-    .sb-link {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.65rem 0.85rem;
-      border-radius: 8px;
+  .sidebar-user-box {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    transition: all 0.2s ease;
+    border-radius: 10px;
+
+    .sidebar-user-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #0d766e 0%, #0284c7 100%);
+      color: #ffffff;
       font-size: 0.88rem;
-      font-weight: 700;
-      color: #334155;
-      text-decoration: none;
-      transition: all 0.15s ease;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+  }
+
+  .sb-divider {
+    height: 1.5px;
+    background: #f1f5f9;
+    margin: 0.45rem 0.35rem;
+  }
+
+  .sb-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.65rem 0.95rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+
+    i {
+      color: var(--opcbs-icon);
+      font-size: 1.25rem;
+      width: 1.35rem;
+      text-align: center;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.18s ease;
+    }
+
+    span {
+      line-height: 1.3;
+    }
+
+    &:hover {
+      background: #f0fdfa;
+      color: #0d766e;
 
       i {
-        font-size: 1.1rem;
-        color: #64748b;
-        transition: color 0.15s ease;
-      }
-
-      &:hover {
-        background: #f1f5f9;
-        color: #0f766e;
-
-        i {
-          color: #0f766e;
-        }
-      }
-
-      &.active {
-        background: #0f766e;
-        color: #ffffff !important;
-        font-weight: 800;
-        box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
-
-        i {
-          color: #ffffff !important;
-        }
-      }
-
-      &.sb-back-home {
-        background: #f0fdfa;
-        border: 1px solid #ccfbf1;
-        color: #0f766e;
-
-        &:hover {
-          background: #ccfbf1;
-        }
+        transform: scale(1.12);
       }
     }
 
-    .sb-logout {
-      padding: 0.65rem 0.85rem;
-      cursor: pointer;
-      font-weight: 700;
+    &.active {
+      background: #0d766e !important;
+      color: #ffffff !important;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(13, 118, 110, 0.28);
+
+      i {
+        color: #ffffff !important;
+        transform: none;
+      }
+    }
+
+    &.sb-back-home {
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      color: #0d766e;
 
       &:hover {
-        background: #fef2f2;
+        background: #ccfbf1;
       }
     }
   }
 
+  .sb-logout {
+    padding: 0.65rem 0.95rem;
+    cursor: pointer;
+    font-weight: 700;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #fef2f2;
+    }
+  }
+
   .text-teal {
-    color: #0f766e !important;
+    color: #0d766e !important;
   }
 }
 

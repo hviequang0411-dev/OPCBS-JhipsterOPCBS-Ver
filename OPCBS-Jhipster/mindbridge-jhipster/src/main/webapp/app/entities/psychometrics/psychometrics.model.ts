@@ -18,6 +18,9 @@ export interface IPsychometricTest {
   category?: string | null;
   purpose?: string | null;
   doctor?: IDoctorProfile | null;
+  createdByDoctor?: IDoctorProfile | null;
+  isSystemTemplate?: boolean | null;
+  instructions?: string | null;
   scoreRangesJson?: string | null;
   sourceUrl?: string | null;
   isActive?: boolean | null;

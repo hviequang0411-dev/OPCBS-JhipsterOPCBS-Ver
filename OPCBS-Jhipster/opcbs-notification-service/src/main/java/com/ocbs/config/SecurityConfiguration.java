@@ -67,6 +67,7 @@ public class SecurityConfiguration {
                     .requestMatchers("/api/account/reset-password/init").permitAll()
                     .requestMatchers("/api/account/reset-password/finish").permitAll()
                     .requestMatchers("/api/public/**").permitAll()
+                    .requestMatchers("/api/notifications/test-email").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/specializations", "/api/specializations/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/doctor-profiles", "/api/doctor-profiles/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/availability-slots", "/api/availability-slots/**").permitAll()

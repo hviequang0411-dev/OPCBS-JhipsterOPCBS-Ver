@@ -40,17 +40,20 @@ public class DoctorScheduleResource {
     private final DoctorProfileRepository doctorProfileRepository;
     private final AvailabilitySlotMapper availabilitySlotMapper;
     private final com.ocbs.repository.AppointmentRepository appointmentRepository;
+    private final com.ocbs.service.DoctorSubscriptionEnforcementService doctorSubscriptionEnforcementService;
 
     public DoctorScheduleResource(
         AvailabilitySlotRepository availabilitySlotRepository,
         DoctorProfileRepository doctorProfileRepository,
         AvailabilitySlotMapper availabilitySlotMapper,
-        com.ocbs.repository.AppointmentRepository appointmentRepository
+        com.ocbs.repository.AppointmentRepository appointmentRepository,
+        com.ocbs.service.DoctorSubscriptionEnforcementService doctorSubscriptionEnforcementService
     ) {
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.doctorProfileRepository = doctorProfileRepository;
         this.availabilitySlotMapper = availabilitySlotMapper;
         this.appointmentRepository = appointmentRepository;
+        this.doctorSubscriptionEnforcementService = doctorSubscriptionEnforcementService;
     }
 
     /**
@@ -134,6 +137,11 @@ public class DoctorScheduleResource {
             throw new BadRequestAlertException("Start time must be before end time", ENTITY_NAME, "invalidtimeorder");
         }
 
+        // Kiểm tra subscription và giới hạn số slot tối đa trong ngày (maxDailySlotsCapacity)
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate slotDate = vm.getStartTime().atZone(zone).toLocalDate();
+        doctorSubscriptionEnforcementService.validateDoctorCanCreateSlots(doctor, slotDate, 1);
+
         // Overlap check
         if (availabilitySlotRepository.existsOverlap(doctor.getId(), vm.getStartTime(), vm.getEndTime())) {
             throw new BadRequestAlertException("Slot overlaps with an existing time slot in your schedule", ENTITY_NAME, "slotoverlap");
@@ -163,6 +171,14 @@ public class DoctorScheduleResource {
     public ResponseEntity<List<AvailabilitySlotDTO>> batchCreateSlots(@Valid @RequestBody DoctorSlotVM.BatchCreateSlotVM vm) {
         DoctorProfile doctor = getCurrentDoctorProfile();
         LOG.debug("REST request to batch create slots for doctor ID: {}", doctor.getId());
+
+        // Kiểm tra subscription còn hiệu lực trước khi tạo batch
+        doctorSubscriptionEnforcementService.getActiveValidSubscription(doctor)
+            .orElseThrow(() -> new BadRequestAlertException(
+                "Bác sĩ chưa có gói dịch vụ nào đang kích hoạt hoặc gói dịch vụ đã hết hạn. Vui lòng đăng ký/gia hạn gói để tạo lịch làm việc.",
+                ENTITY_NAME,
+                "nosubscription"
+            ));
 
         LocalDate start = LocalDate.parse(vm.getStartDate());
         LocalDate end = LocalDate.parse(vm.getEndDate());
@@ -194,6 +210,7 @@ public class DoctorScheduleResource {
                 continue;
             }
 
+            List<AvailabilitySlot> dateSlots = new ArrayList<>();
             LocalTime currentSlotStart = dailyStart;
             while (true) {
                 LocalTime currentSlotEnd = currentSlotStart.plusMinutes(duration);
@@ -219,10 +236,16 @@ public class DoctorScheduleResource {
                     slot.setStatus(SlotStatus.AVAILABLE);
                     slot.setNotes(vm.getNotes());
                     slot.setDoctor(doctor);
-                    createdSlots.add(slot);
+                    dateSlots.add(slot);
                 }
 
                 currentSlotStart = currentSlotEnd;
+            }
+
+            if (!dateSlots.isEmpty()) {
+                // Kiểm tra giới hạn maxDailySlotsCapacity cho từng ngày cụ thể
+                doctorSubscriptionEnforcementService.validateDoctorCanCreateSlots(doctor, date, dateSlots.size());
+                createdSlots.addAll(dateSlots);
             }
         }
 
@@ -232,6 +255,16 @@ public class DoctorScheduleResource {
 
         List<AvailabilitySlot> savedSlots = availabilitySlotRepository.saveAll(createdSlots);
         return ResponseEntity.ok(availabilitySlotMapper.toDto(savedSlots));
+    }
+
+    /**
+     * {@code GET  /doctor/subscription-quota} : Lấy thông tin quyền lợi và hạn ngạch gói dịch vụ hiện hành của bác sĩ.
+     */
+    @GetMapping("/subscription-quota")
+    @Transactional(readOnly = true)
+    public ResponseEntity<com.ocbs.service.dto.DoctorSubscriptionQuotaDTO> getMySubscriptionQuota() {
+        DoctorProfile doctor = getCurrentDoctorProfile();
+        return ResponseEntity.ok(doctorSubscriptionEnforcementService.getDoctorSubscriptionQuota(doctor));
     }
 
     /**

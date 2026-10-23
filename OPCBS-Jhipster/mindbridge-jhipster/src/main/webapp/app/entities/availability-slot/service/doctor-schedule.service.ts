@@ -83,6 +83,10 @@ export class DoctorScheduleService {
     return this.http.delete<void>(`${this.resourceUrl}/slots/${id}`);
   }
 
+  getMySubscriptionQuota(): Observable<any> {
+    return this.http.get<any>(`${this.resourceUrl}/subscription-quota`);
+  }
+
   private convertValueFromServer(restSlot: RestAvailabilitySlot): IAvailabilitySlot {
     return {
       ...restSlot,

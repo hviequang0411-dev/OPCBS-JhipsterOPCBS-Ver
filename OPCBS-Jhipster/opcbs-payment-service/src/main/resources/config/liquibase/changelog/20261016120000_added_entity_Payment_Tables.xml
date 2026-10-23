@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <!-- 1. Bảng service_package (Nếu chưa tồn tại) -->
+    <changeSet id="20261016120000-1" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="service_package"/>
+            </not>
+        </preConditions>
+        <createTable tableName="service_package">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="varchar(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="${clobType}"/>
+            <column name="duration_days" type="int">
+                <constraints nullable="false"/>
+            </column>
+            <column name="price" type="decimal(21,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="max_patient_capacity" type="int"/>
+            <column name="max_daily_slots_capacity" type="int"/>
+            <column name="is_active" type="boolean" defaultValueBoolean="true"/>
+            <column name="is_featured" type="boolean" defaultValueBoolean="false"/>
+            <column name="display_order" type="int" defaultValueNumeric="0"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 2. Bảng doctor_subscription (Nếu chưa tồn tại) -->
+    <changeSet id="20261016120000-2" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="doctor_subscription"/>
+            </not>
+        </preConditions>
+        <createTable tableName="doctor_subscription">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="doctor_id" type="bigint"/>
+            <column name="doctor_login" type="varchar(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="service_package_id" type="bigint"/>
+            <column name="service_package_name" type="varchar(150)"/>
+            <column name="status" type="varchar(50)" defaultValue="PENDING_PAYMENT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="start_date" type="${datetimeType}"/>
+            <column name="expiration_date" type="${datetimeType}"/>
+            <column name="price" type="decimal(21,2)"/>
+            <column name="transaction_code" type="varchar(100)"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 3. Bảng payment_transaction (Cho DB mới hoàn toàn) -->
+    <changeSet id="20261016120000-3" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="payment_transaction"/>
+            </not>
+        </preConditions>
+        <createTable tableName="payment_transaction">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="transaction_code" type="varchar(100)">
+                <constraints primaryKey="false" unique="true" nullable="false"/>
+            </column>
+            <column name="subscription_id" type="bigint"/>
+            <column name="doctor_id" type="bigint"/>
+            <column name="doctor_login" type="varchar(100)"/>
+            <column name="amount" type="decimal(21,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_method" type="varchar(50)" defaultValue="VNPAY">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_status" type="varchar(50)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_url" type="varchar(1000)"/>
+            <column name="vnp_transaction_no" type="varchar(100)"/>
+            <column name="response_code" type="varchar(50)"/>
+            <column name="response_message" type="varchar(500)"/>
+            <column name="paid_at" type="${datetimeType}"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+    </changeSet>
+
+    <!-- 4. Hỗ trợ Migration an toàn cho Database ĐÃ TỒN TẠI (tạo từ create_tables.sql cũ) -->
+    <!-- 4a. Bổ sung cột payment_status nếu bảng đã tồn tại nhưng thiếu cột -->
+    <changeSet id="20261016120000-4a" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="payment_status"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="payment_status" type="varchar(50)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- 4b. Đồng bộ dữ liệu status cũ sang payment_status nếu có -->
+    <changeSet id="20261016120000-4b" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <columnExists tableName="payment_transaction" columnName="status"/>
+                <columnExists tableName="payment_transaction" columnName="payment_status"/>
+            </and>
+        </preConditions>
+        <sql>
+            UPDATE payment_transaction SET payment_status = status WHERE (payment_status IS NULL OR payment_status = '') AND status IS NOT NULL;
+        </sql>
+    </changeSet>
+
+    <!-- 4c. Bổ sung cột response_code nếu thiếu và đồng bộ từ vnp_response_code -->
+    <changeSet id="20261016120000-4c" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="response_code"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="response_code" type="varchar(50)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20261016120000-4c-sync" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <columnExists tableName="payment_transaction" columnName="vnp_response_code"/>
+                <columnExists tableName="payment_transaction" columnName="response_code"/>
+            </and>
+        </preConditions>
+        <sql>
+            UPDATE payment_transaction SET response_code = vnp_response_code WHERE (response_code IS NULL OR response_code = '') AND vnp_response_code IS NOT NULL;
+        </sql>
+    </changeSet>
+
+    <!-- 4d. Bổ sung cột response_message nếu thiếu và đồng bộ từ notes -->
+    <changeSet id="20261016120000-4d" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="response_message"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="response_message" type="varchar(500)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20261016120000-4d-sync" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <columnExists tableName="payment_transaction" columnName="notes"/>
+                <columnExists tableName="payment_transaction" columnName="response_message"/>
+            </and>
+        </preConditions>
+        <sql>
+            UPDATE payment_transaction SET response_message = notes WHERE (response_message IS NULL OR response_message = '') AND notes IS NOT NULL;
+        </sql>
+    </changeSet>
+
+    <!-- 4e. Bổ sung cột paid_at nếu thiếu -->
+    <changeSet id="20261016120000-4e" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="paid_at"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="paid_at" type="${datetimeType}"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- 4f. Bổ sung cột payment_url nếu thiếu -->
+    <changeSet id="20261016120000-4f" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="payment_url"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="payment_url" type="varchar(1000)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- 4g. Bổ sung cột vnp_transaction_no nếu thiếu -->
+    <changeSet id="20261016120000-4g" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="vnp_transaction_no"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="vnp_transaction_no" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- 4h. Bổ sung cột doctor_id và doctor_login nếu thiếu -->
+    <changeSet id="20261016120000-4h" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <and>
+                <tableExists tableName="payment_transaction"/>
+                <not>
+                    <columnExists tableName="payment_transaction" columnName="doctor_id"/>
+                </not>
+            </and>
+        </preConditions>
+        <addColumn tableName="payment_transaction">
+            <column name="doctor_id" type="bigint"/>
+            <column name="doctor_login" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

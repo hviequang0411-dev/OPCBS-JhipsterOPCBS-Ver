@@ -66,6 +66,7 @@
         <spotless-maven-plugin.version>3.10.2</spotless-maven-plugin.version>
         <spring.profiles.active>dev</spring.profiles.active>
         <springdoc-openapi-starter-webmvc-api.version>3.1.1</springdoc-openapi-starter-webmvc-api.version>
+        <frontend.skip>true</frontend.skip>
     </properties>
 
     <dependencies>
@@ -218,6 +219,10 @@
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
         <dependency>
@@ -596,6 +601,7 @@
                         <installDirectory>target</installDirectory>
                         <nodeVersion>${node.version}</nodeVersion>
                         <npmVersion>${npm.version}</npmVersion>
+                        <skip>${frontend.skip}</skip>
                     </configuration>
                 </plugin>
                 <plugin>

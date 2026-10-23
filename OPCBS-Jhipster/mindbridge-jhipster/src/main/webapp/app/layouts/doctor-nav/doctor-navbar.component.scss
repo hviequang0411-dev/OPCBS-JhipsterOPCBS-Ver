@@ -1,0 +1,71 @@
+.doctor-top-navbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(8px);
+
+  .top-util-bar {
+    .portal-badge {
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+
+      .portal-badge-text {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #0f766e;
+        letter-spacing: 0.06em;
+      }
+    }
+
+    .breadcrumb-separator {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .current-module-title {
+      font-size: 0.95rem;
+      font-weight: 750;
+      color: #0f172a;
+
+      i {
+        font-size: 1.1rem;
+      }
+    }
+
+    .live-status-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+
+      .pulse-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #10b981;
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulseClinicIndicator 2s infinite;
+      }
+    }
+  }
+
+  .text-teal {
+    color: #0f766e !important;
+  }
+}
+
+@keyframes pulseClinicIndicator {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}

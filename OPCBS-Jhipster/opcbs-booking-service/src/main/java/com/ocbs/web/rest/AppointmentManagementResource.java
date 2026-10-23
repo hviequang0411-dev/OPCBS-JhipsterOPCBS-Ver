@@ -3,25 +3,21 @@ package com.ocbs.web.rest;
 import com.ocbs.domain.Appointment;
 import com.ocbs.domain.AvailabilitySlot;
 import com.ocbs.domain.DoctorProfile;
-import com.ocbs.domain.Notification;
 import com.ocbs.domain.PatientProfile;
-import com.ocbs.domain.TreatmentPackage;
 import com.ocbs.domain.User;
 import com.ocbs.domain.enumeration.AppointmentStatus;
 import com.ocbs.domain.enumeration.SlotStatus;
-import com.ocbs.domain.enumeration.TreatmentPackageStatus;
-import com.ocbs.event.AppointmentEvent;
-import com.ocbs.event.AppointmentEventProducer;
+import com.ocbs.service.AppointmentOutboxService;
 import com.ocbs.repository.AppointmentRepository;
 import com.ocbs.repository.AvailabilitySlotRepository;
 import com.ocbs.repository.DoctorProfileRepository;
-import com.ocbs.repository.NotificationRepository;
 import com.ocbs.repository.PatientProfileRepository;
-import com.ocbs.repository.TreatmentPackageRepository;
 import com.ocbs.repository.UserRepository;
 import com.ocbs.security.SecurityUtils;
 import com.ocbs.service.dto.AppointmentDTO;
+import com.ocbs.service.dto.AvailabilitySlotDTO;
 import com.ocbs.service.mapper.AppointmentMapper;
+import com.ocbs.service.mapper.AvailabilitySlotMapper;
 import com.ocbs.web.rest.errors.BadRequestAlertException;
 import com.ocbs.web.rest.vm.BookingVM;
 import jakarta.validation.Valid;
@@ -51,18 +47,18 @@ public class AppointmentManagementResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AppointmentManagementResource.class);
     private static final String ENTITY_NAME = "appointment";
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneId.systemDefault());
 
     private final AppointmentRepository appointmentRepository;
     private final AvailabilitySlotRepository slotRepository;
     private final PatientProfileRepository patientProfileRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final UserRepository userRepository;
-    private final TreatmentPackageRepository treatmentPackageRepository;
-    private final NotificationRepository notificationRepository;
-    private final AppointmentEventProducer appointmentEventProducer;
+    private final AppointmentOutboxService appointmentOutboxService;
     private final AppointmentMapper appointmentMapper;
+    private final AvailabilitySlotMapper availabilitySlotMapper;
     private final com.ocbs.service.mapper.PatientProfileMapper patientProfileMapper;
+    private final com.ocbs.service.DoctorDashboardService doctorDashboardService;
+    private final com.ocbs.service.DoctorSubscriptionEnforcementService doctorSubscriptionEnforcementService;
 
     public AppointmentManagementResource(
         AppointmentRepository appointmentRepository,
@@ -70,35 +66,124 @@ public class AppointmentManagementResource {
         PatientProfileRepository patientProfileRepository,
         DoctorProfileRepository doctorProfileRepository,
         UserRepository userRepository,
-        TreatmentPackageRepository treatmentPackageRepository,
-        NotificationRepository notificationRepository,
-        AppointmentEventProducer appointmentEventProducer,
+        AppointmentOutboxService appointmentOutboxService,
         AppointmentMapper appointmentMapper,
-        com.ocbs.service.mapper.PatientProfileMapper patientProfileMapper
+        AvailabilitySlotMapper availabilitySlotMapper,
+        com.ocbs.service.mapper.PatientProfileMapper patientProfileMapper,
+        @org.springframework.beans.factory.annotation.Autowired(required = false) com.ocbs.service.DoctorDashboardService doctorDashboardService,
+        com.ocbs.service.DoctorSubscriptionEnforcementService doctorSubscriptionEnforcementService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.slotRepository = slotRepository;
         this.patientProfileRepository = patientProfileRepository;
         this.doctorProfileRepository = doctorProfileRepository;
         this.userRepository = userRepository;
-        this.treatmentPackageRepository = treatmentPackageRepository;
-        this.notificationRepository = notificationRepository;
-        this.appointmentEventProducer = appointmentEventProducer;
+        this.appointmentOutboxService = appointmentOutboxService;
         this.appointmentMapper = appointmentMapper;
+        this.availabilitySlotMapper = availabilitySlotMapper;
         this.patientProfileMapper = patientProfileMapper;
+        this.doctorDashboardService = doctorDashboardService;
+        this.doctorSubscriptionEnforcementService = doctorSubscriptionEnforcementService;
+    }
+
+    /**
+     * Xóa cache Redis của Bác sĩ sau khi giao dịch DB commit thành công (Post-Commit Invalidation).
+     * Tuyệt đối không làm fail nghiệp vụ chính nếu Redis gặp sự cố.
+     */
+    private void evictDoctorDashboardAfterCommit(DoctorProfile doctor) {
+        if (doctor == null || doctorDashboardService == null) {
+            return;
+        }
+        String doctorLogin = null;
+        if (doctor.getUser() != null && doctor.getUser().getLogin() != null) {
+            doctorLogin = doctor.getUser().getLogin();
+        } else if (doctor.getId() != null) {
+            doctorLogin = doctorProfileRepository.findById(doctor.getId())
+                .filter(d -> d.getUser() != null)
+                .map(d -> d.getUser().getLogin())
+                .orElse(null);
+        }
+        if (doctorLogin == null || doctorLogin.isBlank()) {
+            return;
+        }
+
+        final String finalLogin = doctorLogin;
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            doctorDashboardService.evictDoctorDashboardCache(finalLogin);
+                        } catch (Exception ex) {
+                            LOG.warn("⚠️ [Post-Commit Eviction] Không thể xóa cache bác sĩ '{}': {}", finalLogin, ex.getMessage());
+                        }
+                    }
+                }
+            );
+        } else {
+            try {
+                doctorDashboardService.evictDoctorDashboardCache(finalLogin);
+            } catch (Exception ex) {
+                LOG.warn("⚠️ [Direct Eviction] Không thể xóa cache bác sĩ '{}': {}", finalLogin, ex.getMessage());
+            }
+        }
     }
 
     // ==========================================
-    // 1. PATIENT BOOKING ENDPOINTS
+    // 1. PATIENT BOOKING & SLOT ENDPOINTS
     // ==========================================
+
+    /**
+     * {@code GET /patient/doctors/:doctorId/slots} : Lấy danh sách ca khám trống (AVAILABLE) sắp tới của bác sĩ cho bệnh nhân xem/đặt lịch.
+     */
+    @GetMapping({"/patient/doctors/{doctorId}/slots", "/patient/doctors/slots", "/patient/doctors/slot"})
+    public ResponseEntity<List<AvailabilitySlotDTO>> getDoctorAvailableSlotsForPatient(
+        @PathVariable(name = "doctorId", required = false) Long pathDoctorId,
+        @RequestParam(name = "doctorId", required = false) Long queryDoctorId,
+        @RequestParam(name = "startDate", required = false) Instant startDate,
+        @RequestParam(name = "endDate", required = false) Instant endDate
+    ) {
+        Long doctorId = pathDoctorId != null ? pathDoctorId : queryDoctorId;
+        if (doctorId == null) {
+            throw new BadRequestAlertException("Cần cung cấp doctorId để lấy lịch rảnh", ENTITY_NAME, "doctoridrequired");
+        }
+
+        Instant effectiveStart = startDate != null ? startDate : Instant.now();
+        List<AvailabilitySlot> slots;
+        if (endDate != null) {
+            slots = slotRepository.findByDoctor_IdAndStatusAndStartTimeBetweenOrderByStartTimeAsc(
+                doctorId, SlotStatus.AVAILABLE, effectiveStart, endDate
+            );
+        } else {
+            slots = slotRepository.findByDoctor_IdAndStatusAndStartTimeGreaterThanEqualOrderByStartTimeAsc(
+                doctorId, SlotStatus.AVAILABLE, effectiveStart
+            );
+        }
+        LOG.debug("Found {} available upcoming slots for doctor ID {}", slots.size(), doctorId);
+        return ResponseEntity.ok(availabilitySlotMapper.toDto(slots));
+    }
 
     /**
      * {@code POST /patient/appointments/book} : Patient books an appointment slot.
      */
     @PostMapping("/patient/appointments/book")
     @PreAuthorize("hasAuthority('ROLE_PATIENT') or hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<AppointmentDTO> bookAppointment(@Valid @RequestBody BookingVM.CreateBookingVM bookingVM) throws URISyntaxException {
+    @Transactional
+    public ResponseEntity<AppointmentDTO> bookAppointment(
+        @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+        @Valid @RequestBody BookingVM.CreateBookingVM bookingVM
+    ) throws URISyntaxException {
         LOG.debug("REST request by Patient to book an appointment: {}", bookingVM);
+
+        // IDEMPOTENCY GUARD: Kiểm tra xem request với Idempotency-Key này đã được xử lý chưa
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            Optional<Appointment> existingAppt = appointmentRepository.findByIdempotencyKey(idempotencyKey);
+            if (existingAppt.isPresent()) {
+                LOG.info("⚡ [Idempotency Guard] Trả lại kết quả lịch hẹn đã đặt trước đó cho Idempotency-Key: {}", idempotencyKey);
+                return ResponseEntity.ok(appointmentMapper.toDto(existingAppt.get()));
+            }
+        }
 
         String login = SecurityUtils.getCurrentUserLogin()
             .orElseThrow(() -> new BadRequestAlertException("User not authenticated", ENTITY_NAME, "unauthenticated"));
@@ -119,12 +204,10 @@ public class AppointmentManagementResource {
                 return patientProfileRepository.save(newProfile);
             });
 
+        // PESSIMISTIC LOCK: Khóa slot ở tầng DB ngăn hai request đặt cùng slot đồng thời (Race Condition Protection)
         AvailabilitySlot slot = slotRepository
-            .findById(bookingVM.getSlotId())
+            .findByIdWithLock(bookingVM.getSlotId())
             .orElseThrow(() -> new BadRequestAlertException("Khung giờ không tồn tại", ENTITY_NAME, "slotnotfound"));
-//        Find with lock
-//        AvailabilitySlot slot = slotRepository.findByIdWithLock(bookingVM.getSlotId())
-//            .orElseThrow(() -> new BadRequestAlertException("Khung giờ không tồn tại", ENTI   TY_NAME, "slotnotfound"));
 
         if (slot.getStatus() != SlotStatus.AVAILABLE) {
             throw new BadRequestAlertException("Khung giờ này không còn trống hoặc đã có người đặt", ENTITY_NAME, "slotnotavailable");
@@ -137,6 +220,77 @@ public class AppointmentManagementResource {
         DoctorProfile doctor = slot.getDoctor();
         if (doctor == null) {
             throw new BadRequestAlertException("Bác sĩ không tồn tại cho khung giờ này", ENTITY_NAME, "doctornotfound");
+        }
+
+        // KIỂM TRA QUYỀN LỢI GÓI DỊCH VỤ: Bác sĩ phải có gói ACTIVE hợp lệ và chưa vượt giới hạn thân chủ (maxPatientCapacity)
+        doctorSubscriptionEnforcementService.validateDoctorCanBeBooked(doctor, patient.getId());
+
+        // --------------------------------------------------------------------------------------------------
+        // NGHIỆP VỤ BẢO VỆ CHỐNG SPAM & RATE LIMITING Ở TẦNG DB (ZERO RAW DATA)
+        // --------------------------------------------------------------------------------------------------
+        List<AppointmentStatus> activeStatuses = List.of(
+            AppointmentStatus.PENDING,
+            AppointmentStatus.ACCEPTED,
+            AppointmentStatus.IN_PROGRESS
+        );
+
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate slotLocalDate = slot.getStartTime().atZone(zone).toLocalDate();
+        Instant startOfDay = slotLocalDate.atStartOfDay(zone).toInstant();
+        Instant endOfDay = slotLocalDate.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant();
+
+        // 1. Ràng buộc: 1 bệnh nhân chỉ có thể đặt 1 bác sĩ tối đa 1 lần trong ngày
+        long sameDayCount = appointmentRepository.countActiveAppointmentsOnDate(
+            patient.getId(), doctor.getId(), startOfDay, endOfDay, activeStatuses
+        );
+        if (sameDayCount > 0) {
+            throw new BadRequestAlertException(
+                "Bạn đã có lịch hẹn với Bác sĩ " + doctor.getFullName() + " vào ngày này. Mỗi bệnh nhân chỉ được đặt tối đa 1 ca khám/ngày với cùng một bác sĩ.",
+                ENTITY_NAME,
+                "maxonedailyappointmentwithdoctor"
+            );
+        }
+
+        // 2. Ràng buộc: Chống trùng khung giờ khám (Overlapping Time Conflict)
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointment(
+            patient.getId(), slot.getStartTime(), slot.getEndTime(), activeStatuses
+        );
+        if (hasOverlap) {
+            throw new BadRequestAlertException(
+                "Bạn đã có một lịch hẹn khác diễn ra trong cùng khung giờ này. Vui lòng chọn thời gian khác.",
+                ENTITY_NAME,
+                "overlappingappointment"
+            );
+        }
+
+        // 3. Ràng buộc: Rate Limiting theo tuần (Thứ Hai đến Chủ Nhật)
+        LocalDate mondayOfWeek = slotLocalDate.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        LocalDate sundayOfWeek = mondayOfWeek.plusDays(6);
+        Instant weekStart = mondayOfWeek.atStartOfDay(zone).toInstant();
+        Instant weekEnd = sundayOfWeek.plusDays(1).atStartOfDay(zone).minusNanos(1).toInstant();
+
+        // 3.1. Tối đa 3 ca khám active trong tuần với cùng 1 bác sĩ (Chuẩn C# gốc)
+        long countWithDoctorInWeek = appointmentRepository.countActiveAppointmentsWithDoctorInWeek(
+            patient.getId(), doctor.getId(), weekStart, weekEnd, activeStatuses
+        );
+        if (countWithDoctorInWeek >= 3) {
+            throw new BadRequestAlertException(
+                "Bạn đã đạt giới hạn 3 lịch hẹn đang hoạt động trong tuần (" + mondayOfWeek + " đến " + sundayOfWeek + ") với Bác sĩ " + doctor.getFullName() + ".",
+                ENTITY_NAME,
+                "maxthreeappointmentsperweekwithdoctor"
+            );
+        }
+
+        // 3.2. Tối đa 5 ca khám active trong tuần trên toàn hệ thống (Chống spam / bot đặt chỗ)
+        long totalCountInWeek = appointmentRepository.countTotalActiveAppointmentsInWeek(
+            patient.getId(), weekStart, weekEnd, activeStatuses
+        );
+        if (totalCountInWeek >= 5) {
+            throw new BadRequestAlertException(
+                "Bạn đã đạt hạn mức tối đa 5 lịch hẹn trong tuần trên toàn hệ thống MindBridge. Vui lòng hoàn thành các buổi khám trước khi đặt thêm.",
+                ENTITY_NAME,
+                "maxtotalappointmentsperweek"
+            );
         }
 
         // Cập nhật thông tin liên hệ của bệnh nhân nếu có
@@ -182,6 +336,7 @@ public class AppointmentManagementResource {
         appointment.setPatient(patient);
         appointment.setDoctor(doctor);
         appointment.setSlot(slot);
+        appointment.setIdempotencyKey(idempotencyKey);
 
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
@@ -189,51 +344,21 @@ public class AppointmentManagementResource {
         slot.setStatus(SlotStatus.BOOKED);
         slotRepository.save(slot);
 
-        String formattedTime = TIME_FORMATTER.format(savedAppointment.getScheduledStart());
-
-        // Gửi thông báo đến Bác sĩ
-        if (doctor.getUser() != null) {
-            createNotification(
-                doctor.getUser().getLogin(),
-                doctor.getUser().getId(),
-                "Lịch hẹn mới chờ duyệt",
-                "Bệnh nhân " + patient.getFullName() + " vừa đặt lịch hẹn mới mã " + bookingCode + " vào " + formattedTime + ". Vui lòng kiểm tra và duyệt lịch hẹn.",
-                "APPOINTMENT",
-                savedAppointment.getId(),
-                "APPOINTMENT",
-                "/doctor/appointments"
-            );
-        }
-
-        // Gửi thông báo xác nhận đến Bệnh nhân
-        if (patient.getUser() != null) {
-            createNotification(
-                patient.getUser().getLogin(),
-                patient.getUser().getId(),
-                "Đặt lịch hẹn thành công",
-                "Bạn đã gửi yêu cầu đặt lịch hẹn thành công với Bác sĩ " + doctor.getFullName() + " (Mã: " + bookingCode + ", thời gian: " + formattedTime + "). Đang chờ bác sĩ xác nhận.",
-                "APPOINTMENT",
-                savedAppointment.getId(),
-                "APPOINTMENT",
-                "/patient/appointments"
-            );
-        }
-
-        // Phát sự kiện Kafka
+        // Kafka Notification consumer là nơi duy nhất tạo thông báo; Booking chỉ ghi outbox cùng transaction.
+        // Lưu sự kiện vào Transactional Outbox (commit đồng bộ với savedAppointment)
         try {
-            AppointmentEvent event = new AppointmentEvent(
-                savedAppointment.getId(),
-                bookingCode,
-                patient.getId(),
-                patient.getFullName(),
-                doctor.getId(),
-                doctor.getFullName(),
-                "APPOINTMENT_BOOKED"
+            appointmentOutboxService.recordAppointmentEvent(
+                savedAppointment,
+                "APPOINTMENT_BOOKED",
+                null,
+                savedAppointment.getStatus() != null ? savedAppointment.getStatus().name() : "PENDING",
+                null
             );
-            appointmentEventProducer.publishAppointmentEvent(event);
         } catch (Exception ex) {
-            LOG.warn("Kafka event publish error: {}", ex.getMessage());
+            throw new IllegalStateException("Could not persist APPOINTMENT_BOOKED outbox event; rolling back appointment change", ex);
         }
+
+        evictDoctorDashboardAfterCommit(doctor);
 
         AppointmentDTO result = appointmentMapper.toDto(savedAppointment);
         return ResponseEntity.created(new URI("/api/patient/appointments/" + result.getId())).body(result);
@@ -290,10 +415,12 @@ public class AppointmentManagementResource {
             throw new BadRequestAlertException("Lịch hẹn này đã bị hủy trước đó", ENTITY_NAME, "alreadycancelled");
         }
 
+        AppointmentStatus oldStatus = appointment.getStatus();
+        String reason = cancelVM != null ? cancelVM.getCancellationReason() : null;
         appointment.setStatus(AppointmentStatus.CANCELLED);
         appointment.setUpdatedAt(Instant.now());
-        if (cancelVM != null && cancelVM.getCancellationReason() != null) {
-            appointment.setCancellationReason(cancelVM.getCancellationReason());
+        if (reason != null) {
+            appointment.setCancellationReason(reason);
         }
 
         // Trả lại slot về AVAILABLE nếu slot vẫn tồn tại
@@ -305,35 +432,20 @@ public class AppointmentManagementResource {
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        // Gửi thông báo đến Bác sĩ
-        if (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null) {
-            createNotification(
-                appointment.getDoctor().getUser().getLogin(),
-                appointment.getDoctor().getUser().getId(),
-                "Bệnh nhân đã hủy lịch hẹn",
-                "Bệnh nhân " + patient.getFullName() + " đã hủy lịch hẹn mã " + appointment.getBookingCode() + (appointment.getCancellationReason() != null ? ". Lý do: " + appointment.getCancellationReason() : ""),
-                "APPOINTMENT",
-                appointment.getId(),
-                "APPOINTMENT",
-                "/doctor/appointments"
+        // Lưu sự kiện vào Transactional Outbox (commit đồng bộ với updated appointment)
+        try {
+            appointmentOutboxService.recordAppointmentEvent(
+                updated,
+                "APPOINTMENT_CANCELLED",
+                oldStatus != null ? oldStatus.name() : null,
+                AppointmentStatus.CANCELLED.name(),
+                reason
             );
+        } catch (Exception ex) {
+            throw new IllegalStateException("Could not persist APPOINTMENT_CANCELLED outbox event; rolling back appointment change", ex);
         }
 
-        // Phát sự kiện Kafka
-        try {
-            AppointmentEvent event = new AppointmentEvent(
-                updated.getId(),
-                updated.getBookingCode(),
-                patient.getId(),
-                patient.getFullName(),
-                appointment.getDoctor() != null ? appointment.getDoctor().getId() : null,
-                appointment.getDoctor() != null ? appointment.getDoctor().getFullName() : null,
-                "APPOINTMENT_CANCELLED"
-            );
-            appointmentEventProducer.publishAppointmentEvent(event);
-        } catch (Exception ex) {
-            LOG.warn("Kafka event publish error: {}", ex.getMessage());
-        }
+        evictDoctorDashboardAfterCommit(appointment.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -429,43 +541,30 @@ public class AppointmentManagementResource {
             throw new BadRequestAlertException("Chỉ có thể chấp nhận lịch hẹn đang ở trạng thái chờ duyệt (PENDING)", ENTITY_NAME, "invalidstatus");
         }
 
+        // KIỂM TRA QUYỀN LỢI GÓI DỊCH VỤ: Bác sĩ phải có gói ACTIVE hợp lệ và chưa vượt giới hạn thân chủ (maxPatientCapacity)
+        if (appointment.getDoctor() != null && appointment.getPatient() != null) {
+            doctorSubscriptionEnforcementService.validateDoctorCanAcceptPatient(appointment.getDoctor(), appointment.getPatient().getId());
+        }
+
         appointment.setStatus(AppointmentStatus.ACCEPTED);
         appointment.setUpdatedAt(Instant.now());
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        String formattedTime = TIME_FORMATTER.format(updated.getScheduledStart());
-
-        // Gửi thông báo đến Bệnh nhân
-        if (updated.getPatient() != null && updated.getPatient().getUser() != null) {
-            String doctorName = updated.getDoctor() != null ? updated.getDoctor().getFullName() : "Bác sĩ";
-            createNotification(
-                updated.getPatient().getUser().getLogin(),
-                updated.getPatient().getUser().getId(),
-                "Lịch hẹn đã được chấp nhận",
-                "Bác sĩ " + doctorName + " đã chấp nhận lịch hẹn mã " + updated.getBookingCode() + " vào lúc " + formattedTime + ". Vui lòng chú ý thời gian tham gia đúng giờ.",
-                "APPOINTMENT",
-                updated.getId(),
-                "APPOINTMENT",
-                "/patient/appointments"
-            );
-        }
-
-        // Phát sự kiện Kafka
+        // Lưu sự kiện vào Transactional Outbox (commit đồng bộ với updated appointment)
         try {
-            AppointmentEvent event = new AppointmentEvent(
-                updated.getId(),
-                updated.getBookingCode(),
-                updated.getPatient() != null ? updated.getPatient().getId() : null,
-                updated.getPatient() != null ? updated.getPatient().getFullName() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getId() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getFullName() : null,
-                "APPOINTMENT_ACCEPTED"
+            appointmentOutboxService.recordAppointmentEvent(
+                updated,
+                "APPOINTMENT_CONFIRMED",
+                AppointmentStatus.PENDING.name(),
+                AppointmentStatus.ACCEPTED.name(),
+                null
             );
-            appointmentEventProducer.publishAppointmentEvent(event);
         } catch (Exception ex) {
-            LOG.warn("Kafka event publish error: {}", ex.getMessage());
+            throw new IllegalStateException("Could not persist APPOINTMENT_CONFIRMED outbox event; rolling back appointment change", ex);
         }
+
+        evictDoctorDashboardAfterCommit(updated.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -508,19 +607,16 @@ public class AppointmentManagementResource {
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        // Gửi thông báo đến Bệnh nhân
-        if (updated.getPatient() != null && updated.getPatient().getUser() != null) {
-            createNotification(
-                updated.getPatient().getUser().getLogin(),
-                updated.getPatient().getUser().getId(),
-                "Ca khám đang bắt đầu",
-                "Bác sĩ đã bắt đầu phiên tư vấn cho lịch hẹn mã " + updated.getBookingCode() + ". Vui lòng chuẩn bị tham gia.",
-                "APPOINTMENT",
-                updated.getId(),
-                "APPOINTMENT",
-                "/patient/appointments"
-            );
-        }
+        // Publish the start transition through the same transactional outbox as other lifecycle changes.
+        appointmentOutboxService.recordAppointmentEvent(
+            updated,
+            "APPOINTMENT_STARTED",
+            AppointmentStatus.ACCEPTED.name(),
+            AppointmentStatus.IN_PROGRESS.name(),
+            null
+        );
+
+        evictDoctorDashboardAfterCommit(updated.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -549,10 +645,12 @@ public class AppointmentManagementResource {
             }
         }
 
+        AppointmentStatus oldStatus = appointment.getStatus();
+        String reason = rejectVM != null ? rejectVM.getRejectionReason() : null;
         appointment.setStatus(AppointmentStatus.REJECTED);
         appointment.setUpdatedAt(Instant.now());
-        if (rejectVM != null && rejectVM.getRejectionReason() != null) {
-            appointment.setCancellationReason(rejectVM.getRejectionReason());
+        if (reason != null) {
+            appointment.setCancellationReason(reason);
         }
 
         // Trả slot về AVAILABLE cho bệnh nhân khác có thể đặt
@@ -564,36 +662,20 @@ public class AppointmentManagementResource {
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        // Gửi thông báo đến Bệnh nhân
-        if (updated.getPatient() != null && updated.getPatient().getUser() != null) {
-            String reasonText = updated.getCancellationReason() != null ? ". Lý do: " + updated.getCancellationReason() : "";
-            createNotification(
-                updated.getPatient().getUser().getLogin(),
-                updated.getPatient().getUser().getId(),
-                "Lịch hẹn đã bị từ chối",
-                "Bác sĩ đã từ chối lịch hẹn mã " + updated.getBookingCode() + reasonText + ". Bạn có thể chọn thời gian hoặc bác sĩ khác.",
-                "APPOINTMENT",
-                updated.getId(),
-                "APPOINTMENT",
-                "/patient/appointments"
+        // Rejection is its own lifecycle event; reporting it as cancellation lost the actual outcome downstream.
+        try {
+            appointmentOutboxService.recordAppointmentEvent(
+                updated,
+                "APPOINTMENT_REJECTED",
+                oldStatus != null ? oldStatus.name() : null,
+                AppointmentStatus.REJECTED.name(),
+                reason
             );
+        } catch (Exception ex) {
+            throw new IllegalStateException("Could not persist APPOINTMENT_REJECTED outbox event; rolling back appointment change", ex);
         }
 
-        // Phát sự kiện Kafka
-        try {
-            AppointmentEvent event = new AppointmentEvent(
-                updated.getId(),
-                updated.getBookingCode(),
-                updated.getPatient() != null ? updated.getPatient().getId() : null,
-                updated.getPatient() != null ? updated.getPatient().getFullName() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getId() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getFullName() : null,
-                "APPOINTMENT_REJECTED"
-            );
-            appointmentEventProducer.publishAppointmentEvent(event);
-        } catch (Exception ex) {
-            LOG.warn("Kafka event publish error: {}", ex.getMessage());
-        }
+        evictDoctorDashboardAfterCommit(updated.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -635,6 +717,7 @@ public class AppointmentManagementResource {
             throw new BadRequestAlertException("Vui lòng ghi chép hồ sơ / chẩn đoán / ghi chú lâm sàng trước khi hoàn thành ca khám", ENTITY_NAME, "notesrequired");
         }
 
+        AppointmentStatus oldStatus = appointment.getStatus();
         appointment.setStatus(AppointmentStatus.COMPLETED);
         if (appointment.getCompletedAt() == null) {
             appointment.setCompletedAt(Instant.now());
@@ -643,56 +726,22 @@ public class AppointmentManagementResource {
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        // TỰ ĐỘNG TRỪ SỐ BUỔI TRONG GÓI TRỊ LIỆU (TREATMENT PACKAGE DEDUCTION)
-        if (updated.getPatient() != null) {
-            Long docId = updated.getDoctor() != null ? updated.getDoctor().getId() : null;
-            deductPackageSession(updated.getPatient().getId(), docId, updated.getBookingCode());
-        }
+        // Treatment consumer owns package deduction; doing it here as well would deduct twice.
 
-        // Gửi thông báo hoàn thành đến Bệnh nhân
-        if (updated.getPatient() != null && updated.getPatient().getUser() != null) {
-            String doctorName = updated.getDoctor() != null ? updated.getDoctor().getFullName() : "Bác sĩ";
-            createNotification(
-                updated.getPatient().getUser().getLogin(),
-                updated.getPatient().getUser().getId(),
-                "Ca khám đã hoàn thành",
-                "Bác sĩ " + doctorName + " đã hoàn tất ca khám mã " + updated.getBookingCode() + ". Bạn có thể xem kết quả chẩn đoán và phác đồ điều trị tại mục Hồ Sơ Bệnh Án.",
-                "CLINICAL",
-                updated.getId(),
-                "APPOINTMENT",
-                "/patient/my-clinical-records"
-            );
-        }
-
-        // Gửi thông báo đến Bác sĩ
-        if (updated.getDoctor() != null && updated.getDoctor().getUser() != null) {
-            createNotification(
-                updated.getDoctor().getUser().getLogin(),
-                updated.getDoctor().getUser().getId(),
-                "Hoàn tất ca khám",
-                "Đã lưu hồ sơ bệnh án và hoàn tất ca khám mã " + updated.getBookingCode() + " cho bệnh nhân " + (updated.getPatient() != null ? updated.getPatient().getFullName() : "") + ".",
-                "CLINICAL",
-                updated.getId(),
-                "APPOINTMENT",
-                "/doctor/appointments"
-            );
-        }
-
-        // Phát sự kiện Kafka
+        // Lưu sự kiện vào Transactional Outbox (commit đồng bộ với updated appointment)
         try {
-            AppointmentEvent event = new AppointmentEvent(
-                updated.getId(),
-                updated.getBookingCode(),
-                updated.getPatient() != null ? updated.getPatient().getId() : null,
-                updated.getPatient() != null ? updated.getPatient().getFullName() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getId() : null,
-                updated.getDoctor() != null ? updated.getDoctor().getFullName() : null,
-                "APPOINTMENT_COMPLETED"
+            appointmentOutboxService.recordAppointmentEvent(
+                updated,
+                "APPOINTMENT_COMPLETED",
+                oldStatus.name(),
+                AppointmentStatus.COMPLETED.name(),
+                null
             );
-            appointmentEventProducer.publishAppointmentEvent(event);
         } catch (Exception ex) {
-            LOG.warn("Kafka event publish error: {}", ex.getMessage());
+            throw new IllegalStateException("Could not persist APPOINTMENT_COMPLETED outbox event; rolling back appointment change", ex);
         }
+
+        evictDoctorDashboardAfterCommit(updated.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -909,58 +958,23 @@ public class AppointmentManagementResource {
 
         Appointment updated = appointmentRepository.save(appointment);
 
-        // Nếu ca khám vừa được đánh dấu hoàn tất: Tự động trừ buổi và gửi thông báo
+        // A completion event is emitted only on the actual status transition; downstream services own side effects.
         if (isNewlyCompleted) {
-            if (updated.getPatient() != null) {
-                Long docId = updated.getDoctor() != null ? updated.getDoctor().getId() : null;
-                deductPackageSession(updated.getPatient().getId(), docId, updated.getBookingCode());
-            }
-
-            // Gửi thông báo đến Bệnh nhân
-            if (updated.getPatient() != null && updated.getPatient().getUser() != null) {
-                String doctorName = updated.getDoctor() != null ? updated.getDoctor().getFullName() : "Bác sĩ";
-                createNotification(
-                    updated.getPatient().getUser().getLogin(),
-                    updated.getPatient().getUser().getId(),
-                    "Hồ sơ ca khám đã hoàn thành",
-                    "Bác sĩ " + doctorName + " đã cập nhật kết quả lâm sàng và hoàn tất ca khám mã " + updated.getBookingCode() + ". Bạn có thể xem kết quả tại mục Hồ Sơ Bệnh Án.",
-                    "CLINICAL",
-                    updated.getId(),
-                    "APPOINTMENT",
-                    "/patient/my-clinical-records"
-                );
-            }
-
-            // Gửi thông báo đến Bác sĩ
-            if (updated.getDoctor() != null && updated.getDoctor().getUser() != null) {
-                createNotification(
-                    updated.getDoctor().getUser().getLogin(),
-                    updated.getDoctor().getUser().getId(),
-                    "Hoàn tất hồ sơ bệnh án",
-                    "Đã lưu chẩn đoán lâm sàng và hoàn thành ca khám " + updated.getBookingCode() + ".",
-                    "CLINICAL",
-                    updated.getId(),
-                    "APPOINTMENT",
-                    "/doctor/appointments"
-                );
-            }
-
-            // Phát sự kiện Kafka
+            // Lưu sự kiện vào Transactional Outbox (commit đồng bộ với updated appointment)
             try {
-                AppointmentEvent event = new AppointmentEvent(
-                    updated.getId(),
-                    updated.getBookingCode(),
-                    updated.getPatient() != null ? updated.getPatient().getId() : null,
-                    updated.getPatient() != null ? updated.getPatient().getFullName() : null,
-                    updated.getDoctor() != null ? updated.getDoctor().getId() : null,
-                    updated.getDoctor() != null ? updated.getDoctor().getFullName() : null,
-                    "APPOINTMENT_COMPLETED"
+                appointmentOutboxService.recordAppointmentEvent(
+                    updated,
+                    "APPOINTMENT_COMPLETED",
+                    AppointmentStatus.IN_PROGRESS.name(),
+                    AppointmentStatus.COMPLETED.name(),
+                    null
                 );
-                appointmentEventProducer.publishAppointmentEvent(event);
             } catch (Exception ex) {
-                LOG.warn("Kafka event publish error: {}", ex.getMessage());
+                throw new IllegalStateException("Could not persist APPOINTMENT_COMPLETED outbox event; rolling back appointment change", ex);
             }
         }
+
+        evictDoctorDashboardAfterCommit(updated.getDoctor());
 
         return ResponseEntity.ok(appointmentMapper.toDto(updated));
     }
@@ -1005,86 +1019,4 @@ public class AppointmentManagementResource {
         return ResponseEntity.ok(appointmentMapper.toDto(completedList));
     }
 
-    // ==========================================
-    // 5. HELPER METHODS: DEDUCT PACKAGE & NOTIFICATION
-    // ==========================================
-
-    /**
-     * Tự động trừ 1 buổi trong gói trị liệu ACTIVE của bệnh nhân.
-     * Ưu tiên gói trị liệu liên kết trực tiếp với bác sĩ phụ trách, nếu không có thì trừ vào gói chung của bệnh nhân.
-     */
-    private void deductPackageSession(Long patientId, Long doctorId, String bookingCode) {
-        if (patientId == null) return;
-        try {
-            List<TreatmentPackage> activePackages = null;
-            if (doctorId != null) {
-                activePackages = treatmentPackageRepository.findActivePackagesByPatientAndDoctor(patientId, doctorId);
-            }
-            if (activePackages == null || activePackages.isEmpty()) {
-                activePackages = treatmentPackageRepository.findActivePackagesByPatient(patientId);
-            }
-
-            if (activePackages != null && !activePackages.isEmpty()) {
-                TreatmentPackage targetPackage = activePackages.get(0);
-                int currentRemaining = targetPackage.getRemainingSessions() != null ? targetPackage.getRemainingSessions() : 0;
-
-                if (currentRemaining > 0) {
-                    int newRemaining = currentRemaining - 1;
-                    targetPackage.setRemainingSessions(newRemaining);
-                    LOG.info("⚡ [Treatment Package] Deducted 1 session for Package ID: {}, Name: '{}', BookingCode: '{}'. Remaining: {}/{}",
-                        targetPackage.getId(), targetPackage.getName(), bookingCode, newRemaining, targetPackage.getSessionQuantity());
-
-                    if (newRemaining <= 0) {
-                        targetPackage.setStatus(TreatmentPackageStatus.COMPLETED);
-                        LOG.info("🏁 [Treatment Package] Package ID: {} has 0 sessions remaining. Marked as COMPLETED!", targetPackage.getId());
-                    }
-
-                    treatmentPackageRepository.save(targetPackage);
-
-                    // Gửi thông báo trừ buổi cho bệnh nhân
-                    if (targetPackage.getPatient() != null && targetPackage.getPatient().getUser() != null) {
-                        String userLogin = targetPackage.getPatient().getUser().getLogin();
-                        String statusNote = newRemaining <= 0 ? " (Bạn đã hoàn thành toàn bộ gói trị liệu!)" : "";
-                        createNotification(
-                            userLogin,
-                            targetPackage.getPatient().getUser().getId(),
-                            "Đã trừ 1 buổi trong gói trị liệu",
-                            "Gói trị liệu '" + targetPackage.getName() + "' vừa được trừ 1 buổi cho ca khám " + bookingCode + ". Số buổi còn lại: " + newRemaining + "/" + targetPackage.getSessionQuantity() + statusNote,
-                            "TREATMENT",
-                            targetPackage.getId(),
-                            "TREATMENT_PACKAGE",
-                            "/patient/treatment-packages"
-                        );
-                    }
-                }
-            } else {
-                LOG.info("ℹ️ [Treatment Package] No active package found for Patient ID: {} to deduct session for BookingCode: {}", patientId, bookingCode);
-            }
-        } catch (Exception ex) {
-            LOG.error("❌ [Treatment Package] Error while deducting package session for patientId {}: {}", patientId, ex.getMessage(), ex);
-        }
-    }
-
-    /**
-     * Tạo và lưu thông báo in-app vào cơ sở dữ liệu.
-     */
-    private void createNotification(String userLogin, Long userId, String title, String message, String type, Long entityId, String entityType, String actionUrl) {
-        try {
-            if (userLogin == null || userLogin.isBlank()) return;
-            Notification notification = new Notification();
-            notification.setUserLogin(userLogin);
-            notification.setUserId(userId);
-            notification.setTitle(title);
-            notification.setMessage(message);
-            notification.setNotificationType(type);
-            notification.setRelatedEntityId(entityId);
-            notification.setRelatedEntityType(entityType);
-            notification.setIsRead(false);
-            notification.setActionUrl(actionUrl);
-            notificationRepository.save(notification);
-            LOG.info("🔔 [Notification] Saved notification for user '{}': {}", userLogin, title);
-        } catch (Exception ex) {
-            LOG.error("❌ [Notification] Error saving notification for user '{}': {}", userLogin, ex.getMessage());
-        }
-    }
 }

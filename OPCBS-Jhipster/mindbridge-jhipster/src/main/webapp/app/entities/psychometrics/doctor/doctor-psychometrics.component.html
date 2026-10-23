@@ -1,101 +1,296 @@
-<div class="doctor-psychometrics container-fluid py-4">
-  <div class="page-header d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+<div class="doctor-psychometrics">
+  <!-- Page Header -->
+  <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4 pb-3 border-bottom">
     <div>
-      <h2 class="h3 fw-bold text-primary mb-1">
-        <i class="bi bi-clipboard2-pulse me-2"></i>Trắc Nghiệm Tâm Lý Chuẩn Y Khoa
-      </h2>
-      <p class="text-muted mb-0">Chỉ định bài đánh giá tâm lý cho bệnh nhân và theo dõi kết quả thang đo DASS-21, PHQ-9, GAD-7</p>
+      <div class="d-flex align-items-center gap-2 mb-1.5">
+        <span class="badge bg-teal-subtle text-teal text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 6px;">
+          <i class="bi bi-clipboard2-pulse-fill me-1"></i>Sàng Lọc Lâm Sàng &amp; Tâm Lý Học
+        </span>
+        <span class="text-muted" style="font-size: 0.8rem;">&bull;</span>
+        <span class="text-muted" style="font-size: 0.8rem;">Hệ Thống Tiêu Chuẩn Quốc Tế</span>
+      </div>
+      <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-clipboard2-pulse-fill text-teal"></i>
+        <span>Trắc Nghiệm Tâm Lý Chuẩn Y Khoa (Psychometrics)</span>
+      </h1>
+      <p class="text-muted mb-0" style="font-size: 0.88rem;">
+        Kho bài test tiêu chuẩn (DASS-21, PHQ-9, GAD-7), giám sát điểm số bệnh nhân và phát hiện sớm dấu hiệu nguy cơ cao (Event Producer).
+      </p>
     </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary" (click)="openAssignModal(assignModal)">
-        <i class="bi bi-plus-circle me-1"></i>Chỉ Định Bài Test Cho Bệnh Nhân
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1.5" (click)="loadTests(); loadPatients()" title="Làm mới danh sách">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Làm mới</span>
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary btn-sm px-3.5 py-2 fw-semibold text-white d-flex align-items-center gap-1.5 shadow-sm btn-assign-test" 
+        (click)="openAssignModal(assignModal)"
+      >
+        <i class="bi bi-send-check-fill"></i>
+        <span>Chỉ Định Bài Test Cho Bệnh Nhân</span>
       </button>
     </div>
   </div>
 
-  <!-- Filter by Patient -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <div class="d-flex align-items-center gap-2">
-        <span class="text-muted fw-semibold">Chọn bệnh nhân để xem kết quả:</span>
-        <select class="form-select form-select-sm w-auto" [(ngModel)]="selectedPatientId" (change)="onPatientChange()">
-          <option [ngValue]="null">-- Chọn bệnh nhân --</option>
-          <option *ngFor="let p of patients" [ngValue]="p.id">
-            {{ p.fullName || p.user?.login }} ({{ p.phone || 'Chưa có SĐT' }})
-          </option>
-        </select>
+  <!-- 2. Assessment Library Section (Matching C# Razor layout) -->
+  <div class="assess-library-wrapper mb-4">
+    <div class="library-toolbar">
+      <div>
+        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+          <i class="bi bi-collection-fill text-teal"></i>
+          <span>Ngân Hàng Đề Trắc Nghiệm (Assessment Library)</span>
+          <span class="badge bg-light text-muted border" style="font-size: 0.75rem; font-weight: 700;">
+            {{ tests.length }} bài test
+          </span>
+        </h5>
+        <p class="text-muted mb-0 mt-0.5" style="font-size: 0.8rem;">
+          Bảng hỏi sàng lọc lâm sàng quốc tế và bảng đánh giá tâm lý chuyên sâu.
+        </p>
       </div>
-      <div *ngIf="selectedPatientId" class="text-muted small">
-        Tổng số bài làm: <strong>{{ submissions.length }}</strong>
+
+      <div class="d-flex align-items-center gap-2.5 flex-wrap">
+        <!-- Search Box -->
+        <div class="library-search-box">
+          <i class="bi bi-search"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="librarySearch" 
+            class="form-control form-control-sm" 
+            placeholder="Tìm theo tên đề, thang đo, loại..." 
+          />
+        </div>
+
+        <!-- Segmented Tabs (C# Active Green Style) -->
+        <div class="filter-segment-group" role="group">
+          <button 
+            type="button" 
+            class="filter-segment-btn" 
+            [class.active]="libraryTab === 'all'" 
+            (click)="setLibraryTab('all')"
+          >
+            Tất cả <span class="count-badge">{{ tests.length }}</span>
+          </button>
+          <button 
+            type="button" 
+            class="filter-segment-btn" 
+            [class.active]="libraryTab === 'system'" 
+            (click)="setLibraryTab('system')"
+          >
+            Mẫu hệ thống <span class="count-badge">{{ systemTemplateCount }}</span>
+          </button>
+          <button 
+            type="button" 
+            class="filter-segment-btn" 
+            [class.active]="libraryTab === 'my'" 
+            (click)="setLibraryTab('my')"
+          >
+            Đề của tôi <span class="count-badge">{{ myAssessmentCount }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="row g-3">
+      <div *ngFor="let test of filteredLibrary" class="col-12 col-md-6 col-xl-4">
+        <div class="doc-assess-card h-100" [ngClass]="isSystemTest(test) ? 'system-card' : 'my-card'">
+          <div>
+            <!-- Header Badges -->
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <div>
+                <span *ngIf="isSystemTest(test)" class="badge mb-1.5" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px;">
+                  <i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.45rem;"></i> System Template
+                </span>
+                <span *ngIf="!isSystemTest(test)" class="badge mb-1.5" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px;">
+                  <i class="bi bi-circle-fill text-success me-1" style="font-size: 0.45rem;"></i> My Assessment
+                </span>
+                <h6 class="fw-bold text-dark mb-0" style="font-size: 0.98rem; line-height: 1.35;">{{ test.title }}</h6>
+              </div>
+            </div>
+
+            <p class="text-muted mb-3 line-clamp-2" style="font-size: 0.82rem; line-height: 1.45;">
+              {{ test.description || test.purpose || 'Bảng câu hỏi đánh giá tâm lý chuẩn y khoa.' }}
+            </p>
+
+            <!-- Metadata Chips -->
+            <div class="d-flex align-items-center gap-3 text-muted mb-2.5" style="font-size: 0.76rem; font-weight: 600;">
+              <div class="d-flex align-items-center gap-1">
+                <i class="bi bi-question-circle text-teal"></i>
+                <span>{{ test.questions?.length || 21 }} Câu hỏi</span>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <i class="bi bi-tag text-muted"></i>
+                <span>{{ test.category || test.testType || 'Tổng Quát' }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <i class="bi bi-stopwatch text-muted"></i>
+                <span>10-15 phút</span>
+              </div>
+            </div>
+
+            <div *ngIf="test.sourceUrl" class="mb-2">
+              <a [href]="test.sourceUrl" target="_blank" rel="noopener noreferrer" class="text-decoration-none d-inline-flex align-items-center gap-1 source-link" style="font-size: 0.74rem; font-weight: 600; color: #0f766e;">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span>Nguồn tham chiếu y khoa quốc tế</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-between align-items-center pt-2.5 border-top gap-2 mt-auto">
+            <button 
+              type="button" 
+              class="btn btn-outline-secondary btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1"
+              style="border-radius: 8px; font-size: 0.78rem;"
+              (click)="openTestDetailsModal(testDetailsModal, test)"
+            >
+              <i class="bi bi-eye"></i>
+              <span>Xem Thang Đo</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="btn btn-sm px-3 py-1.5 fw-semibold text-white shadow-sm d-flex align-items-center gap-1 btn-assign-card"
+              style="border-radius: 8px; font-size: 0.78rem; background: #0f766e;"
+              (click)="openAssignModalForTest(assignModal, test)"
+            >
+              <i class="bi bi-send-fill"></i>
+              <span>Chỉ Định Bài Này</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status"></div>
-    <p class="text-muted mt-2">Đang tải lịch sử trắc nghiệm của bệnh nhân...</p>
-  </div>
+  <!-- 3. Recent Patient Assessments Section (BOTTOM) -->
+  <div class="card border-0 shadow-sm mb-4 monitoring-panel">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3.5 pb-2 border-bottom">
+        <div>
+          <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+            <i class="bi bi-clock-history text-teal"></i>
+            <span>Lịch Sử &amp; Kết Quả Trắc Nghiệm Của Bệnh Nhân</span>
+          </h5>
+          <p class="text-muted mb-0 mt-0.5" style="font-size: 0.8rem;">
+            Danh sách các bài test đã chỉ định, điểm số thang đo và cảnh báo nguy cơ cao (Event Producer).
+          </p>
+        </div>
 
-  <!-- Empty state -->
-  <div *ngIf="!isLoading && !selectedPatientId" class="text-center py-5 card border-0 shadow-sm">
-    <div class="card-body py-5">
-      <i class="bi bi-person-lines-fill display-1 text-muted opacity-50 mb-3 d-block"></i>
-      <h5 class="text-muted">Vui lòng chọn một bệnh nhân</h5>
-      <p class="text-muted small">Chọn bệnh nhân từ danh sách trên để xem chi tiết các bài trắc nghiệm tâm lý và điểm số của họ.</p>
-    </div>
-  </div>
+        <!-- Filter by Patient Dropdown -->
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small fw-semibold">
+            <i class="bi bi-filter me-1"></i>Lọc bệnh nhân:
+          </span>
+          <select class="form-select form-select-sm w-auto shadow-none" style="border-radius: 8px;" [(ngModel)]="selectedPatientId" (change)="onPatientChange()">
+            <option [ngValue]="null">-- Tất cả bệnh nhân đã giao --</option>
+            <option *ngFor="let p of patients" [ngValue]="p.id">
+              {{ p.fullName || p.user?.login }} ({{ p.phone || 'Chưa có SĐT' }})
+            </option>
+          </select>
+        </div>
+      </div>
 
-  <div *ngIf="!isLoading && selectedPatientId && submissions.length === 0" class="text-center py-5 card border-0 shadow-sm">
-    <div class="card-body py-5">
-      <i class="bi bi-clipboard-x display-1 text-muted opacity-50 mb-3 d-block"></i>
-      <h5 class="text-muted">Bệnh nhân chưa có bài trắc nghiệm nào</h5>
-      <p class="text-muted small">Bác sĩ có thể bấm nút "Chỉ Định Bài Test Cho Bệnh Nhân" để yêu cầu bệnh nhân làm bài sàng lọc.</p>
-      <button class="btn btn-primary btn-sm mt-2" (click)="openAssignModal(assignModal)">
-        <i class="bi bi-plus-lg me-1"></i>Chỉ định ngay
-      </button>
-    </div>
-  </div>
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-teal" style="color: #0f766e;" role="status"></div>
+        <p class="text-muted mt-2 small">Đang tải lịch sử trắc nghiệm của bệnh nhân...</p>
+      </div>
 
-  <!-- Submissions Table -->
-  <div *ngIf="!isLoading && selectedPatientId && submissions.length > 0" class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && submissions.length === 0" class="text-center py-5 text-muted border border-dashed rounded-3 empty-assessments">
+        <i class="bi bi-clipboard2-x d-block mb-2" style="font-size: 2.75rem; color: #94a3b8; opacity: 0.5;"></i>
+        <h6 class="fw-bold text-dark mb-1">Chưa có kết quả trắc nghiệm nào</h6>
+        <span class="small text-muted d-block mb-3">Bác sĩ hãy chọn bệnh nhân và bấm nút "Chỉ Định Bài Test" ở trên để gửi bài sàng lọc.</span>
+        <button type="button" class="btn btn-sm btn-outline-teal px-3 py-1.5 fw-semibold" (click)="openAssignModal(assignModal)">
+          <i class="bi bi-send me-1"></i>Giao Bài Test Đầu Tiên
+        </button>
+      </div>
+
+      <!-- Submissions Table -->
+      <div *ngIf="!isLoading && submissions.length > 0" class="table-responsive">
+        <table class="table align-middle mb-0 clinical-table" style="font-size: 0.86rem;">
+          <thead>
             <tr>
-              <th>Bài Trắc Nghiệm</th>
-              <th>Trạng Thái</th>
-              <th>Điểm Số</th>
-              <th>Kết Luận Lâm Sàng</th>
-              <th>Ngày Hoàn Thành</th>
-              <th class="text-end">Hành Động</th>
+              <th class="ps-3 py-3">Bệnh Nhân</th>
+              <th class="py-3">Bài Trắc Nghiệm</th>
+              <th class="py-3">Thời Điểm Hoàn Thành</th>
+              <th class="py-3">Tổng Điểm &amp; Mức Độ</th>
+              <th class="py-3">Trạng Thái</th>
+              <th class="text-end pe-3 py-3">Hành Động</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let sub of submissions">
-              <td>
-                <strong class="text-dark">{{ sub.test?.title }}</strong>
-                <div class="text-muted small">Loại: {{ sub.test?.testType }} - {{ sub.test?.category }}</div>
+            <tr *ngFor="let sub of submissions" class="clinical-row">
+              <td class="ps-3 py-3">
+                <div class="d-flex align-items-center gap-2.5">
+                  <div class="avatar-sm rounded-circle d-flex align-items-center justify-content-center fw-bold text-teal flex-shrink-0" style="width: 36px; height: 36px; background: rgba(15, 118, 110, 0.1); font-size: 0.85rem;">
+                    {{ ((sub.patient?.fullName || sub.patient?.user?.login) || 'B')[0] }}
+                  </div>
+                  <div>
+                    <div class="fw-bold text-dark">{{ sub.patient?.fullName || sub.patient?.user?.login || 'Bệnh nhân' }}</div>
+                    <div class="text-muted small" style="font-size: 0.75rem;">
+                      <i class="bi bi-telephone me-1"></i>{{ sub.patient?.phone || 'Chưa cập nhật SĐT' }}
+                    </div>
+                  </div>
+                </div>
               </td>
-              <td>
-                <span class="badge" [ngClass]="sub.status === 'COMPLETED' ? 'bg-success' : 'bg-warning text-dark'">
-                  {{ sub.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đã giao (Chưa làm)' }}
+              <td class="py-3">
+                <div class="fw-semibold text-dark">{{ sub.test?.title }}</div>
+                <div class="text-muted small" style="font-size: 0.75rem;">
+                  <span class="badge bg-light text-muted border me-1">{{ sub.test?.testType }}</span>
+                  <span>{{ sub.test?.category || 'Sàng lọc lâm sàng' }}</span>
+                </div>
+              </td>
+              <td class="py-3 text-muted">
+                <div class="d-flex align-items-center gap-1.5">
+                  <i class="bi bi-calendar3 text-muted"></i>
+                  <span>{{ (sub.completedAt || sub.createdDate) | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </td>
+              <td class="py-3">
+                <div *ngIf="sub.status === 'COMPLETED'">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="fw-bold text-dark fs-6">{{ sub.totalScore }} điểm</span>
+                    <span 
+                      class="badge severity-badge" 
+                      [style.background]="getEffectiveSeverity(sub).bg" 
+                      [style.color]="getEffectiveSeverity(sub).text" 
+                      [style.border]="'1px solid ' + getEffectiveSeverity(sub).border"
+                    >
+                      <span *ngIf="getEffectiveSeverity(sub).isHighRisk" class="pulse-dot"></span>
+                      {{ getEffectiveSeverity(sub).label }}
+                    </span>
+                  </div>
+                  <div *ngIf="getEffectiveSeverity(sub).isHighRisk" class="badge bg-danger-subtle text-danger border border-danger-subtle small d-inline-flex align-items-center gap-1" style="font-size: 0.68rem;">
+                    <i class="bi bi-broadcast"></i>
+                    <span>Cảnh báo nguy cơ cao (Event Producer sang Clinical)</span>
+                  </div>
+                </div>
+                <span *ngIf="sub.status !== 'COMPLETED'" class="text-muted small fst-italic">
+                  <i class="bi bi-hourglass-split me-1"></i>Đang chờ bệnh nhân làm bài
                 </span>
               </td>
-              <td>
-                <span class="fw-bold fs-6 text-primary">{{ sub.totalScore }}</span>
+              <td class="py-3">
+                <span *ngIf="sub.status === 'COMPLETED'" class="badge status-badge-completed px-2.5 py-1.5" style="font-size: 0.72rem; font-weight: 700;">
+                  <i class="bi bi-check-circle-fill me-1"></i>Hoàn thành
+                </span>
+                <span *ngIf="sub.status !== 'COMPLETED'" class="badge status-badge-progress px-2.5 py-1.5" style="font-size: 0.72rem; font-weight: 700;">
+                  <i class="bi bi-clock-history me-1"></i>Đã giao (Chờ nộp)
+                </span>
               </td>
-              <td style="max-width: 300px;">
-                <span class="small text-secondary">{{ sub.interpretation }}</span>
-              </td>
-              <td class="text-muted small">
-                {{ sub.completedAt || sub.createdDate | date:'dd/MM/yyyy HH:mm' }}
-              </td>
-              <td class="text-end">
-                <a *ngIf="sub.status === 'COMPLETED'" class="btn btn-outline-primary btn-sm" [routerLink]="['/patient/psychometrics/result', sub.id]">
-                  <i class="bi bi-eye me-1"></i>Xem Chi Tiết
-                </a>
+              <td class="text-end pe-3 py-3">
+                <button 
+                  *ngIf="sub.status === 'COMPLETED'" 
+                  type="button" 
+                  class="btn btn-outline-teal btn-sm px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1"
+                  style="border-radius: 7px; font-size: 0.78rem;"
+                  (click)="openSubmissionReportModal(submissionReportModal, sub)"
+                >
+                  <i class="bi bi-file-earmark-medical"></i>
+                  <span>Xem Báo Cáo</span>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -105,19 +300,20 @@
   </div>
 </div>
 
-<!-- Assign Modal -->
+<!-- Modal 1: Assign Assessment to Patient -->
 <ng-template #assignModal let-modal>
-  <div class="modal-header bg-light">
-    <h5 class="modal-title fw-bold text-primary">
-      <i class="bi bi-clipboard2-check me-2"></i>Chỉ Định Bài Test Tâm Lý
+  <div class="modal-header bg-light border-bottom">
+    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="bi bi-clipboard2-check text-teal" style="color: #0f766e;"></i>
+      <span>Chỉ Định Bài Test Tâm Lý Cho Bệnh Nhân</span>
     </h5>
-    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
   </div>
-  <div class="modal-body">
+  <div class="modal-body p-4">
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <div class="mb-3">
-      <label class="form-label fw-semibold">Bệnh nhân tiếp nhận <span class="text-danger">*</span></label>
+      <label class="form-label fw-semibold text-dark small">Bệnh nhân tiếp nhận <span class="text-danger">*</span></label>
       <select class="form-select" [(ngModel)]="assignPatientId">
         <option [ngValue]="null">-- Chọn bệnh nhân --</option>
         <option *ngFor="let p of patients" [ngValue]="p.id">
@@ -127,7 +323,7 @@
     </div>
 
     <div class="mb-3">
-      <label class="form-label fw-semibold">Chọn bài trắc nghiệm chuẩn <span class="text-danger">*</span></label>
+      <label class="form-label fw-semibold text-dark small">Chọn bài trắc nghiệm chuẩn y khoa <span class="text-danger">*</span></label>
       <select class="form-select" [(ngModel)]="selectedTestId">
         <option *ngFor="let t of tests" [ngValue]="t.id">
           [{{ t.testType }}] {{ t.title }} ({{ t.category }})
@@ -136,20 +332,191 @@
     </div>
 
     <div class="mb-3">
-      <label class="form-label fw-semibold">Hạn hoàn thành (Tùy chọn)</label>
+      <label class="form-label fw-semibold text-dark small">Hạn hoàn thành (Due Date)</label>
       <input type="datetime-local" class="form-control" [(ngModel)]="dueDate" />
     </div>
 
     <div class="mb-3">
-      <label class="form-label fw-semibold">Ghi chú / Dặn dò của bác sĩ</label>
-      <textarea class="form-control" rows="3" [(ngModel)]="doctorNotes" placeholder="Nhập lưu ý hoặc dặn dò bệnh nhân trước khi làm bài..."></textarea>
+      <label class="form-label fw-semibold text-dark small">Y lệnh &amp; Ghi chú của Bác Sĩ (Doctor Clinical Notes)</label>
+      <textarea class="form-control" rows="3" [(ngModel)]="doctorNotes" placeholder="Ví dụ: Đề nghị bệnh nhân hoàn thành trung thực trước buổi tư vấn ngày thứ 6..."></textarea>
     </div>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Hủy</button>
-    <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="assignTest(modal)">
+  <div class="modal-footer bg-light border-top">
+    <button type="button" class="btn btn-secondary px-3" (click)="modal.dismiss()">Hủy</button>
+    <button type="button" class="btn text-white px-4 fw-semibold btn-assign-test" [disabled]="isSaving" (click)="assignTest(modal)">
       <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1"></span>
-      Chỉ Định Bài Test
+      Xác Nhận Chỉ Định
     </button>
+  </div>
+</ng-template>
+
+<!-- Modal 2: Test Details & Scoring Guide -->
+<ng-template #testDetailsModal let-modal>
+  <div *ngIf="selectedTestForDetails as test" class="modal-content border-0">
+    <div class="modal-header bg-light border-bottom">
+      <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle text-teal" style="color: #0f766e;"></i>
+        <span>Chi Tiết Bảng Hỏi: {{ test.title }}</span>
+      </h5>
+      <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body p-4">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="badge bg-primary">{{ test.testType }}</span>
+        <span class="badge bg-secondary">{{ test.category || 'Tâm lý học' }}</span>
+        <span class="badge bg-info text-dark">{{ test.questions?.length || 21 }} câu hỏi</span>
+      </div>
+
+      <h6 class="fw-bold text-dark mb-1">Mục đích lâm sàng:</h6>
+      <p class="text-secondary small mb-3">{{ test.purpose || test.description }}</p>
+
+      <h6 class="fw-bold text-dark mb-1">Hướng dẫn làm bài:</h6>
+      <div class="p-3 bg-light rounded-3 small mb-3 border">
+        {{ test.instructions || 'Bệnh nhân chọn mức độ phù hợp nhất với trải nghiệm cảm xúc trong tuần qua (0: Không đúng chút nào -> 3: Rất đúng).' }}
+      </div>
+
+      <h6 class="fw-bold text-dark mb-2">Thang đo phân loại mức độ nghiêm trọng:</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered small">
+          <thead class="table-light">
+            <tr>
+              <th>Phân nhóm</th>
+              <th>Bình thường</th>
+              <th>Nhẹ</th>
+              <th>Vừa</th>
+              <th>Nặng (High Risk)</th>
+              <th>Rất nặng (Severe)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Trầm cảm (Depression)</strong></td>
+              <td>0 - 9</td>
+              <td>10 - 13</td>
+              <td>14 - 20</td>
+              <td class="text-danger fw-bold">21 - 27</td>
+              <td class="text-danger fw-bold">&gt;= 28</td>
+            </tr>
+            <tr>
+              <td><strong>Lo âu (Anxiety)</strong></td>
+              <td>0 - 7</td>
+              <td>8 - 9</td>
+              <td>10 - 14</td>
+              <td class="text-danger fw-bold">15 - 19</td>
+              <td class="text-danger fw-bold">&gt;= 20</td>
+            </tr>
+            <tr>
+              <td><strong>Căng thẳng (Stress)</strong></td>
+              <td>0 - 14</td>
+              <td>15 - 18</td>
+              <td>19 - 25</td>
+              <td class="text-danger fw-bold">26 - 33</td>
+              <td class="text-danger fw-bold">&gt;= 34</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="small text-muted fst-italic">
+        * Khi bệnh nhân rơi vào vùng "Nặng" hoặc "Rất nặng", hệ thống sẽ kích hoạt Event Producer gửi thông báo cảnh báo tức thời sang Clinical Service.
+      </div>
+    </div>
+    <div class="modal-footer bg-light border-top">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Đóng</button>
+      <button type="button" class="btn text-white fw-semibold btn-assign-test" (click)="modal.dismiss(); openAssignModalForTest(assignModal, test)">
+        <i class="bi bi-send me-1"></i>Chỉ Định Bài Test Này
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modal 3: Detailed Submission Report -->
+<ng-template #submissionReportModal let-modal>
+  <div *ngIf="selectedSubmissionForDetails as sub" class="modal-content border-0">
+    <div class="modal-header bg-light border-bottom">
+      <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+        <i class="bi bi-clipboard2-pulse text-teal" style="color: #0f766e;"></i>
+        <span>Báo Cáo Đánh Giá Lâm Sàng: {{ sub.test?.title }}</span>
+      </h5>
+      <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body p-4">
+      <!-- Patient & Test Info Header -->
+      <div class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light border mb-3">
+        <div>
+          <div class="fw-bold text-dark">{{ sub.patient?.fullName || sub.patient?.user?.login }}</div>
+          <div class="small text-muted">SĐT: {{ sub.patient?.phone || 'Chưa cập nhật' }}</div>
+        </div>
+        <div class="text-end">
+          <div class="small text-muted">Hoàn thành lúc:</div>
+          <div class="fw-semibold text-dark">{{ sub.completedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+        </div>
+      </div>
+
+      <!-- Severity Banner -->
+      <div class="p-3 rounded-3 mb-3 border" [style.background]="getEffectiveSeverity(sub).bg" [style.border-color]="getEffectiveSeverity(sub).border">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-bold" [style.color]="getEffectiveSeverity(sub).text">
+              MỨC ĐỘ ĐÁNH GIÁ: {{ getEffectiveSeverity(sub).label }}
+            </div>
+            <div class="small mt-1" [style.color]="getEffectiveSeverity(sub).text">
+              {{ sub.interpretation }}
+            </div>
+          </div>
+          <div class="fs-4 fw-bold" [style.color]="getEffectiveSeverity(sub).text">
+            {{ sub.totalScore }} điểm
+          </div>
+        </div>
+      </div>
+
+      <!-- High Risk Warning If Applicable -->
+      <div *ngIf="getEffectiveSeverity(sub).isHighRisk" class="alert alert-danger d-flex align-items-start gap-2 mb-3">
+        <i class="bi bi-exclamation-octagon-fill fs-5 flex-shrink-0 mt-0.5"></i>
+        <div>
+          <strong>CẢNH BÁO NGUY CƠ CAO (Clinical Event Triggered):</strong>
+          <div class="small mt-0.5">
+            Điểm số của người bệnh vượt ngưỡng an toàn y khoa. Event Producer đã gửi sự kiện sang <code>opcbs-clinical-service</code> để cảnh báo bác sĩ phụ trách.
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscores Breakdown (if available) -->
+      <div *ngIf="getParsedScoreData(sub.scoreDataJson) as data" class="mb-3">
+        <h6 class="fw-bold text-dark small mb-2">Chi tiết các thang đo phụ:</h6>
+        <div class="row g-2">
+          <div *ngIf="data.depressionScore !== undefined" class="col-4">
+            <div class="p-2.5 rounded-3 bg-light border text-center">
+              <span class="small text-muted d-block">Trầm cảm</span>
+              <strong class="fs-5 text-dark">{{ data.depressionScore }}</strong>
+              <div class="small text-muted">{{ data.depressionLevel }}</div>
+            </div>
+          </div>
+          <div *ngIf="data.anxietyScore !== undefined" class="col-4">
+            <div class="p-2.5 rounded-3 bg-light border text-center">
+              <span class="small text-muted d-block">Lo âu</span>
+              <strong class="fs-5 text-dark">{{ data.anxietyScore }}</strong>
+              <div class="small text-muted">{{ data.anxietyLevel }}</div>
+            </div>
+          </div>
+          <div *ngIf="data.stressScore !== undefined" class="col-4">
+            <div class="p-2.5 rounded-3 bg-light border text-center">
+              <span class="small text-muted d-block">Căng thẳng</span>
+              <strong class="fs-5 text-dark">{{ data.stressScore }}</strong>
+              <div class="small text-muted">{{ data.stressLevel }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="sub.doctorNotes" class="p-3 bg-light rounded-3 border small">
+        <strong>Y lệnh bác sĩ:</strong> {{ sub.doctorNotes }}
+      </div>
+    </div>
+    <div class="modal-footer bg-light border-top">
+      <button type="button" class="btn btn-secondary px-3" (click)="modal.dismiss()">Đóng</button>
+      <a class="btn text-white fw-semibold px-3 btn-assign-test" [routerLink]="['/patient/psychometrics/result', sub.id]" (click)="modal.dismiss()">
+        <i class="bi bi-box-arrow-up-right me-1"></i>Xem Chi Tiết Bài Làm Đầy Đủ
+      </a>
+    </div>
   </div>
 </ng-template>

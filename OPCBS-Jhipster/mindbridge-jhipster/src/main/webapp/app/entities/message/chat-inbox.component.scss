@@ -472,6 +472,16 @@
     color: #ffffff;
     border-bottom-right-radius: 3px;
     box-shadow: 0 2px 8px rgba(15, 118, 110, 0.2);
+
+    &.sending {
+      opacity: 0.82;
+      background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%);
+    }
+
+    &.failed {
+      background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+      box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
+    }
   }
 }
 

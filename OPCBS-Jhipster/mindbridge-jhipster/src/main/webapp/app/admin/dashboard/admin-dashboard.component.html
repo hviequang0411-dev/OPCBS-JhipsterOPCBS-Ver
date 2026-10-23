@@ -1,0 +1,481 @@
+<div class="admin-dash-container">
+  <!-- Page Header & Action Controls -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge bg-teal-subtle text-teal text-uppercase fw-semibold"
+          style="font-size: 0.72rem; letter-spacing: 0.5px; padding: 4px 10px; background: rgba(15, 118, 110, 0.1); color: #0f766e; border-radius: 6px;">
+          <i class="bi bi-shield-lock-fill me-1"></i>Hệ Thống Quản Trị Trung Ương
+        </span>
+        <span class="text-muted" style="font-size: 0.8rem;">&bull;</span>
+        <span class="text-muted" style="font-size: 0.8rem;">OPCBS / MindBridge Command Center</span>
+      </div>
+      <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-speedometer2" style="color: #0f766e;"></i>
+        <span>Bảng Điều Khiển Tổng Quan Quản Trị &amp; Vận Hành</span>
+      </h1>
+      <p class="text-muted mb-0" style="font-size: 0.88rem;">
+        Trực quan hóa đa chiều các chỉ số vận hành lâm sàng, doanh thu, cơ cấu chuyên môn y tế và lịch khám
+      </p>
+    </div>
+
+    <!-- Right Controls: Cache Performance & Quick Actions -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Redis Cache Badge -->
+      <div class="cache-badge-box d-flex align-items-center gap-2 px-3 py-1.5 rounded-3 border bg-white shadow-sm">
+        @if (data().cacheHit) {
+        <span class="badge bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center gap-1"
+          style="font-size: 0.74rem;">
+          <i class="bi bi-lightning-charge-fill text-warning"></i> REDIS CACHE HIT ({{ data().executionTimeMs }} ms)
+        </span>
+        } @else {
+        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center gap-1"
+          style="font-size: 0.74rem;">
+          <i class="bi bi-database-check"></i> DB QUERY ({{ data().executionTimeMs }} ms)
+        </span>
+        }
+        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 d-flex align-items-center gap-1"
+          style="font-size: 0.75rem; border-radius: 6px;" (click)="evictCache()" [disabled]="isEvicting()"
+          title="Xóa cache và nạp lại số liệu mới nhất">
+          <i class="bi bi-arrow-clockwise" [class.spin-anim]="isEvicting()"></i>
+          <span>{{ isEvicting() ? 'Đang xóa...' : 'Làm mới Cache' }}</span>
+        </button>
+      </div>
+
+      <a routerLink="/admin/service-package" class="btn btn-primary btn-sm d-flex align-items-center gap-1.5 px-3 py-2"
+        style="background: #0f766e; border-color: #0f766e; font-weight: 600; border-radius: 8px;">
+        <i class="bi bi-gem"></i>
+        <span>Quản Lý Gói Cước</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Notification Toast Alert -->
+  @if (alertMessage()) {
+  <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mb-4 shadow-sm" role="alert"
+    style="border-radius: 8px;">
+    <i class="bi bi-check-circle-fill text-success"></i>
+    <span style="font-size: 0.88rem;">{{ alertMessage() }}</span>
+  </div>
+  }
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border text-teal mb-3" style="color: #0f766e; width: 3rem; height: 3rem;" role="status"></div>
+    <p class="text-muted fw-medium">Đang tải và tổng hợp số liệu Dashboard từ Redis Cache...</p>
+  </div>
+  } @else if (errorMessage()) {
+  <div class="card border-0 shadow-sm p-5 text-center my-4" style="border-radius: 12px; background: #fff5f5;">
+    <div class="text-danger mb-3">
+      <i class="bi bi-exclamation-octagon-fill" style="font-size: 3rem;"></i>
+    </div>
+    <h4 class="fw-bold text-danger mb-2">Không thể kết nối hoặc tải dữ liệu Dashboard Admin</h4>
+    <p class="text-muted mx-auto mb-4" style="max-width: 540px;">
+      {{ errorMessage() }}
+    </p>
+    <div>
+      <button type="button" class="btn btn-danger px-4 py-2 fw-semibold" style="border-radius: 8px;"
+        (click)="loadData()">
+        <i class="bi bi-arrow-clockwise me-1.5"></i> Thử lại ngay
+      </button>
+    </div>
+  </div>
+  } @else {
+  <!-- 1. KPI Metric Row -->
+  <div class="row g-3 mb-4">
+    <!-- Platform Revenue -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-stat-box d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <div>
+          <span class="stat-label">Doanh Thu Đã Thanh Toán</span>
+          <h3 class="stat-value text-dark" style="color: #0f766e;">
+            {{ formatVnd(data().totalRevenue) }}
+          </h3>
+          <span class="text-muted" style="font-size: 0.72rem;">VNPay thành công &amp; Gói hội viên (đối chiếu chống
+            trùng 2 chiều)</span>
+          @if ((data().unconfirmedRevenue ?? 0) > 0) {
+          <div class="text-warning mt-1" style="font-size: 0.72rem;">
+            <i class="bi bi-clock-history me-1"></i>{{ formatVnd(data().unconfirmedRevenue ?? 0) }} đang chờ thanh toán
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Subscriptions -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-stat-box d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background: rgba(99, 102, 241, 0.12); color: #6366f1;">
+          <i class="bi bi-credit-card-2-front-fill"></i>
+        </div>
+        <div>
+          <span class="stat-label">Gói Hội Viên Bác Sĩ</span>
+          <h3 class="stat-value text-dark">
+            {{ data().activeSubscriptions }} <small class="text-muted fs-6 fw-normal">đang hoạt động</small>
+          </h3>
+          <span class="text-muted" style="font-size: 0.72rem;">Duy trì tính năng phòng khám số</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Doctors -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-stat-box d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background: rgba(15, 118, 110, 0.12); color: #0f766e;">
+          <i class="bi bi-person-badge-fill"></i>
+        </div>
+        <div>
+          <span class="stat-label">Tổng Số Chuyên Gia Bác Sĩ</span>
+          <h3 class="stat-value text-dark">
+            {{ data().totalDoctors }} <small class="text-muted fs-6 fw-normal">hồ sơ</small>
+          </h3>
+          <span class="text-muted" style="font-size: 0.72rem;">Đã xác minh chứng chỉ hành nghề</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specializations -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="kpi-stat-box d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+          <i class="bi bi-tags-fill"></i>
+        </div>
+        <div>
+          <span class="stat-label">Chuyên Khoa &amp; Lĩnh Vực</span>
+          <h3 class="stat-value text-dark">
+            {{ data().totalSpecializations }} <small class="text-muted fs-6 fw-normal">chuyên khoa</small>
+          </h3>
+          <span class="text-muted" style="font-size: 0.72rem;">Bao phủ các rối loạn tâm lý học</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DIAGRAMS ROW: REVENUE TREND & SPECIALIZATION DONUT -->
+  <div class="row g-4 mb-4">
+    <!-- Diagram 1: Monthly Revenue Trend (SVG Area & Curved Bezier Line Chart) -->
+    <div class="col-lg-7">
+      <div class="dash-card h-100 d-flex flex-column">
+        <div class="card-header-custom">
+          <div>
+            <h5 class="card-title-custom">
+              <i class="bi bi-graph-up-arrow" style="color: #0f766e;"></i>
+              <span>Xu Hướng Doanh Thu Nền Tảng (6 Tháng Gần Nhất)</span>
+            </h5>
+            <div class="text-muted small mt-0.5">Biểu đồ đường cong tích hợp diện tích theo dõi dòng tiền &amp; số gói
+              dịch vụ bán ra</div>
+          </div>
+          <span class="badge bg-teal-subtle text-teal fw-semibold px-2.5 py-1"
+            style="font-size: 0.74rem; background: rgba(15, 118, 110, 0.08); color: #0f766e; border-radius: 6px;">
+            <i class="bi bi-calendar-range me-1"></i> 6 tháng gần nhất
+          </span>
+        </div>
+
+        <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
+          @if (!hasRevenueData()) {
+          <div class="empty-chart-state py-5 text-center text-muted">
+            <i class="bi bi-bar-chart-line display-6 mb-2 d-block text-secondary opacity-50"></i>
+            <p class="mb-1 fw-semibold">Chưa ghi nhận dữ liệu doanh thu trong 6 tháng qua</p>
+            <small>Dữ liệu biểu đồ sẽ tự động biểu diễn khi có giao dịch thanh toán đầu tiên qua hệ thống.</small>
+          </div>
+          } @else {
+          <!-- Chart Container -->
+          <div class="chart-container-svg position-relative">
+            @if (hoveredPoint()) {
+            <div class="chart-tooltip-box shadow-sm">
+              <div class="fw-bold text-dark border-bottom pb-1 mb-1">{{ hoveredPoint()!.month }}</div>
+              <div class="d-flex justify-content-between gap-3 text-teal fw-bold" style="color: #0f766e;">
+                <span>Doanh thu:</span>
+                <span>{{ formatVnd(hoveredPoint()!.revenue) }}</span>
+              </div>
+              <div class="d-flex justify-content-between gap-3 text-muted small mt-0.5">
+                <span>Gói hội viên:</span>
+                <span>{{ hoveredPoint()!.subscriptions }} lượt</span>
+              </div>
+            </div>
+            }
+
+            <svg viewBox="0 0 600 195" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="adminRevenueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#0f766e" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="#0f766e" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              <!-- Horizontal Grid Lines with Y-Axis Values -->
+              <line x1="45" y1="25" x2="575" y2="25" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3,3" />
+              <text x="40" y="29" text-anchor="end" fill="#94a3b8" font-size="9" font-weight="500">{{
+                formatShortVnd(getMaxRevenue()) }}</text>
+
+              <line x1="45" y1="90" x2="575" y2="90" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="3,3" />
+              <text x="40" y="94" text-anchor="end" fill="#94a3b8" font-size="9" font-weight="500">{{
+                formatShortVnd(getMaxRevenue() / 2) }}</text>
+
+              <line x1="45" y1="155" x2="575" y2="155" stroke="#e2e8f0" stroke-width="1.5" />
+              <text x="40" y="159" text-anchor="end" fill="#94a3b8" font-size="9" font-weight="500">0 ₫</text>
+
+              <!-- Area Fill -->
+              <path [attr.d]="getChartAreaD()" fill="url(#adminRevenueGrad)" />
+
+              <!-- Curved Trend Line -->
+              <path [attr.d]="getChartPathD()" fill="none" stroke="#0f766e" stroke-width="3" stroke-linecap="round"
+                stroke-linejoin="round" />
+
+              <!-- Data Points with hover -->
+              @for (pt of getChartPoints(); track pt.month) {
+              <circle class="chart-point" [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" (mouseenter)="onPointHover(pt)"
+                (mouseleave)="onPointLeave()" />
+
+              <!-- X Axis Month Label -->
+              <text [attr.x]="pt.x" y="178" text-anchor="middle" fill="#64748b" font-size="11" font-weight="600">
+                {{ pt.month }}
+              </text>
+              }
+            </svg>
+          </div>
+          }
+
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top small text-muted px-2">
+            <span class="d-flex align-items-center gap-1.5">
+              <span class="rounded-circle" style="width: 8px; height: 8px; background: #0f766e;"></span>
+              <span>Doanh thu thanh toán thực tế (đã đối chiếu chống cộng trùng 2 chiều)</span>
+            </span>
+            <span>Cập nhật qua Redis Cache (TTL: 2 phút, Invalidate tức thì khi phát sinh giao dịch)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diagram 2: Specialization Breakdown Donut Diagram -->
+    <div class="col-lg-5">
+      <div class="dash-card h-100 d-flex flex-column">
+        <div class="card-header-custom">
+          <div>
+            <h5 class="card-title-custom">
+              <i class="bi bi-pie-chart-fill" style="color: #0f766e;"></i>
+              <span>Tỷ Lệ Bác Sĩ Theo Chuyên Khoa (%)</span>
+            </h5>
+            <div class="text-muted small mt-0.5">Cơ cấu phân bổ nhân lực y tế theo từng chuyên môn</div>
+          </div>
+        </div>
+
+        <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
+          @if (!hasSpecializationData()) {
+          <div class="empty-chart-state py-5 text-center text-muted">
+            <i class="bi bi-pie-chart display-6 mb-2 d-block text-secondary opacity-50"></i>
+            <p class="mb-1 fw-semibold">Chưa có phân bố chuyên khoa bác sĩ</p>
+            <small>Hồ sơ bác sĩ được gán chuyên khoa sẽ hiển thị tỷ lệ tại đây.</small>
+          </div>
+          } @else {
+          <div class="row align-items-center">
+            <!-- Donut SVG -->
+            <div class="col-sm-5 text-center mb-3 mb-sm-0">
+              <div style="position: relative; width: 160px; height: 160px; margin: 0 auto;">
+                <svg width="160" height="160" viewBox="0 0 160 160">
+                  <g transform="rotate(-90 80 80)">
+                    @for (seg of getDonutSegments(); track seg.name) {
+                    <circle class="donut-segment" cx="80" cy="80" r="55" fill="transparent" [attr.stroke]="seg.color"
+                      stroke-width="22" [attr.stroke-dasharray]="seg.strokeDasharray"
+                      [attr.stroke-dashoffset]="seg.strokeDashoffset" (mouseenter)="onSpecHover(seg)"
+                      (mouseleave)="onSpecHover(null)" />
+                    }
+                  </g>
+                </svg>
+                <div
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                  <span class="fw-bold text-dark fs-4 lh-1">{{ data().totalDoctors }}</span>
+                  <span class="text-muted" style="font-size: 0.72rem;">Bác Sĩ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legend with percentages & counts -->
+            <div class="col-sm-7">
+              <div class="d-flex flex-column gap-2" style="font-size: 0.8rem; max-height: 190px; overflow-y: auto;">
+                @for (spec of data().specializationBreakdown; track spec.name) {
+                <div class="d-flex align-items-center justify-content-between p-1.5 rounded-2 spec-legend-item"
+                  [class.active]="hoveredSpec()?.name === spec.name" (mouseenter)="onSpecHover(spec)"
+                  (mouseleave)="onSpecHover(null)">
+                  <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                    <span class="rounded-circle" [style.background]="spec.color"
+                      style="width: 10px; height: 10px; flex-shrink: 0;"></span>
+                    <span class="text-dark fw-medium text-truncate" [title]="spec.name">{{ spec.name }}</span>
+                  </div>
+                  <span class="badge text-dark bg-light border fw-bold" style="font-size: 0.72rem;">
+                    {{ spec.percentage }}% ({{ spec.doctorCount }})
+                  </span>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+          }
+
+          <div class="mt-3 pt-2 border-top text-end">
+            <a routerLink="/specialization" class="btn btn-sm btn-link text-decoration-none p-0 text-teal fw-semibold"
+              style="font-size: 0.82rem; color: #0f766e;">
+              <span>Quản lý danh mục chuyên khoa</span>
+              <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ROW 2: ACTIVE SERVICE PACKAGES & APPOINTMENT STATUS DISTRIBUTION -->
+  <div class="row g-4">
+    <!-- Active Platform Service Packages Table -->
+    <div class="col-lg-7">
+      <div class="dash-card h-100">
+        <div class="card-header-custom">
+          <div>
+            <h5 class="card-title-custom">
+              <i class="bi bi-box-seam-fill" style="color: #0f766e;"></i>
+              <span>Gói Cước Dịch Vụ Nền Tảng Đang Hoạt Động</span>
+            </h5>
+            <div class="text-muted small mt-0.5">Các gói cước tài khoản chuyên gia được thiết lập trên hệ thống</div>
+          </div>
+          <a routerLink="/admin/service-package" class="btn btn-outline-teal btn-sm"
+            style="border: 1px solid #0f766e; color: #0f766e; border-radius: 6px; font-size: 0.78rem; font-weight: 600;">
+            Xem tất cả
+          </a>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Tên Gói</th>
+                <th>Giá Niêm Yết</th>
+                <th>Thời Hạn</th>
+                <th>Trạng Thái</th>
+                <th class="text-end pe-3">Chi Tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (data().recentPackages.length === 0) {
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">
+                  Chưa có gói dịch vụ nào được cấu hình trong cơ sở dữ liệu.
+                </td>
+              </tr>
+              } @else {
+              @for (pkg of data().recentPackages; track pkg.id) {
+              <tr>
+                <td class="ps-3 fw-bold text-dark">{{ pkg.name }}</td>
+                <td class="fw-bold" style="color: #0f766e;">{{ formatVnd(pkg.price) }}</td>
+                <td class="text-muted">{{ pkg.durationDays }} ngày</td>
+                <td>
+                  @if (pkg.isActive) {
+                  <span class="badge bg-success bg-opacity-10 text-success" style="font-size: 0.72rem;">Đang kích
+                    hoạt</span>
+                  } @else {
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.72rem;">Tạm
+                    dừng</span>
+                  }
+                </td>
+                <td class="text-end pe-3">
+                  <a [routerLink]="['/admin/service-package', pkg.id, 'view']"
+                    class="btn btn-sm btn-outline-secondary py-0.5 px-2"
+                    style="font-size: 0.76rem; border-radius: 6px;">
+                    Xem
+                  </a>
+                </td>
+              </tr>
+              }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appointment Progress & Operations Shortcuts -->
+    <div class="col-lg-5">
+      <!-- Appointment Distribution Diagram -->
+      <div class="dash-card mb-4">
+        <div class="card-header-custom">
+          <div>
+            <h5 class="card-title-custom">
+              <i class="bi bi-calendar2-check-fill" style="color: #0f766e;"></i>
+              <span>Tình Trạng Lịch Hẹn (Tổng: {{ data().totalAppointments }})</span>
+            </h5>
+            <div class="text-muted small mt-0.5">Tỷ lệ phân bổ trạng thái các buổi tư vấn lâm sàng toàn viện</div>
+          </div>
+        </div>
+
+        <div class="p-3">
+          @if (!hasAppointmentData()) {
+          <div class="empty-chart-state py-4 text-center text-muted">
+            <i class="bi bi-calendar-x display-6 mb-2 d-block text-secondary opacity-50"></i>
+            <p class="mb-0 fw-semibold">Chưa có lịch hẹn nào được ghi nhận</p>
+          </div>
+          } @else {
+          <!-- Stacked Progress Bar -->
+          <div class="progress mb-3" style="height: 14px; border-radius: 7px; overflow: hidden; background: #e2e8f0;">
+            @for (st of data().appointmentStatusBreakdown; track st.status) {
+            <div class="progress-bar" role="progressbar" [style.width.%]="st.percentage" [style.background]="st.color"
+              [attr.title]="st.label + ': ' + st.count + ' ca (' + st.percentage + '%)'"
+              (mouseenter)="onStatusHover(st)" (mouseleave)="onStatusHover(null)"></div>
+            }
+          </div>
+
+          <!-- Status Breakdown Grid -->
+          <div class="row g-2" style="font-size: 0.8rem;">
+            @for (st of data().appointmentStatusBreakdown; track st.status) {
+            <div class="col-6">
+              <div
+                class="p-2 rounded-2 bg-light border d-flex justify-content-between align-items-center status-card-item"
+                [class.highlight]="hoveredStatus()?.status === st.status" (mouseenter)="onStatusHover(st)"
+                (mouseleave)="onStatusHover(null)">
+                <div class="d-flex align-items-center gap-1.5 text-truncate me-1">
+                  <span class="rounded-circle" [style.background]="st.color"
+                    style="width: 8px; height: 8px; flex-shrink: 0;"></span>
+                  <span class="text-dark small text-truncate">{{ st.label }}</span>
+                </div>
+                <span class="fw-bold text-dark fs-7 flex-shrink-0">{{ st.count }} <small
+                    class="text-muted fw-normal">({{ st.percentage }}%)</small></span>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Quick Operations Shortcuts -->
+      <div class="dash-card p-3">
+        <h6 class="fw-bold text-dark small text-uppercase mb-2.5 d-flex align-items-center gap-1"
+          style="letter-spacing: 0.5px;">
+          <i class="bi bi-lightning-charge-fill text-warning"></i>
+          <span>Lối Tắt Tác Vụ Quản Trị</span>
+        </h6>
+        <div class="d-flex flex-column gap-2">
+          <a routerLink="/admin/service-package/new" class="shortcut-btn">
+            <i class="bi bi-plus-circle text-teal"></i>
+            <span>Tạo mới gói dịch vụ nền tảng (Service Package)</span>
+          </a>
+          <a routerLink="/admin/psychometrics/new" class="shortcut-btn">
+            <i class="bi bi-file-earmark-arrow-up text-teal"></i>
+            <span>Tải đề trắc nghiệm tâm lý từ File hoặc Link URL</span>
+          </a>
+          <a routerLink="/doctor/verification" class="shortcut-btn">
+            <i class="bi bi-shield-check text-teal"></i>
+            <span>Thẩm định chứng chỉ hành nghề bác sĩ</span>
+          </a>
+          <a routerLink="/appointment" class="shortcut-btn">
+            <i class="bi bi-calendar3 text-teal"></i>
+            <span>Giám sát tất cả lịch hẹn khám toàn viện</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+</div>

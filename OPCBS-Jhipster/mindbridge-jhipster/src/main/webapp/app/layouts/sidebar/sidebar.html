@@ -2,222 +2,77 @@
   <!-- Portal Brand Header -->
   <div class="sidebar-brand d-flex align-items-center justify-content-between">
     <a routerLink="/" class="d-flex align-items-center gap-2 text-decoration-none" title="Return to MindBridge Website">
-      <img src="content/images/logo-cropped.png" alt="MindBridge" style="height: 32px;" onerror="this.style.display='none'" />
+      <div class="sidebar-brand-emblem">
+        <i class="bi bi-heart-pulse-fill"></i>
+      </div>
       <div class="d-flex flex-column">
-        <span class="sidebar-brand-title">Mind<span style="color: #0f766e;">Bridge</span></span>
+        <span class="sidebar-brand-title">Mind<span style="color: #0d766e;">Bridge</span></span>
         <span class="sidebar-brand-sub">{{ getPortalTitle() }}</span>
       </div>
     </a>
   </div>
 
-  <!-- User Identity Card -->
-  <div class="sidebar-user-box mt-3 mb-2 p-2.5 rounded-3 d-flex align-items-center gap-2.5" style="background: #f1f5f9; border: 1px solid #e2e8f0;">
-    <div class="sidebar-user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px; background: #0f766e; color: #ffffff; font-size: 0.88rem; flex-shrink: 0;">
-      {{ getUserInitials() }}
-    </div>
-    <div class="flex-grow-1 overflow-hidden">
-      <div class="fw-bold text-dark text-truncate" style="font-size: 0.85rem;">{{ getUserDisplayName() }}</div>
-      <span class="badge" [ngClass]="getRoleBadge().class" style="font-size: 0.65rem; padding: 2px 6px;">{{ getRoleBadge().label }}</span>
-    </div>
-  </div>
-
-  <!-- Quick Return to Website -->
-  <a class="sb-link sb-back-home mb-1" routerLink="/" title="Quay về trang chủ">
-    <i class="bi bi-arrow-left-circle-fill text-teal"></i>
-    <span class="fw-bold" style="color: #0f766e;">Về Trang Chủ</span>
-  </a>
-
-  <div class="sb-divider"></div>
-
   <nav class="sidebar-nav">
-    <!-- ============================== DOCTOR ============================== -->
-    @if (isDoctor()) {
-      <div class="sb-section-label">LÂM SÀNG &amp; LỊCH KHÁM</div>
-
-      <a class="sb-link" routerLink="/doctor/dashboard" routerLinkActive="active">
-        <i class="bi bi-speedometer2 text-teal"></i>
-        <span>Bảng Điều Khiển</span>
-      </a>
-
-      <a class="sb-link" routerLink="/doctor/patients" routerLinkActive="active">
-        <i class="bi bi-people-fill"></i>
-        <span>Bệnh Nhân &amp; Hồ Sơ Bệnh Án</span>
-      </a>
-
-      <a class="sb-link" routerLink="/availability-slot" routerLinkActive="active">
-        <i class="bi bi-calendar-week"></i>
-        <span>Lịch Làm Việc &amp; Ca Khám</span>
-      </a>
-
-      <a class="sb-link" routerLink="/appointment" routerLinkActive="active">
-        <i class="bi bi-calendar-check"></i>
-        <span>Lịch Hẹn Khám</span>
-      </a>
-
-      <a class="sb-link" routerLink="/doctor/treatment-packages" routerLinkActive="active">
-        <i class="bi bi-box-seam"></i>
-        <span>Gói Trị Liệu &amp; Dịch Vụ</span>
-      </a>
-
-      <a class="sb-link" routerLink="/doctor/psychometrics" routerLinkActive="active">
-        <i class="bi bi-clipboard2-pulse"></i>
-        <span>Trắc Nghiệm Tâm Lý</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">TRAO ĐỔI &amp; THÔNG BÁO</div>
-
-      <a class="sb-link" routerLink="/messages" routerLinkActive="active">
-        <i class="bi bi-chat-dots"></i>
-        <span>Tư Vấn Trực Tuyến</span>
-      </a>
-
-      <a class="sb-link" routerLink="/notifications" routerLinkActive="active">
-        <i class="bi bi-bell"></i>
-        <span>Thông Báo</span>
-      </a>
-
-      <a class="sb-link" routerLink="/doctor/subscriptions" routerLinkActive="active">
-        <i class="bi bi-credit-card"></i>
-        <span>Gói Hội Viên Bác Sĩ</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">DANH MỤC CHUYÊN KHOA</div>
-
-      <a class="sb-link" routerLink="/doctor-profile" routerLinkActive="active">
-        <i class="bi bi-person-heart"></i>
-        <span>Danh Bạ Bác Sĩ</span>
-      </a>
-
-      <a class="sb-link" routerLink="/specialization" routerLinkActive="active">
-        <i class="bi bi-tags"></i>
-        <span>Chuyên Khoa</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">HỒ SƠ &amp; BẢO MẬT</div>
-
-      <a class="sb-link" routerLink="/doctor/verification" routerLinkActive="active">
-        <i class="bi bi-shield-check text-primary"></i>
-        <span>Chứng Chỉ &amp; Thẩm Định</span>
-      </a>
-
-      <a class="sb-link" routerLink="/account/settings" routerLinkActive="active">
-        <i class="bi bi-person-gear"></i>
-        <span>Thông Tin Cá Nhân</span>
-      </a>
-      <a class="sb-link" routerLink="/account/password" routerLinkActive="active">
-        <i class="bi bi-shield-lock"></i>
-        <span>Đổi Mật Khẩu</span>
-      </a>
-    }
-
-    <!-- ============================== PATIENT ============================== -->
-    @else if (isPatient()) {
-      <div class="sb-section-label">KHÁM BỆNH &amp; LỊCH HẸN</div>
-
-      <a class="sb-link" routerLink="/appointment" routerLinkActive="active">
-        <i class="bi bi-calendar-check"></i>
-        <span>Lịch Hẹn Của Tôi</span>
-      </a>
-
-      <a class="sb-link" routerLink="/patient/clinical-records" routerLinkActive="active">
-        <i class="bi bi-journal-medical"></i>
-        <span>Hồ Sơ Sức Khỏe</span>
-      </a>
-
-      <a class="sb-link" routerLink="/patient/treatment-packages" routerLinkActive="active">
-        <i class="bi bi-box2-heart"></i>
-        <span>Gói Trị Liệu Của Tôi</span>
-      </a>
-
-      <a class="sb-link" routerLink="/patient/journal" routerLinkActive="active">
-        <i class="bi bi-journal-richtext"></i>
-        <span>Nhật Ký Cảm Xúc</span>
-      </a>
-
-      <a class="sb-link" routerLink="/patient/psychometrics" routerLinkActive="active">
-        <i class="bi bi-clipboard2-pulse"></i>
-        <span>Trắc Nghiệm Tâm Lý</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">TƯ VẤN &amp; THÔNG BÁO</div>
-
-      <a class="sb-link" routerLink="/messages" routerLinkActive="active">
-        <i class="bi bi-chat-dots"></i>
-        <span>Nhắn Tin Với Bác Sĩ</span>
-      </a>
-
-      <a class="sb-link" routerLink="/notifications" routerLinkActive="active">
-        <i class="bi bi-bell"></i>
-        <span>Thông Báo</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">TÌM KIẾM BÁC SĨ</div>
-
-      <a class="sb-link" routerLink="/doctor-profile" routerLinkActive="active">
-        <i class="bi bi-person-heart"></i>
-        <span>Tìm Chuyên Gia</span>
-      </a>
-
-      <a class="sb-link" routerLink="/specialization" routerLinkActive="active">
-        <i class="bi bi-tags"></i>
-        <span>Danh Mục Chuyên Khoa</span>
-      </a>
-
-      <div class="sb-divider"></div>
-      <div class="sb-section-label">TÀI KHOẢN CỦA TÔI</div>
-
-      <a class="sb-link" routerLink="/account/settings" routerLinkActive="active">
-        <i class="bi bi-person"></i>
-        <span>Hồ Sơ Cá Nhân</span>
-      </a>
-      <a class="sb-link" routerLink="/account/password" routerLinkActive="active">
-        <i class="bi bi-shield-lock"></i>
-        <span>Đổi Mật Khẩu</span>
-      </a>
-    }
-
     <!-- ============================== ADMIN ============================== -->
-    @else if (isAdmin()) {
+    @if (isAdmin()) {
+      <div class="sb-section-label">CHỈ HUY &amp; KINH DOANH</div>
+
+      <a class="sb-link" routerLink="/admin/dashboard" routerLinkActive="active">
+        <i class="bi bi-speedometer2"></i>
+        <span>Tổng Quan Quản Trị</span>
+      </a>
+
+      <a class="sb-link" routerLink="/admin/service-package" routerLinkActive="active">
+        <i class="bi bi-boxes"></i>
+        <span>Gói Dịch Vụ Nền Tảng</span>
+      </a>
+
+      <a class="sb-link" routerLink="/admin/psychometrics" routerLinkActive="active">
+        <i class="bi bi-ui-checks-grid"></i>
+        <span>Đề Trắc Nghiệm Tâm Lý</span>
+      </a>
+
+      <a class="sb-link" routerLink="/admin/blogs" routerLinkActive="active">
+        <i class="bi bi-shield-fill-check"></i>
+        <span>Kiểm Duyệt Blog Y Khoa</span>
+      </a>
+
+      <div class="sb-divider"></div>
       <div class="sb-section-label">QUẢN TRỊ HỆ THỐNG</div>
 
       <a class="sb-link" routerLink="/user-management" routerLinkActive="active">
-        <i class="bi bi-people"></i>
+        <i class="bi bi-people-fill"></i>
         <span>Quản Lý Tài Khoản</span>
       </a>
 
       <a class="sb-link" routerLink="/doctor-profile" routerLinkActive="active">
-        <i class="bi bi-person-badge"></i>
+        <i class="bi bi-person-badge-fill"></i>
         <span>Hồ Sơ Bác Sĩ</span>
       </a>
 
       <a class="sb-link" routerLink="/patient-profile" routerLinkActive="active">
-        <i class="bi bi-person-lines-fill"></i>
+        <i class="bi bi-person-heart"></i>
         <span>Hồ Sơ Bệnh Nhân</span>
       </a>
 
       <a class="sb-link" routerLink="/specialization" routerLinkActive="active">
-        <i class="bi bi-tags"></i>
+        <i class="bi bi-diagram-3-fill"></i>
         <span>Chuyên Khoa</span>
       </a>
 
       <a class="sb-link" routerLink="/availability-slot" routerLinkActive="active">
-        <i class="bi bi-calendar-week"></i>
+        <i class="bi bi-calendar-event"></i>
         <span>Khung Giờ Khám</span>
       </a>
 
       <a class="sb-link" routerLink="/doctor/patients" routerLinkActive="active">
-        <i class="bi bi-people-fill"></i>
+        <i class="bi bi-person-vcard-fill"></i>
         <span>Bệnh Nhân &amp; Bệnh Án</span>
       </a>
 
-      <a class="sb-link" routerLink="/doctor/verification" routerLinkActive="active">
-        <i class="bi bi-patch-check text-primary"></i>
-        <span>Thẩm Định Bác Sĩ</span>
+      <a class="sb-link" routerLink="/admin/doctor-verifications" routerLinkActive="active">
+        <i class="bi bi-patch-check-fill text-warning"></i>
+        <span>Duyệt Chứng Chỉ Bác Sĩ</span>
       </a>
 
       <a class="sb-link" routerLink="/appointment" routerLinkActive="active">
@@ -229,12 +84,12 @@
       <div class="sb-section-label">GIÁM SÁT HỆ THỐNG</div>
 
       <a class="sb-link" routerLink="/admin/health" routerLinkActive="active">
-        <i class="bi bi-activity text-danger"></i>
+        <i class="bi bi-activity"></i>
         <span>Trạng Thái Hệ Thống</span>
       </a>
 
       <a class="sb-link" routerLink="/admin/metrics" routerLinkActive="active">
-        <i class="bi bi-speedometer2 text-teal"></i>
+        <i class="bi bi-speedometer"></i>
         <span>Chỉ Số Hiệu Năng</span>
       </a>
 
@@ -244,11 +99,193 @@
       </a>
     }
 
-    <!-- Footer Action -->
-    <div class="sb-divider mt-4"></div>
+    <!-- ============================== DOCTOR (CLONE EXACT ORIGINAL) ============================== -->
+    @else if (isDoctor()) {
+      <div class="sb-section-label">LÂM SÀNG &amp; LỊCH KHÁM</div>
+
+      <a class="sb-link" routerLink="/doctor/dashboard" routerLinkActive="active">
+        <i class="bi bi-speedometer2"></i>
+        <span>Bảng Điều Khiển Bác Sĩ</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/patients" routerLinkActive="active">
+        <i class="bi bi-people-fill"></i>
+        <span>Bệnh Nhân &amp; Bệnh Án</span>
+      </a>
+
+      <a class="sb-link" routerLink="/appointment" routerLinkActive="active">
+        <i class="bi bi-calendar-check"></i>
+        <span>Lịch Hẹn Khám</span>
+      </a>
+
+      <a class="sb-link" routerLink="/availability-slot" routerLinkActive="active">
+        <i class="bi bi-calendar-event"></i>
+        <span>Khung Giờ &amp; Ca Khám</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/treatment-packages" routerLinkActive="active">
+        <i class="bi bi-box-seam"></i>
+        <span>Gói Trị Liệu &amp; Phác Đồ</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/psychometrics" routerLinkActive="active">
+        <i class="bi bi-clipboard2-pulse"></i>
+        <span>Trắc Nghiệm Tâm Lý</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">TRAO ĐỔI &amp; GÓI DỊCH VỤ</div>
+
+      <a class="sb-link" routerLink="/messages" routerLinkActive="active">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span>Tư Vấn Trực Tuyến</span>
+      </a>
+
+      <a class="sb-link" routerLink="/notifications" routerLinkActive="active">
+        <i class="bi bi-bell"></i>
+        <span>Trung Tâm Thông Báo</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/subscriptions" routerLinkActive="active">
+        <i class="bi bi-credit-card-2-front"></i>
+        <span>Gói Hội Viên &amp; VNPay</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">DANH MỤC &amp; HỒ SƠ</div>
+
+      <a class="sb-link" routerLink="/doctor-profile" routerLinkActive="active">
+        <i class="bi bi-person-badge-fill"></i>
+        <span>Hồ Sơ Chuyên Gia</span>
+      </a>
+
+      <a class="sb-link" routerLink="/specialization" routerLinkActive="active">
+        <i class="bi bi-tags-fill"></i>
+        <span>Chuyên Khoa Khám</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/blogs" routerLinkActive="active">
+        <i class="bi bi-journal-richtext"></i>
+        <span>Quản Lý Blog Y Khoa</span>
+      </a>
+
+      <a class="sb-link" routerLink="/doctor/verification" routerLinkActive="active">
+        <i class="bi bi-patch-check-fill"></i>
+        <span>Chứng Chỉ &amp; Thẩm Định</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">TÀI KHOẢN &amp; BẢO MẬT</div>
+
+      <a class="sb-link" routerLink="/account/settings" routerLinkActive="active">
+        <i class="bi bi-person-gear"></i>
+        <span>Thông Tin Cá Nhân</span>
+      </a>
+      <a class="sb-link" routerLink="/account/password" routerLinkActive="active">
+        <i class="bi bi-shield-lock-fill"></i>
+        <span>Đổi Mật Khẩu</span>
+      </a>
+    }
+
+    <!-- ============================== PATIENT & MEMBER ============================== -->
+    @else {
+      <div class="sb-section-label">CHĂM SÓC &amp; ĐIỀU TRỊ</div>
+
+      <a class="sb-link" routerLink="/appointment" routerLinkActive="active">
+        <i class="bi bi-calendar2-heart-fill"></i>
+        <span>Lịch Hẹn Của Tôi</span>
+      </a>
+
+      <a class="sb-link" routerLink="/patient/clinical-records" routerLinkActive="active">
+        <i class="bi bi-file-earmark-medical-fill"></i>
+        <span>Hồ Sơ Sức Khỏe &amp; Bệnh Án</span>
+      </a>
+
+      <a class="sb-link" routerLink="/patient/treatment-packages" routerLinkActive="active">
+        <i class="bi bi-shield-plus"></i>
+        <span>Gói Trị Liệu Của Tôi</span>
+      </a>
+
+      <a class="sb-link" routerLink="/patient/journal" routerLinkActive="active">
+        <i class="bi bi-emoji-smile-fill"></i>
+        <span>Nhật Ký Cảm Xúc Hàng Ngày</span>
+      </a>
+
+      <a class="sb-link" routerLink="/patient/psychometrics" routerLinkActive="active">
+        <i class="bi bi-clipboard2-check-fill"></i>
+        <span>Trắc Nghiệm Tâm Lý (DASS-21)</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">TƯ VẤN &amp; KẾT NỐI</div>
+
+      <a class="sb-link" routerLink="/messages" routerLinkActive="active">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span>Nhắn Tin Với Bác Sĩ</span>
+      </a>
+
+      <a class="sb-link" routerLink="/notifications" routerLinkActive="active">
+        <i class="bi bi-bell"></i>
+        <span>Trung Tâm Thông Báo</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">TÌM KIẾM CHUYÊN GIA</div>
+
+      <a class="sb-link" routerLink="/doctor-profile" routerLinkActive="active">
+        <i class="bi bi-person-badge-fill"></i>
+        <span>Tìm Bác Sĩ Tâm Lý</span>
+      </a>
+
+      <a class="sb-link" routerLink="/specialization" routerLinkActive="active">
+        <i class="bi bi-tags-fill"></i>
+        <span>Danh Mục Chuyên Khoa</span>
+      </a>
+
+      <a class="sb-link" routerLink="/pricing" routerLinkActive="active">
+        <i class="bi bi-boxes"></i>
+        <span>Bảng Giá Gói Dịch Vụ</span>
+      </a>
+
+      <div class="sb-divider"></div>
+      <div class="sb-section-label">TÀI KHOẢN &amp; BẢO MẬT</div>
+
+      <a class="sb-link" routerLink="/account/settings" routerLinkActive="active">
+        <i class="bi bi-person-gear"></i>
+        <span>Hồ Sơ Cá Nhân</span>
+      </a>
+      <a class="sb-link" routerLink="/account/password" routerLinkActive="active">
+        <i class="bi bi-shield-lock-fill"></i>
+        <span>Đổi Mật Khẩu</span>
+      </a>
+    }
+  </nav>
+
+  <!-- Sidebar Footer: Thẻ người dùng, Nút Về Trang Chủ & Nút Đăng Xuất -->
+  <div class="sidebar-footer mt-auto pt-2">
+    <div class="sb-divider mb-2.5"></div>
+
+    <!-- User Identity Card -->
+    <div class="sidebar-user-box mb-2 p-2 rounded-3 d-flex align-items-center gap-2">
+      <div class="sidebar-user-avatar rounded-circle d-flex align-items-center justify-content-center fw-bold">
+        {{ getUserInitials() }}
+      </div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-bold text-dark text-truncate" style="font-size: 0.86rem;">{{ getUserDisplayName() }}</div>
+        <span class="badge" [ngClass]="getRoleBadge().class" style="font-size: 0.65rem; padding: 2px 7px;">{{ getRoleBadge().label }}</span>
+      </div>
+    </div>
+
+    <!-- Quick Return to Website -->
+    <a class="sb-link sb-back-home mb-1" routerLink="/" title="Quay về trang chủ">
+      <i class="bi bi-arrow-left-circle-fill"></i>
+      <span class="fw-bold" style="color: #0d766e;">Về Trang Chủ</span>
+    </a>
+
+    <!-- Logout Action -->
     <button type="button" class="sb-link sb-logout w-100 text-start border-0 bg-transparent" (click)="logout()">
       <i class="bi bi-box-arrow-right text-danger"></i>
-      <span class="text-danger fw-semibold">Đăng Xuất</span>
+      <span class="text-danger fw-bold">Đăng Xuất</span>
     </button>
-  </nav>
+  </div>
 </aside>

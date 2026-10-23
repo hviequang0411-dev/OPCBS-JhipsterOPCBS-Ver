@@ -516,7 +516,20 @@ export class Appointment implements OnInit {
       error: err => {
         this.isLoading.set(false);
         this.cdr.markForCheck();
-        this.showError('Không thể hủy lịch: ' + (err.error?.message || err.message));
+        let errorMsg = 'Không thể hủy lịch hẹn lúc này.';
+        const key = err.error?.errorKey || (typeof err.error?.message === 'string' ? err.error.message.replace(/^error\./, '') : null);
+        if (key === 'cannotcancelcompleted') {
+          errorMsg = 'Không thể hủy ca khám đã hoàn thành.';
+        } else if (key === 'alreadycancelled') {
+          errorMsg = 'Lịch hẹn này đã được hủy trước đó.';
+        } else if (key === 'accessdenied') {
+          errorMsg = 'Bạn không có quyền thao tác trên lịch hẹn này.';
+        } else if (err.error?.title && !err.error.title.toLowerCase().includes('bad request')) {
+          errorMsg = err.error.title;
+        } else if (err.error?.detail && !err.error.detail.toLowerCase().includes('bad request')) {
+          errorMsg = err.error.detail;
+        }
+        this.showError(errorMsg);
       },
     });
   }

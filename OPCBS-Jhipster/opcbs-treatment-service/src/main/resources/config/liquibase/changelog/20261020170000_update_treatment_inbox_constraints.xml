@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- Cập nhật bảng treatment_inbox để hỗ trợ quản lý idempotency đa loại event mà không gây khóa nhầm các event khác -->
+    <changeSet id="20261020170000-1" author="opcbs">
+        <dropUniqueConstraint
+            tableName="treatment_inbox"
+            constraintName="ux_treatment_inbox_appointment"/>
+
+        <addColumn tableName="treatment_inbox">
+            <column name="event_type" type="varchar(100)" defaultValue="APPOINTMENT_COMPLETED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="varchar(50)" defaultValue="PROCESSED">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <addUniqueConstraint
+            tableName="treatment_inbox"
+            columnNames="appointment_id, event_type"
+            constraintName="ux_treatment_inbox_appt_event"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Service to consume and process appointment events asynchronously from Kafka.
+ * Service to consume and process appointment events asynchronously (or internally).
  */
 @Service
 public class AppointmentEventConsumer {
@@ -13,8 +13,8 @@ public class AppointmentEventConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(AppointmentEventConsumer.class);
 
     public void handleAppointmentEvent(AppointmentEvent event) {
-        LOG.info("📥 [Kafka Consumer] Received Event from topic '{}': EventType='{}', AppointmentId={}, Patient='{}'",
-            "opcbs-appointment-events", event.getEventType(), event.getAppointmentId(), event.getPatientName());
+        LOG.info("[Event Listener - Standalone Mode] Processing Appointment Event: EventType='{}', AppointmentId={}, Patient='{}'",
+            event.getEventType(), event.getAppointmentId(), event.getPatientName());
         
         switch (event.getEventType()) {
             case "APPOINTMENT_BOOKED" -> LOG.info("📋 [Clinical Service] Prepared preliminary intake chart for appointment {}", event.getBookingCode());

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet id="20261001122000-1" author="mindbridge">
+        <createTable tableName="psychometric_test">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="description" type="${clobType}"/>
+            <column name="test_type" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="category" type="varchar(100)"/>
+            <column name="purpose" type="${clobType}"/>
+            <column name="score_ranges_json" type="${clobType}"/>
+            <column name="source_url" type="varchar(500)"/>
+            <column name="is_active" type="boolean" defaultValueBoolean="true">
+                <constraints nullable="false" />
+            </column>
+            <column name="doctor_id" type="bigint"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="doctor_id"
+                                 baseTableName="psychometric_test"
+                                 constraintName="fk_psychometric_test__doctor_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="doctor_profile"/>
+
+        <createTable tableName="psychometric_question">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="test_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="question_text" type="${clobType}">
+                <constraints nullable="false" />
+            </column>
+            <column name="question_number" type="int">
+                <constraints nullable="false" />
+            </column>
+            <column name="category" type="varchar(100)"/>
+            <column name="question_type" type="varchar(50)" defaultValue="Rating0To3">
+                <constraints nullable="false" />
+            </column>
+            <column name="options_json" type="${clobType}"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="test_id"
+                                 baseTableName="psychometric_question"
+                                 constraintName="fk_psychometric_question__test_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="psychometric_test"/>
+
+        <createTable tableName="psychometric_submission">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="test_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="patient_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="assigned_by_doctor_id" type="bigint"/>
+            <column name="appointment_id" type="bigint"/>
+            <column name="total_score" type="int" defaultValueNumeric="0">
+                <constraints nullable="false" />
+            </column>
+            <column name="score_data_json" type="${clobType}"/>
+            <column name="interpretation" type="${clobType}"/>
+            <column name="doctor_notes" type="${clobType}"/>
+            <column name="due_date" type="${datetimeType}"/>
+            <column name="status" type="varchar(50)" defaultValue="COMPLETED">
+                <constraints nullable="false" />
+            </column>
+            <column name="completed_at" type="${datetimeType}"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="test_id"
+                                 baseTableName="psychometric_submission"
+                                 constraintName="fk_psychometric_submission__test_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="psychometric_test"/>
+
+        <addForeignKeyConstraint baseColumnNames="patient_id"
+                                 baseTableName="psychometric_submission"
+                                 constraintName="fk_psychometric_submission__patient_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="patient_profile"/>
+
+        <addForeignKeyConstraint baseColumnNames="assigned_by_doctor_id"
+                                 baseTableName="psychometric_submission"
+                                 constraintName="fk_psychometric_submission__doctor_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="doctor_profile"/>
+
+        <createTable tableName="psychometric_answer">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="submission_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="question_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="score" type="int" defaultValueNumeric="0">
+                <constraints nullable="false" />
+            </column>
+            <column name="answer_text" type="${clobType}"/>
+            <column name="created_by" type="varchar(50)"/>
+            <column name="created_date" type="${datetimeType}"/>
+            <column name="last_modified_by" type="varchar(50)"/>
+            <column name="last_modified_date" type="${datetimeType}"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="submission_id"
+                                 baseTableName="psychometric_answer"
+                                 constraintName="fk_psychometric_answer__submission_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="psychometric_submission"/>
+
+        <addForeignKeyConstraint baseColumnNames="question_id"
+                                 baseTableName="psychometric_answer"
+                                 constraintName="fk_psychometric_answer__question_id"
+                                 referencedColumnNames="id"
+                                 referencedTableName="psychometric_question"/>
+    </changeSet>
+
+    <changeSet id="20261001122000-2" author="mindbridge">
+        <!-- Seed DASS-21 Test -->
+        <insert tableName="psychometric_test">
+            <column name="id" valueNumeric="1"/>
+            <column name="title" value="Thang đo Trầm cảm - Lo âu - Căng thẳng (DASS-21)"/>
+            <column name="description" value="DASS-21 là bộ công cụ lâm sàng gồm 21 câu hỏi giúp đánh giá mức độ nghiêm trọng của ba trạng thái cảm xúc tiêu cực: Trầm cảm (Depression), Lo âu (Anxiety) và Căng thẳng (Stress) trong tuần vừa qua."/>
+            <column name="test_type" value="DASS21"/>
+            <column name="category" value="Đa triệu chứng tâm lý"/>
+            <column name="purpose" value="Tầm soát và phân loại mức độ Trầm cảm, Lo âu, Stress theo thang điểm chuẩn y khoa"/>
+            <column name="source_url" value="https://www.psychology.unsw.edu.au/dass/"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueComputed="NOW()"/>
+        </insert>
+
+        <!-- DASS-21 Questions -->
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="1"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="1"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi thấy khó mà thư giãn được"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="2"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="2"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi bị khô miệng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="3"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="3"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi dường như không thể cảm thấy bất kỳ cảm xúc tích cực nào"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="4"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="4"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi bị khó thở (ví dụ: thở gấp, hụt hơi khi không gắng sức)"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="5"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="5"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi thấy khó có thể bắt tay vào làm việc gì đó"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="6"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="6"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi có xu hướng phản ứng thái quá với các tình huống"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="7"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="7"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy run rẩy (ví dụ: run tay)"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="8"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="8"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy mình đang dùng nhiều năng lượng thần kinh / bồn chồn"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="9"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="9"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi lo lắng về những tình huống có thể khiến tôi hoảng sợ và tự làm mình ngớ ngẩn"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="10"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="10"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy mình chẳng có gì để mong đợi phía trước"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="11"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="11"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi thấy mình dễ bị kích động, khó chịu"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="12"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="12"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi thấy khó thư giãn tĩnh tâm"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="13"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="13"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy chán nản và thất vọng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="14"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="14"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi không thể dung thứ cho những điều cản trở tôi tiếp tục công việc đang làm"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="15"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="15"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy mình gần như muốn hoảng loạn"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="16"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="16"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi không thể cảm thấy hào hứng về bất cứ điều gì"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="17"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="17"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy mình không có giá trị như một con người"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="18"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="18"/><column name="category" value="Stress"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi thấy mình khá dễ chạm tự ái / dễ xúc động"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="19"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="19"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi nhận thức được nhịp tim của mình khi không vận động mạnh (ví dụ: tim đập nhanh, lỡ nhịp)"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="20"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="20"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy sợ hãi mà không có lý do chính đáng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="21"/><column name="test_id" valueNumeric="1"/><column name="question_number" valueNumeric="21"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Tôi cảm thấy cuộc sống vô nghĩa"/></insert>
+
+        <!-- Seed PHQ-9 Test -->
+        <insert tableName="psychometric_test">
+            <column name="id" valueNumeric="2"/>
+            <column name="title" value="Bảng câu hỏi Sức khỏe Bệnh nhân (PHQ-9)"/>
+            <column name="description" value="PHQ-9 là công cụ trắc nghiệm chuẩn quốc tế gồm 9 câu hỏi dùng để sàng lọc, chẩn đoán và theo dõi mức độ nghiêm trọng của chứng Trầm cảm trong 2 tuần qua."/>
+            <column name="test_type" value="PHQ9"/>
+            <column name="category" value="Trầm cảm"/>
+            <column name="purpose" value="Tầm soát và đánh giá mức độ trầm cảm lâm sàng"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueComputed="NOW()"/>
+        </insert>
+
+        <!-- PHQ-9 Questions -->
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="22"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="1"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Ít hứng thú hoặc không có niềm vui trong việc làm bất cứ điều gì"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="23"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="2"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Cảm thấy buồn bã, chán nản hoặc tuyệt vọng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="24"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="3"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Khó ngủ, ngủ chập chờn hoặc ngủ quá nhiều"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="25"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="4"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Cảm thấy mệt mỏi hoặc thiếu năng lượng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="26"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="5"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Ăn không ngon miệng hoặc ăn quá nhiều"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="27"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="6"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Cảm thấy tồi tệ về bản thân - hoặc cảm thấy mình là kẻ thất bại, làm gia đình thất vọng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="28"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="7"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Khó tập trung vào mọi việc, chẳng hạn như đọc báo hoặc xem tivi"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="29"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="8"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Di chuyển hoặc nói năng chậm chạp đến mức người khác có thể nhận thấy; hoặc ngược lại, bồn chồn đến mức đi lại nhiều hơn bình thường"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="30"/><column name="test_id" valueNumeric="2"/><column name="question_number" valueNumeric="9"/><column name="category" value="Depression"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Có suy nghĩ rằng thà chết đi hoặc tự làm tổn thương bản thân bằng cách nào đó"/></insert>
+
+        <!-- Seed GAD-7 Test -->
+        <insert tableName="psychometric_test">
+            <column name="id" valueNumeric="3"/>
+            <column name="title" value="Thang đo Rối loạn Lo âu Lan tỏa (GAD-7)"/>
+            <column name="description" value="GAD-7 là công cụ sàng lọc lâm sàng gồm 7 câu hỏi dùng để phát hiện và đo lường mức độ nghiêm trọng của chứng Rối loạn lo âu lan tỏa."/>
+            <column name="test_type" value="GAD7"/>
+            <column name="category" value="Lo âu"/>
+            <column name="purpose" value="Tầm soát và lượng giá mức độ lo âu tổng quát"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="created_by" value="system"/>
+            <column name="created_date" valueComputed="NOW()"/>
+        </insert>
+
+        <!-- GAD-7 Questions -->
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="31"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="1"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Cảm thấy lo lắng, hồi hộp hoặc căng thẳng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="32"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="2"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Không thể ngừng hoặc kiểm soát việc lo lắng"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="33"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="3"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Lo lắng quá nhiều về những điều khác nhau"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="34"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="4"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Khó thư giãn"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="35"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="5"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Bồn chồn đến mức khó có thể ngồi yên"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="36"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="6"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Trở nên dễ cáu gắt hoặc khó chịu"/></insert>
+        <insert tableName="psychometric_question"><column name="id" valueNumeric="37"/><column name="test_id" valueNumeric="3"/><column name="question_number" valueNumeric="7"/><column name="category" value="Anxiety"/><column name="question_type" value="Rating0To3"/><column name="question_text" value="Cảm thấy sợ hãi như thể điều gì đó khủng khiếp sắp xảy ra"/></insert>
+    </changeSet>
+</databaseChangeLog>

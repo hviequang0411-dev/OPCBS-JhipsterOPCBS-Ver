@@ -1,0 +1,220 @@
+<div class="edit-pkg-container">
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <a routerLink="/admin/service-package" class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h1 class="h4 fw-bold text-dark mb-0">
+          {{ isEditMode ? 'Chỉnh Sửa Gói Dịch Vụ: ' + pkg.name : 'Tạo Mới Gói Dịch Vụ Nền Tảng' }}
+        </h1>
+        <p class="text-muted small mb-0">Thiết lập giá cước, thời hạn và phân quyền cho Bác sĩ đối tác</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a routerLink="/admin/service-package" class="btn btn-outline-secondary btn-sm px-3">
+        Hủy Bỏ
+      </a>
+      <button type="button" class="btn btn-primary btn-sm px-4 d-flex align-items-center gap-1.5" (click)="save()" [disabled]="isSaving()" style="background: #0f766e; border-color: #0f766e; font-weight: 600;">
+        @if (isSaving()) {
+          <span class="spinner-border spinner-border-sm" role="status"></span>
+        }
+        <i class="bi bi-check-lg"></i>
+        <span>{{ isEditMode ? 'Lưu Thay Đổi' : 'Tạo Gói Dịch Vụ' }}</span>
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert" style="border-radius: 8px;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>{{ errorMessage() }}</div>
+    </div>
+  }
+
+  <div class="row g-4">
+    <!-- Form Inputs (Left) -->
+    <div class="col-lg-7">
+      <div class="form-panel">
+        <h5 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+          <i class="bi bi-sliders text-teal"></i>
+          <span>Thông Tin Cấu Hình Gói</span>
+        </h5>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small">
+            Tên Gói Dịch Vụ <span class="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ví dụ: Gói Tiêu Chuẩn (Standard Practitioner)"
+            [(ngModel)]="pkg.name"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small">
+            Mô Tả Ngắn Gọn
+          </label>
+          <textarea
+            class="form-control"
+            rows="2"
+            placeholder="Mô tả tóm tắt lợi ích của gói cho bác sĩ..."
+            [(ngModel)]="pkg.description"
+          ></textarea>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              Giá Niêm Yết (VND) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                min="0"
+                step="50000"
+                [(ngModel)]="pkg.price"
+                required
+              />
+              <span class="input-group-text bg-light text-muted">VND</span>
+            </div>
+            <div class="form-text small">Hiển thị: {{ formatPrice(pkg.price) }}</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              Thời Hạn Hiệu Lực (Ngày) <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <input
+                type="number"
+                class="form-control"
+                min="1"
+                [(ngModel)]="pkg.durationDays"
+                required
+              />
+              <span class="input-group-text bg-light text-muted">Ngày</span>
+            </div>
+            <div class="form-text small">Ví dụ: 30 ngày (1 tháng), 90 ngày (quý), 365 ngày (năm)</div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              Giới Hạn Slot Khám / Ngày
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              min="0"
+              placeholder="Để trống nếu không giới hạn"
+              [(ngModel)]="pkg.maxDailySlotsCapacity"
+            />
+            <div class="form-text small">Số ca khám tối đa bác sĩ có thể mở trong 1 ngày</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold text-dark small">
+              Thứ Tự Hiển Thị
+            </label>
+            <input
+              type="number"
+              class="form-control"
+              min="1"
+              [(ngModel)]="pkg.displayOrder"
+            />
+            <div class="form-text small">Số nhỏ hơn sẽ hiển thị trước trên bảng giá</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small">
+            Danh Sách Tính Năng &amp; Quyền Lợi (Mỗi dòng 1 tính năng)
+          </label>
+          <textarea
+            class="form-control font-monospace"
+            rows="5"
+            placeholder="Hỗ trợ đặt lịch hẹn tự động&#10;Quản lý hồ sơ bệnh nhân không giới hạn&#10;Tư vấn trực tuyến bảo mật"
+            [(ngModel)]="pkg.featuresList"
+          ></textarea>
+          <div class="form-text small">Nhập mỗi quyền lợi trên một dòng riêng biệt để hệ thống hiển thị dạng bullet list tích xanh</div>
+        </div>
+
+        <div class="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-bold text-dark small">Trạng Thái Kích Hoạt</div>
+            <div class="text-muted small">Cho phép Bác sĩ xem và đăng ký gói cước này ngay lập tức</div>
+          </div>
+          <div class="form-check form-switch fs-5 mb-0">
+            <input
+              class="form-check-input cursor-pointer"
+              type="checkbox"
+              role="switch"
+              [(ngModel)]="pkg.isActive"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Preview Card (Right) -->
+    <div class="col-lg-5">
+      <div class="preview-card">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="preview-badge">Xem Trước Giao Diện Bác Sĩ</span>
+          <span class="badge" [class.bg-success]="pkg.isActive" [class.bg-secondary]="!pkg.isActive" style="font-size: 0.72rem;">
+            {{ pkg.isActive ? 'ĐANG CHẠY' : 'TẠM DỪNG' }}
+          </span>
+        </div>
+
+        <h3 class="fw-bold text-dark mb-1" style="font-size: 1.4rem;">
+          {{ pkg.name || 'Tên Gói Dịch Vụ' }}
+        </h3>
+        <p class="text-muted small mb-3">
+          {{ pkg.description || 'Mô tả ngắn gọn về giá trị và lợi ích gói cước mang lại...' }}
+        </p>
+
+        <div class="preview-price">
+          {{ formatPrice(pkg.price) }}
+        </div>
+        <div class="preview-duration mb-4">
+          Thời hạn sử dụng: <strong>{{ pkg.durationDays || 30 }} ngày</strong>
+          @if (pkg.maxDailySlotsCapacity) {
+            <span>&bull; Tối đa {{ pkg.maxDailySlotsCapacity }} slot/ngày</span>
+          } @else {
+            <span>&bull; Slot không giới hạn</span>
+          }
+        </div>
+
+        <hr class="my-3 text-muted" />
+
+        <div class="fw-semibold text-dark small text-uppercase mb-2.5" style="letter-spacing: 0.5px;">
+          Quyền lợi bao gồm:
+        </div>
+
+        <div class="features-preview mb-4">
+          @if (getFeatureArray().length === 0) {
+            <div class="text-muted small fst-italic">Chưa có quyền lợi nào được khai báo.</div>
+          } @else {
+            @for (feature of getFeatureArray(); track feature) {
+              <div class="feature-item">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ feature }}</span>
+              </div>
+            }
+          }
+        </div>
+
+        <button type="button" class="btn btn-outline-teal w-100 py-2 fw-semibold" style="border: 2px solid #0f766e; color: #0f766e; border-radius: 8px;" disabled>
+          Nút Đăng Ký Của Bác Sĩ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

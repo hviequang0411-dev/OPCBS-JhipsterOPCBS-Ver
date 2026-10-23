@@ -50,6 +50,15 @@ public class Notification extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "action_url", length = 500)
     private String actionUrl;
 
+    @Column(name = "channel", length = 20)
+    private String channel = "IN_APP";
+
+    @Column(name = "delivery_status", length = 30)
+    private String deliveryStatus = "DELIVERED";
+
+    @Column(name = "retry_count")
+    private Integer retryCount = 0;
+
     public Notification() {}
 
     public Long getId() {
@@ -138,5 +147,29 @@ public class Notification extends AbstractAuditingEntity<Long> implements Serial
 
     public void setActionUrl(String actionUrl) {
         this.actionUrl = actionUrl;
+    }
+
+    public String getChannel() {
+        return channel;
+    }
+
+    public void setChannel(String channel) {
+        this.channel = channel;
+    }
+
+    public String getDeliveryStatus() {
+        return deliveryStatus;
+    }
+
+    public void setDeliveryStatus(String deliveryStatus) {
+        this.deliveryStatus = deliveryStatus;
+    }
+
+    public Integer getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(Integer retryCount) {
+        this.retryCount = retryCount;
     }
 }

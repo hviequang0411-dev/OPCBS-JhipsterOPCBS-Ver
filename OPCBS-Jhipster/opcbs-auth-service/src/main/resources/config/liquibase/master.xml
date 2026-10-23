@@ -24,6 +24,7 @@
     <include file="config/liquibase/changelog/20260928102429_added_entity_constraints_Appointment.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260929110000_seed_demo_data.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20260929153000_extend_patient_and_appointment_for_consultation_notes.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20261021100000_added_user_event_outbox.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261001120000_added_entity_TreatmentPackage.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261001121000_added_entity_EmotionJournal.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20261001122000_added_entity_Psychometrics.xml" relativeToChangelogFile="false"/>

@@ -455,6 +455,13 @@ public class BookingVM {
         private long totalAppointments;
         private long completedAppointments;
         private java.util.List<com.ocbs.service.dto.AppointmentDTO> appointments;
+        private java.util.List<com.ocbs.domain.PsychometricSubmission> psychometricSubmissions;
+        private java.util.List<com.ocbs.domain.EmotionJournal> sharedJournals;
+        private java.util.List<com.ocbs.domain.TreatmentPackage> treatmentPackages;
+        private boolean hasNegativeRisk;
+        private String warningMessage;
+        private java.util.Map<String, Long> moodDistribution;
+        private java.util.Map<String, Long> testSeverityDistribution;
 
         public PatientDetailRecordVM() {}
 
@@ -500,6 +507,62 @@ public class BookingVM {
 
         public void setAppointments(java.util.List<com.ocbs.service.dto.AppointmentDTO> appointments) {
             this.appointments = appointments;
+        }
+
+        public java.util.List<com.ocbs.domain.PsychometricSubmission> getPsychometricSubmissions() {
+            return psychometricSubmissions;
+        }
+
+        public void setPsychometricSubmissions(java.util.List<com.ocbs.domain.PsychometricSubmission> psychometricSubmissions) {
+            this.psychometricSubmissions = psychometricSubmissions;
+        }
+
+        public java.util.List<com.ocbs.domain.EmotionJournal> getSharedJournals() {
+            return sharedJournals;
+        }
+
+        public void setSharedJournals(java.util.List<com.ocbs.domain.EmotionJournal> sharedJournals) {
+            this.sharedJournals = sharedJournals;
+        }
+
+        public java.util.List<com.ocbs.domain.TreatmentPackage> getTreatmentPackages() {
+            return treatmentPackages;
+        }
+
+        public void setTreatmentPackages(java.util.List<com.ocbs.domain.TreatmentPackage> treatmentPackages) {
+            this.treatmentPackages = treatmentPackages;
+        }
+
+        public boolean isHasNegativeRisk() {
+            return hasNegativeRisk;
+        }
+
+        public void setHasNegativeRisk(boolean hasNegativeRisk) {
+            this.hasNegativeRisk = hasNegativeRisk;
+        }
+
+        public String getWarningMessage() {
+            return warningMessage;
+        }
+
+        public void setWarningMessage(String warningMessage) {
+            this.warningMessage = warningMessage;
+        }
+
+        public java.util.Map<String, Long> getMoodDistribution() {
+            return moodDistribution;
+        }
+
+        public void setMoodDistribution(java.util.Map<String, Long> moodDistribution) {
+            this.moodDistribution = moodDistribution;
+        }
+
+        public java.util.Map<String, Long> getTestSeverityDistribution() {
+            return testSeverityDistribution;
+        }
+
+        public void setTestSeverityDistribution(java.util.Map<String, Long> testSeverityDistribution) {
+            this.testSeverityDistribution = testSeverityDistribution;
         }
     }
 }

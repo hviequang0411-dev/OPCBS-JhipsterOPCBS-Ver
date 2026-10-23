@@ -114,3 +114,9 @@ jhipster:
 # ===================================================================
 
 # application:
+
+opcbs:
+  jwt:
+    jwk-set-uri: ${JWT_JWK_SET_URI:http://opcbs-auth-service:8081/.well-known/jwks.json}
+    public-key-path: ${JWT_PUBLIC_KEY_PATH:}
+    public-key: ${JWT_PUBLIC_KEY:}

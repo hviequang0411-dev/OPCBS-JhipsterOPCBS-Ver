@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!--
+        Changelog: Thêm các cột channel, delivery_status, retry_count vào bảng notification
+        để phân tách notification trong ứng dụng khỏi nhà cung cấp Email/SMS bên ngoài.
+    -->
+    <changeSet id="20261016141000-1" author="opcbs-team">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="notification"/>
+            <not>
+                <columnExists tableName="notification" columnName="channel"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="notification">
+            <column name="channel" type="varchar(20)" defaultValue="IN_APP"/>
+            <column name="delivery_status" type="varchar(30)" defaultValue="DELIVERED"/>
+            <column name="retry_count" type="int" defaultValueNumeric="0"/>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="notification" columnName="channel"/>
+            <dropColumn tableName="notification" columnName="delivery_status"/>
+            <dropColumn tableName="notification" columnName="retry_count"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface ServicePackageRepository extends JpaRepository<ServicePackage, Long> {
 
     List<ServicePackage> findAllByIsActiveTrueOrderByDisplayOrderAsc();
+
+    List<ServicePackage> findAllByOrderByDisplayOrderAscIdAsc();
 }

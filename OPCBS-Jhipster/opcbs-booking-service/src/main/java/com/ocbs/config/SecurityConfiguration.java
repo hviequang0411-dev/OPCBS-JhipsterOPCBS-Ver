@@ -74,6 +74,8 @@ public class SecurityConfiguration {
                     .requestMatchers(HttpMethod.GET, "/api/doctor-profiles", "/api/doctor-profiles/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/availability-slots", "/api/availability-slots/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/psychometrics/tests", "/api/psychometrics/tests/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/patient/doctors/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/doctor/upload-avatar", "/api/upload-avatar").authenticated()
                     .requestMatchers("/api/patient/**").hasAnyAuthority(AuthoritiesConstants.PATIENT, AuthoritiesConstants.ADMIN)
                     .requestMatchers("/api/doctor/**").hasAnyAuthority(AuthoritiesConstants.DOCTOR, AuthoritiesConstants.ADMIN)
                     .requestMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)

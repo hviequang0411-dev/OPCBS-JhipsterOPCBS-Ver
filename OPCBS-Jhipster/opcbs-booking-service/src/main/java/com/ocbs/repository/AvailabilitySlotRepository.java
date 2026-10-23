@@ -53,6 +53,19 @@ public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySl
         java.time.Instant end
     );
 
+    List<AvailabilitySlot> findByDoctor_IdAndStatusAndStartTimeGreaterThanEqualOrderByStartTimeAsc(
+        Long doctorId,
+        com.ocbs.domain.enumeration.SlotStatus status,
+        java.time.Instant start
+    );
+
+    List<AvailabilitySlot> findByDoctor_IdAndStatusAndStartTimeBetweenOrderByStartTimeAsc(
+        Long doctorId,
+        com.ocbs.domain.enumeration.SlotStatus status,
+        java.time.Instant start,
+        java.time.Instant end
+    );
+
     @Query(
         "select count(s) > 0 from AvailabilitySlot s where s.doctor.id = :doctorId and s.startTime < :endTime and s.endTime > :startTime"
     )
@@ -70,5 +83,12 @@ public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySl
         @Param("slotId") Long slotId,
         @Param("startTime") java.time.Instant startTime,
         @Param("endTime") java.time.Instant endTime
+    );
+
+    @Query("SELECT COUNT(s) FROM AvailabilitySlot s WHERE s.doctor.id = :doctorId AND s.startTime >= :startOfDay AND s.startTime <= :endOfDay")
+    long countDoctorSlotsOnDate(
+        @Param("doctorId") Long doctorId,
+        @Param("startOfDay") java.time.Instant startOfDay,
+        @Param("endOfDay") java.time.Instant endOfDay
     );
 }

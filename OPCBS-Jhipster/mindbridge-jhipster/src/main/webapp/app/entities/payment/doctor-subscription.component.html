@@ -1,98 +1,680 @@
-<div class="container py-4 my-3" style="max-width: 1140px;">
-  <!-- Active Subscription Hero Banner (If any) -->
-  @if (currentSubscription(); as sub) {
-    <div class="card border-0 shadow-sm rounded-4 mb-4 active-sub-card text-white overflow-hidden">
-      <div class="card-body p-4 p-md-5 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
-        <div>
-          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-25 mb-3">
-            <span class="sub-status-dot"></span>
-            <span class="small fw-semibold">Gói Dịch Vụ Đang Kích Hoạt</span>
+<div class="doctor-subscriptions-container">
+  <!-- 1. Hero Page Header with Clinical Trust Badges -->
+  <div class="subscription-hero-header text-center mb-4">
+    <div class="d-inline-flex align-items-center gap-2 px-3.5 py-1.5 rounded-pill hero-badge mb-3">
+      <i class="bi bi-shield-fill-check"></i>
+      <span>QUẢN LÝ GÓI DỊCH VỤ &amp; HỘI VIÊN BÁC SĨ CHUYÊN KHOA</span>
+    </div>
+
+    <h1 class="hero-title mb-2">
+      Thông Tin Gói Dịch Vụ &amp; Lịch Sử Giao Dịch
+    </h1>
+
+    <p class="hero-subtitle mx-auto mb-4">
+      Theo dõi thời hạn hiệu lực, quản lý quyền lợi điều trị lâm sàng, gia hạn gói thông minh cộng dồn ngày sử dụng và tra cứu lịch sử giao dịch trực tuyến bảo mật qua VNPay Sandbox.
+    </p>
+
+    <!-- Navigation Tabs Pill (Chuẩn C# gốc: Current Plan / Subscription History / Browse Plans) -->
+    <div class="d-inline-flex align-items-center justify-content-center p-1.5 rounded-pill bg-white shadow-sm border subscription-nav-pills mb-2">
+      <button
+        type="button"
+        class="nav-pill-btn"
+        [class.active]="activeTab() === 'STATUS'"
+        (click)="setActiveTab('STATUS')"
+      >
+        <i class="bi bi-shield-check me-1.5"></i>
+        <span>Gói Dịch Vụ Hiện Tại</span>
+      </button>
+
+      <button
+        type="button"
+        class="nav-pill-btn"
+        [class.active]="activeTab() === 'HISTORY'"
+        (click)="setActiveTab('HISTORY')"
+      >
+        <i class="bi bi-clock-history me-1.5"></i>
+        <span>Lịch Sử Giao Dịch</span>
+        @if (subscriptionHistory().length > 0) {
+          <span class="badge rounded-pill bg-teal-subtle text-teal ms-1.5 px-2 py-0.5">
+            {{ subscriptionHistory().length }}
+          </span>
+        }
+      </button>
+
+      <button
+        type="button"
+        class="nav-pill-btn"
+        [class.active]="activeTab() === 'PLANS'"
+        (click)="setActiveTab('PLANS')"
+      >
+        <i class="bi bi-grid-fill me-1.5"></i>
+        <span>Bảng Giá &amp; Đổi Gói Mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. VNPay Callback Alert Banner (When redirected back from VNPay gateway) -->
+  @if (vnpayCallbackResult(); as cb) {
+    <div 
+      class="alert alert-dismissible fade show rounded-4 p-4 mb-4 shadow-sm border vnpay-callback-banner"
+      [ngClass]="cb.success ? 'alert-success border-success-subtle' : 'alert-danger border-danger-subtle'"
+      role="alert"
+    >
+      <div class="d-flex align-items-start gap-3">
+        <div class="fs-2 flex-shrink-0 mt-0.5">
+          <i [class]="cb.success ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle-fill text-danger'"></i>
+        </div>
+        <div class="flex-grow-1">
+          <h5 class="fw-bold mb-1" [ngClass]="cb.success ? 'text-success' : 'text-danger'">
+            {{ cb.success ? 'Thanh Toán & Kích Hoạt Gói Thành Công!' : 'Giao Dịch VNPay Chưa Hoàn Tất' }}
+          </h5>
+          <p class="mb-2 small text-dark">{{ cb.message }}</p>
+          <div class="d-flex flex-wrap gap-3 small text-muted">
+            @if (cb.transactionCode) {
+              <span>Mã giao dịch: <strong class="text-dark">{{ cb.transactionCode }}</strong></span>
+            }
+            @if (cb.isIdempotent) {
+              <span class="badge bg-info-subtle text-info border">Bảo Vệ Idempotency Kích Hoạt</span>
+            }
+            @if (cb.expirationDate) {
+              <span>Hạn sử dụng mới: <strong class="text-dark">{{ cb.expirationDate | date:'dd/MM/yyyy' }}</strong></span>
+            }
           </div>
-          <h2 class="fw-bold mb-2 text-white">{{ sub.servicePackageName }}</h2>
-          <p class="mb-0 text-white-50 small">
-            <span>Hiệu lực từ: <strong>{{ sub.startDate | date:'dd/MM/yyyy' }}</strong></span>
-            <span class="mx-2">•</span>
-            <span>Hết hạn ngày: <strong class="text-white">{{ sub.expirationDate | date:'dd/MM/yyyy' }}</strong></span>
-          </p>
         </div>
-        <div class="text-md-end">
-          <div class="text-white-50 small mb-1">Mã Giao Dịch</div>
-          <div class="font-monospace fw-bold fs-5 text-white mb-2">{{ sub.transactionCode }}</div>
-          <span class="badge bg-success bg-opacity-75 px-3 py-2 rounded-pill fs-6">Đã Thanh Toán</span>
-        </div>
+        <button type="button" class="btn-close shadow-none" (click)="dismissCallbackAlert()"></button>
       </div>
     </div>
   }
 
-  <!-- Pricing Title & Header -->
-  <div class="text-center mb-5">
-    <span class="badge bg-teal-subtle text-teal px-3 py-2 rounded-pill fw-semibold mb-2">BÁC SĨ &amp; CHUYÊN GIA TÂM LÝ</span>
-    <h2 class="fw-bold text-dark display-6 mb-3">Nâng Cấp Gói Dịch Vụ Nền Tảng</h2>
-    <p class="text-secondary mx-auto mb-0" style="max-width: 650px;">
-      Mở rộng kết nối, tiếp cận hàng ngàn bệnh nhân và sở hữu bộ công cụ chẩn đoán tâm lý hiện đại nhất trên MindBridge.
-    </p>
-  </div>
-
-  <!-- Pricing Cards Grid -->
-  <div class="row g-4 justify-content-center mb-5">
-    @for (pkg of packages(); track pkg.id) {
-      <div class="col-12 col-md-6 col-lg-4">
-        <div
-          class="card h-100 border-0 shadow-sm rounded-4 pricing-card position-relative transition-all"
-          [class.highlight-card]="pkg.badge === 'Khuyên Dùng'"
-        >
-          @if (pkg.badge) {
-            <div class="badge-ribbon">
-              <span>{{ pkg.badge }}</span>
-            </div>
-          }
-
-          <div class="card-body p-4 p-xl-5 d-flex flex-column">
-            <h4 class="fw-bold text-dark mb-2">{{ pkg.name }}</h4>
-            <p class="text-muted small mb-4 flex-grow-0" style="min-height: 40px;">{{ pkg.description }}</p>
-
-            <div class="d-flex align-items-baseline gap-1 mb-4">
-              <span class="display-6 fw-bold text-primary">{{ pkg.price | number }}</span>
-              <span class="text-muted fw-semibold">đ / {{ pkg.durationDays }} ngày</span>
+  <!-- ========================================================================= -->
+  <!-- TAB 1: GÓI HIỆN TẠI (CURRENT PLAN - Chuẩn C# Status.cshtml)               -->
+  <!-- ========================================================================= -->
+  @if (activeTab() === 'STATUS') {
+    @if (currentSubscription(); as sub) {
+      <div class="card border-0 shadow-sm rounded-4 mb-4 current-plan-card overflow-hidden">
+        <!-- Plan Top Header -->
+        <div class="current-plan-header p-4 p-md-5 text-white">
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+              <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill status-pill mb-2.5">
+                <span class="sub-status-dot" [class.dot-warning]="isNearExpiration(sub)" [class.dot-danger]="isSubExpired(sub)"></span>
+                <span class="small fw-bold tracking-wide">
+                  {{ isSubExpired(sub) ? 'GÓI CƯỚC ĐÃ HẾT HẠN' : isNearExpiration(sub) ? 'GÓI CƯỚC SẮP HẾT HẠN' : 'GÓI DỊCH VỤ ĐANG HOẠT ĐỘNG' }}
+                </span>
+              </div>
+              <h2 class="fw-bold text-white mb-1.5 display-6" style="font-size: 2rem;">
+                {{ sub.servicePackageName || 'Gói Hội Viên Bác Sĩ' }}
+              </h2>
+              <div class="text-white-75 small font-monospace">
+                Mã Hợp Đồng: <strong class="text-white">#SUB-{{ sub.id }}</strong>
+                <span class="mx-2">•</span>
+                Mã Giao Dịch: <strong class="text-white">{{ sub.transactionCode }}</strong>
+              </div>
             </div>
 
-            <hr class="my-0 mb-4 opacity-10" />
+            <div class="text-md-end plan-amount-badge p-3 rounded-3">
+              <div class="text-white-75 small mb-0.5">Số Tiền Đã Thanh Toán</div>
+              <div class="fw-bold fs-3 text-white">{{ (sub.price || 0) | number }} <span class="fs-6">₫</span></div>
+              <span class="badge bg-emerald px-2.5 py-1 rounded-pill fw-semibold small text-white mt-1">
+                <i class="bi bi-shield-check me-1"></i>ĐÃ XÁC THỰC
+              </span>
+            </div>
+          </div>
+        </div>
 
-            <div class="mb-4 flex-grow-1">
-              <div class="fw-semibold text-dark small mb-3">Quyền lợi nổi bật:</div>
-              <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
-                @for (feat of getFeaturesList(pkg.features); track feat) {
-                  <li class="d-flex align-items-start gap-2 small text-secondary">
-                    <i class="bi bi-check-circle-fill text-teal mt-1 flex-shrink-0"></i>
-                    <span>{{ feat }}</span>
-                  </li>
+        <div class="card-body p-4 p-md-5 bg-white">
+          <!-- 4 Cards Clinical Stats Grid (Bám sát C# Status.cshtml) -->
+          <div class="row g-3 mb-4">
+            <!-- Ô 1: Ngày Kích Hoạt -->
+            <div class="col-6 col-lg-3">
+              <div class="metric-info-box h-100">
+                <div class="metric-label">
+                  <i class="bi bi-calendar-check text-teal me-1.5"></i>
+                  <span>Ngày Kích Hoạt</span>
+                </div>
+                <div class="metric-value">
+                  {{ (sub.startDate | date:'dd/MM/yyyy') || 'Chưa cập nhật' }}
+                </div>
+                <div class="metric-hint">Bắt đầu chu kỳ điều trị</div>
+              </div>
+            </div>
+
+            <!-- Ô 2: Hạn Đăng Ký -->
+            <div class="col-6 col-lg-3">
+              <div class="metric-info-box h-100" [class.border-danger-subtle]="isSubExpired(sub)" [class.border-warning-subtle]="isNearExpiration(sub)">
+                <div class="metric-label">
+                  <i class="bi bi-calendar-x text-danger me-1.5"></i>
+                  <span>Hạn Đăng Ký (Hết Hạn)</span>
+                </div>
+                <div class="metric-value text-danger">
+                  {{ (sub.expirationDate | date:'dd/MM/yyyy') || 'Chưa cập nhật' }}
+                </div>
+                <div class="metric-hint">Thời điểm kết thúc quyền lợi</div>
+              </div>
+            </div>
+
+            <!-- Ô 3: Ngày Khởi Tạo / Giao Dịch -->
+            <div class="col-6 col-lg-3">
+              <div class="metric-info-box h-100">
+                <div class="metric-label">
+                  <i class="bi bi-clock-history text-secondary me-1.5"></i>
+                  <span>Ngày Giao Dịch</span>
+                </div>
+                <div class="metric-value">
+                  {{ (sub.createdDate | date:'dd/MM/yyyy HH:mm') || (sub.startDate | date:'dd/MM/yyyy') }}
+                </div>
+                <div class="metric-hint">Thời gian ghi nhận thanh toán</div>
+              </div>
+            </div>
+
+            <!-- Ô 4: Thời Gian Còn Lại -->
+            <div class="col-6 col-lg-3">
+              <div class="metric-info-box h-100 highlight-metric">
+                <div class="metric-label">
+                  <i class="bi bi-hourglass-split text-warning me-1.5"></i>
+                  <span>Thời Gian Còn Lại</span>
+                </div>
+                <div class="metric-value" [ngClass]="isSubExpired(sub) ? 'text-secondary' : isNearExpiration(sub) ? 'text-warning-emphasis' : 'text-teal'">
+                  @if (isSubExpired(sub)) {
+                    <span>Đã hết hạn</span>
+                  } @else if (isSubActive(sub)) {
+                    <span>{{ getDaysRemaining(sub) }} ngày</span>
+                  } @else {
+                    <span>Chờ xác nhận</span>
+                  }
+                </div>
+                <div class="metric-hint">
+                  {{ isSubActive(sub) ? 'Đang bảo toàn hiệu lực' : 'Cần kích hoạt tiếp' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar & Alert Section (Chuẩn C# Status.cshtml: progressPct & warn <= 7 days) -->
+          <div class="progress-container-box p-3.5 rounded-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2 small">
+              <span class="fw-bold text-dark">Tiến Độ Thời Hạn Sử Dụng Gói</span>
+              <span class="fw-bold" [ngClass]="isSubExpired(sub) ? 'text-secondary' : isNearExpiration(sub) ? 'text-warning' : 'text-teal'">
+                @if (isSubExpired(sub)) {
+                  <span>100% (Đã kết thúc)</span>
+                } @else {
+                  <span>{{ getProgressPct(sub) }}% đã dùng (Còn {{ getDaysRemaining(sub) }} ngày)</span>
                 }
-              </ul>
+              </span>
             </div>
 
+            <div class="progress progress-medical mb-2">
+              <div
+                class="progress-bar"
+                role="progressbar"
+                [style.width.%]="getProgressPct(sub)"
+                [ngClass]="isSubExpired(sub) ? 'bg-secondary' : isNearExpiration(sub) ? 'bg-warning' : 'bg-teal'"
+              ></div>
+            </div>
+
+            <!-- Cảnh Báo Sắp Hết Hạn <= 7 Ngày (Chuẩn C# #fffbeb, #92400e) -->
+            @if (isNearExpiration(sub)) {
+              <div class="alert alert-warning py-2.5 px-3 rounded-3 border-0 d-flex align-items-center gap-2.5 mt-3 mb-0 alert-renewal-warn">
+                <i class="bi bi-exclamation-triangle-fill fs-5 text-warning flex-shrink-0"></i>
+                <div class="small">
+                  Gói dịch vụ của Quý Bác sĩ sẽ hết hạn trong <strong>{{ getDaysRemaining(sub) }} ngày</strong> nữa. Quý Bác sĩ vui lòng <strong>Gia Hạn Gói Ngay</strong> để đảm bảo không bị gián đoạn tính năng tiếp nhận bệnh nhân và các bài trắc nghiệm.
+                </div>
+              </div>
+            } @else if (isSubExpired(sub)) {
+              <div class="alert alert-secondary py-2.5 px-3 rounded-3 border-0 d-flex align-items-center gap-2.5 mt-3 mb-0">
+                <i class="bi bi-clock-history fs-5 text-secondary flex-shrink-0"></i>
+                <div class="small">
+                  Gói dịch vụ này đã hết hạn hiệu lực. Quý Bác sĩ hãy gia hạn ngay để mở khóa lại đầy đủ quyền tiếp nhận ca khám mới.
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Included Plan Benefits -->
+          <div class="plan-benefits-box pt-3 pb-3 border-top mb-4">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+              <i class="bi bi-stars text-warning"></i>
+              <span>Đặc Quyền Hội Viên &amp; Hạn Mức Chuyên Khoa</span>
+            </h6>
+            <div class="row g-3">
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <span>Thời hạn chu kỳ: <strong>{{ getPackageDuration(sub) }} ngày</strong></span>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-people-fill text-teal fs-6"></i>
+                  @if (subscriptionQuota(); as q) {
+                    <span>Hạn mức thân chủ: <strong>{{ q.maxPatientCapacity ? (q.currentPatientCount + ' / ' + q.maxPatientCapacity + ' thân chủ') : 'Không giới hạn' }}</strong></span>
+                  } @else {
+                    <span>Hạn mức thân chủ: <strong>{{ getPackagePatientCapacity(sub) }}</strong></span>
+                  }
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-calendar-range text-teal fs-6"></i>
+                  @if (subscriptionQuota(); as q) {
+                    <span>Khung giờ làm việc: <strong>{{ q.maxDailySlotsCapacity ? (q.maxDailySlotsCapacity + ' slot / ngày') : 'Không giới hạn' }}</strong></span>
+                  } @else {
+                    <span>Khung giờ làm việc: <strong>{{ getPackageDailySlots(sub) }}</strong></span>
+                  }
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <span>Trắc nghiệm lâm sàng: <strong>DASS-21, PHQ-9, GAD-7</strong></span>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <span>Huy hiệu Bác sĩ Chuyên khoa: <strong>Xác thực MindBridge</strong></span>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <span>Gia hạn thông minh: <strong>Cộng dồn thời gian còn lại</strong></span>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="benefit-item d-flex align-items-center gap-2 small text-dark">
+                  <i class="bi bi-check-circle-fill text-success fs-6"></i>
+                  <span>Hỗ trợ y tế &amp; kỹ thuật: <strong>Ưu tiên 24/7</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div class="d-flex flex-wrap align-items-center gap-2.5 pt-3 border-top">
+            <!-- Nút Gia Hạn Gói Ngay -->
             <button
               type="button"
-              class="btn w-100 py-3 rounded-pill fw-bold shadow-sm"
-              [class.btn-primary]="pkg.badge === 'Khuyên Dùng'"
-              [class.btn-outline-primary]="pkg.badge !== 'Khuyên Dùng'"
-              (click)="openCheckoutModal(checkoutModal, pkg)"
+              class="btn btn-pro rounded-pill px-4 py-2.5 fw-bold d-flex align-items-center gap-2"
+              (click)="openRenewModal(renewModal, sub)"
             >
-              <i class="bi bi-lightning-charge-fill me-1"></i>
-              <span>Đăng Ký Gói Ngay</span>
+              <i class="bi bi-arrow-repeat fs-5"></i>
+              <span>Gia Hạn Gói Ngay (Cộng Dồn Hạn)</span>
+            </button>
+
+            <!-- Nút Đổi Gói Cước Khác -->
+            <button
+              type="button"
+              class="btn btn-outline-teal rounded-pill px-4 py-2.5 fw-semibold d-flex align-items-center gap-2"
+              (click)="setActiveTab('PLANS')"
+            >
+              <i class="bi bi-grid me-1"></i>
+              <span>Nâng Cấp / Đổi Gói Mới</span>
+            </button>
+
+            <!-- Nút Xem Lịch Sử Giao Dịch -->
+            <button
+              type="button"
+              class="btn btn-outline-secondary rounded-pill px-4 py-2.5 fw-semibold d-flex align-items-center gap-2 ms-auto"
+              (click)="setActiveTab('HISTORY')"
+            >
+              <i class="bi bi-receipt me-1"></i>
+              <span>Xem Lịch Sử Giao Dịch</span>
             </button>
           </div>
         </div>
       </div>
+    } @else {
+      <!-- Empty State (Khi bác sĩ chưa có gói) -->
+      <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4 bg-white empty-plan-card">
+        <div class="empty-plan-icon-wrap mx-auto mb-3">
+          <i class="bi bi-credit-card-2-front-fill fs-1 text-teal"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Quý Bác Sĩ Chưa Kích Hoạt Gói Dịch Vụ Nào</h4>
+        <p class="text-secondary small mb-4 mx-auto" style="max-width: 520px; line-height: 1.6;">
+          Kích hoạt ngay một gói dịch vụ hội viên để mở khóa toàn bộ quyền tiếp nhận bệnh nhân, đặt lịch hẹn trực tuyến và trọn bộ công cụ chẩn đoán tâm lý y khoa chuyên sâu.
+        </p>
+        <div>
+          <button
+            type="button"
+            class="btn btn-pro rounded-pill px-4 py-2.5 fw-bold d-inline-flex align-items-center gap-2"
+            (click)="setActiveTab('PLANS')"
+          >
+            <i class="bi bi-stars"></i>
+            <span>Khám Phá Các Gói Dịch Vụ Bác Sĩ</span>
+          </button>
+        </div>
+      </div>
     }
-  </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- TAB 2: LỊCH SỬ GIAO DỊCH (SUBSCRIPTION HISTORY - Chuẩn C# History.cshtml)  -->
+  <!-- ========================================================================= -->
+  @if (activeTab() === 'HISTORY') {
+    <div class="history-section mb-4">
+      <!-- 3 Metrics Summary Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+          <div class="history-summary-box p-3.5 rounded-3 bg-white border shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+              <div class="summary-icon bg-teal-subtle text-teal">
+                <i class="bi bi-receipt-cutoff fs-4"></i>
+              </div>
+              <div>
+                <div class="small text-muted fw-semibold">Tổng Số Lần Đăng Ký</div>
+                <div class="fs-4 fw-bold text-dark">{{ subscriptionHistory().length }} gói dịch vụ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="history-summary-box p-3.5 rounded-3 bg-white border shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+              <div class="summary-icon bg-success-subtle text-success">
+                <i class="bi bi-cash-stack fs-4"></i>
+              </div>
+              <div>
+                <div class="small text-muted fw-semibold">Tổng Tiền Đầu Tư Dịch Vụ</div>
+                <div class="fs-4 fw-bold text-emerald">{{ getTotalSpent() | number }} ₫</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="history-summary-box p-3.5 rounded-3 bg-white border shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+              <div class="summary-icon bg-primary-subtle text-primary">
+                <i class="bi bi-shield-check fs-4"></i>
+              </div>
+              <div>
+                <div class="small text-muted fw-semibold">Trạng Thái Gói Hiện Tại</div>
+                <div class="fs-5 fw-bold" [ngClass]="isSubActive(currentSubscription()) ? 'text-teal' : 'text-secondary'">
+                  {{ isSubActive(currentSubscription()) ? 'Đang Hiệu Lực' : 'Chưa Kích Hoạt' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter & Controls Toolbar -->
+      <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+        <div class="card-body p-3.5 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="small text-muted fw-semibold">Lọc theo trạng thái:</span>
+            <div class="btn-group btn-group-sm filter-pill-group">
+              <button
+                type="button"
+                class="btn filter-pill"
+                [class.active]="historyFilter() === 'all'"
+                (click)="setHistoryFilter('all')"
+              >
+                Tất cả ({{ subscriptionHistory().length }})
+              </button>
+              <button
+                type="button"
+                class="btn filter-pill"
+                [class.active]="historyFilter() === 'ACTIVE'"
+                (click)="setHistoryFilter('ACTIVE')"
+              >
+                Đang dùng
+              </button>
+              <button
+                type="button"
+                class="btn filter-pill"
+                [class.active]="historyFilter() === 'EXTENDED'"
+                (click)="setHistoryFilter('EXTENDED')"
+              >
+                Đã gia hạn
+              </button>
+              <button
+                type="button"
+                class="btn filter-pill"
+                [class.active]="historyFilter() === 'EXPIRED'"
+                (click)="setHistoryFilter('EXPIRED')"
+              >
+                Đã hết hạn
+              </button>
+              <button
+                type="button"
+                class="btn filter-pill"
+                [class.active]="historyFilter() === 'PENDING_PAYMENT'"
+                (click)="setHistoryFilter('PENDING_PAYMENT')"
+              >
+                Chờ thanh toán
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" (click)="loadHistory()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table View for Desktop (Bám sát C# History.cshtml) -->
+      @if (filteredHistory().length === 0) {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-3 bg-white">
+          <i class="bi bi-clock-history text-secondary display-5 mb-3"></i>
+          <h5 class="fw-bold text-dark mb-1">Không tìm thấy giao dịch nào phù hợp</h5>
+          <p class="text-secondary small mb-0">Không có bản ghi đăng ký nào thuộc trạng thái bạn đã chọn.</p>
+        </div>
+      } @else {
+        <!-- Desktop Table -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 d-none d-md-block bg-white">
+          <div class="table-responsive">
+            <table class="table subscription-history-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th style="width: 28%;">Gói Dịch Vụ &amp; Mã Giao Dịch</th>
+                  <th style="width: 15%;">Trạng Thái</th>
+                  <th style="width: 14%;">Số Tiền</th>
+                  <th style="width: 16%;">Ngày Thanh Toán</th>
+                  <th style="width: 17%;">Chu Kỳ Hiệu Lực</th>
+                  <th class="text-end" style="width: 10%;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredHistory(); track item.id) {
+                  <tr>
+                    <td>
+                      <div class="fw-bold text-dark">{{ item.servicePackageName || 'Gói Dịch Vụ Hội Viên' }}</div>
+                      <div class="text-muted small font-monospace" style="font-size: 0.78rem;">
+                        #SUB-{{ item.id }} <span class="text-secondary">•</span> {{ item.transactionCode }}
+                      </div>
+                    </td>
+                    <td>
+                      <span [class]="getStatusBadgeClass(item.status)">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem;"></i>
+                        {{ getStatusLabel(item.status) }}
+                      </span>
+                    </td>
+                    <td class="fw-bold text-dark">
+                      {{ (item.price || 0) | number }} <span class="text-muted small">₫</span>
+                    </td>
+                    <td class="text-secondary small">
+                      <i class="bi bi-calendar-event me-1 text-muted"></i>
+                      {{ (item.createdDate | date:'dd/MM/yyyy HH:mm') || (item.startDate | date:'dd/MM/yyyy') }}
+                    </td>
+                    <td class="text-secondary small">
+                      <div class="d-flex align-items-center gap-1">
+                        <span>{{ item.startDate | date:'dd/MM/yyyy' }}</span>
+                        <span class="text-muted">—</span>
+                        <span class="fw-semibold text-dark">{{ item.expirationDate | date:'dd/MM/yyyy' }}</span>
+                      </div>
+                    </td>
+                    <td class="text-end">
+                      <div class="dropdown d-inline-block">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-teal rounded-pill px-2.5 py-1"
+                          style="font-size: 0.78rem;"
+                          (click)="openHistoryDetailModal(historyDetailModal, item)"
+                        >
+                          <i class="bi bi-info-circle me-1"></i>Chi tiết
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Mobile Card View (Bám sát C# History.cshtml mobile card view) -->
+        <div class="d-md-none d-flex flex-column gap-3 mb-4">
+          @for (item of filteredHistory(); track item.id) {
+            <div class="card border rounded-3 p-3 shadow-sm bg-white mobile-history-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <div class="fw-bold text-dark">{{ item.servicePackageName || 'Gói Dịch Vụ Hội Viên' }}</div>
+                  <div class="text-muted small font-monospace" style="font-size: 0.74rem;">#SUB-{{ item.id }} • {{ item.transactionCode }}</div>
+                </div>
+                <span [class]="getStatusBadgeClass(item.status)">
+                  {{ getStatusLabel(item.status) }}
+                </span>
+              </div>
+              <div class="divider-line my-2"></div>
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Số tiền thanh toán:</span>
+                <strong class="text-dark">{{ (item.price || 0) | number }} ₫</strong>
+              </div>
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Ngày thanh toán:</span>
+                <span class="text-dark">{{ item.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <div class="d-flex justify-content-between small text-muted mb-3">
+                <span>Chu kỳ:</span>
+                <span class="text-dark">{{ item.startDate | date:'dd/MM/yyyy' }} – {{ item.expirationDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-teal btn-sm w-100 rounded-pill"
+                (click)="openHistoryDetailModal(historyDetailModal, item)"
+              >
+                <i class="bi bi-info-circle me-1"></i>Xem Chi Tiết Giao Dịch
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- TAB 3: BẢNG GIÁ & ĐỔI GÓI MỚI (PLANS)                                     -->
+  <!-- ========================================================================= -->
+  @if (activeTab() === 'PLANS') {
+    <div class="plans-section mb-5">
+      <!-- Section Mini Intro -->
+      <div class="text-center mb-4">
+        <h3 class="fw-bold text-dark mb-1">Danh Mục Gói Dịch Vụ Hội Viên</h3>
+        <p class="text-muted small">Lựa chọn gói cước phù hợp với quy mô tiếp nhận bệnh nhân và nhu cầu chuyên môn của Quý Bác sĩ.</p>
+      </div>
+
+      @if (packages().length === 0) {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center my-4 bg-white">
+          <i class="bi bi-box2 text-muted display-4 mb-3"></i>
+          <h4 class="fw-bold text-dark mb-2">Chưa Có Gói Dịch Vụ Nào Được Kích Hoạt</h4>
+          <p class="text-secondary small mb-0">Ban quản lý hệ thống đang chuẩn bị các gói dịch vụ mới. Quý Bác sĩ vui lòng quay lại sau.</p>
+        </div>
+      } @else {
+        <div class="row g-4 justify-content-center">
+          @for (pkg of packages(); track pkg.id) {
+            <div class="col-12 col-md-6 col-lg-4">
+              <div
+                class="card h-100 border-0 shadow-sm pricing-card position-relative"
+                [class.highlight-card]="pkg.badge === 'Khuyên Dùng' || pkg.name.includes('Professional') || pkg.name.includes('Chuyên Nghiệp')"
+              >
+                <!-- Highlight Accent Bar on Top -->
+                @if (pkg.badge === 'Khuyên Dùng' || pkg.name.includes('Professional') || pkg.name.includes('Chuyên Nghiệp')) {
+                  <div class="highlight-top-accent"></div>
+                }
+
+                <!-- Ribbon Badge -->
+                @if (pkg.badge || pkg.name.includes('Professional') || pkg.name.includes('Chuyên Nghiệp')) {
+                  <div class="badge-ribbon">
+                    <i class="bi bi-stars me-1"></i>
+                    <span>{{ pkg.badge || 'KHUYÊN DÙNG' }}</span>
+                  </div>
+                }
+
+                <div class="card-body p-4 p-xl-5 d-flex flex-column">
+                  <!-- Tier Icon & Title -->
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="tier-icon-box" [ngClass]="(pkg.badge === 'Khuyên Dùng' || pkg.name.includes('Professional')) ? 'pro-icon' : 'normal-icon'">
+                      <i [class]="getTierIcon(pkg)"></i>
+                    </div>
+                    <div>
+                      <h4 class="fw-bold text-dark mb-0 tier-title">{{ pkg.name }}</h4>
+                      <span class="text-muted small" style="font-size: 0.76rem;">Phòng khám MindBridge</span>
+                    </div>
+                  </div>
+
+                  <!-- Sanitized Description -->
+                  <p class="text-secondary small mb-4 flex-grow-0 tier-desc">
+                    {{ getSanitizedDescription(pkg) }}
+                  </p>
+
+                  <!-- Price Container -->
+                  <div class="price-container mb-4">
+                    <span class="price-currency">₫</span>
+                    <span class="price-amount">{{ pkg.price | number }}</span>
+                    <span class="price-period">/ {{ pkg.durationDays }} ngày</span>
+                  </div>
+
+                  <div class="divider-line mb-4"></div>
+
+                  <!-- Feature Checklist -->
+                  <div class="mb-4 flex-grow-1">
+                    <div class="features-label mb-3">ĐẶC QUYỀN GÓI HỘI VIÊN:</div>
+                    <ul class="list-unstyled d-flex flex-column gap-2.5 mb-0">
+                      @for (feat of getFeaturesList(pkg); track feat) {
+                        <li class="d-flex align-items-start gap-2.5 small text-dark feature-item">
+                          <div class="feature-check-icon flex-shrink-0">
+                            <i class="bi bi-check2"></i>
+                          </div>
+                          <span class="feature-text">{{ feat }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+
+                  <!-- Call To Action Button -->
+                  <button
+                    type="button"
+                    class="btn w-100 py-3 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 btn-subscribe-cta"
+                    [class.btn-pro]="pkg.badge === 'Khuyên Dùng' || pkg.name.includes('Professional') || pkg.name.includes('Chuyên Nghiệp')"
+                    [class.btn-normal]="!(pkg.badge === 'Khuyên Dùng' || pkg.name.includes('Professional') || pkg.name.includes('Chuyên Nghiệp'))"
+                    (click)="openCheckoutModal(checkoutModal, pkg)"
+                  >
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    <span>{{ currentSubscription() ? 'Nâng Cấp / Chuyển Gói Này' : 'Đăng Ký Gói Ngay' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
 </div>
 
-<!-- Checkout & Payment Modal -->
-<ng-template #checkoutModal let-modal>
-  <div class="modal-header border-0 pb-0">
+<!-- ========================================================================= -->
+<!-- MODAL: GIA HẠN GÓI THÔNG MINH (SMART EXTENSION RENEWAL MODAL)              -->
+<!-- ========================================================================= -->
+<ng-template #renewModal let-modal>
+  <div class="modal-header border-bottom bg-light">
     <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-      <i class="bi bi-credit-card-2-front-fill text-primary"></i>
-      <span>Thanh Toán Gói Dịch Vụ</span>
+      <i class="bi bi-arrow-repeat text-teal"></i>
+      <span>Gia Hạn Gói Dịch Vụ Hội Viên Bác Sĩ</span>
     </h5>
     <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
   </div>
@@ -101,81 +683,456 @@
     @if (paymentSuccess()) {
       <div class="text-center py-4">
         <div class="success-icon-wrap mx-auto mb-3">
-          <i class="bi bi-check-lg text-success display-4"></i>
+          <i class="bi bi-check-lg text-emerald display-4"></i>
         </div>
-        <h4 class="fw-bold text-dark mb-2">Thanh Toán Thành Công!</h4>
+        <h4 class="fw-bold text-dark mb-2">Gia Hạn Gói Thành Công!</h4>
+        <p class="text-secondary small mb-4">
+          Thời hạn gói dịch vụ đã được cộng dồn thành công. Quý Bác sĩ có thể tiếp tục tiếp nhận bệnh nhân mà không bị gián đoạn.
+        </p>
+        <button type="button" class="btn btn-pro rounded-pill px-4 fw-semibold" (click)="modal.close()">
+          <span>Xem Thông Tin Gói Mới</span>
+        </button>
+      </div>
+    } @else {
+      @if (activeTxn(); as txn) {
+        <!-- Smart Renewal Plan Box -->
+        <div class="card bg-light border rounded-3 p-3.5 mb-3 summary-box">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Gói dịch vụ gia hạn:</span>
+            <strong class="text-dark">{{ txn.packageName }}</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted small">Cơ chế gia hạn:</span>
+            <span class="badge bg-teal-subtle text-teal fw-bold">Cộng dồn thời hạn bảo toàn</span>
+          </div>
+          @if (renewalTargetSub(); as targetSub) {
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted small">Hạn mới dự kiến sau khi gia hạn:</span>
+              <span class="fw-bold text-success">
+                {{ getProjectedExpirationDate(targetSub, getPackageDuration(targetSub)) | date:'dd/MM/yyyy' }} (+{{ getPackageDuration(targetSub) }} ngày)
+              </span>
+            </div>
+          }
+          <div class="d-flex justify-content-between align-items-center pt-2.5 border-top">
+            <span class="fw-bold text-dark">Số tiền gia hạn:</span>
+            <span class="fs-4 fw-bold text-teal">{{ txn.amount | number }} ₫</span>
+          </div>
+        </div>
+
+        <div class="alert alert-info py-2 px-3 small border-0 mb-3 d-flex align-items-center gap-2 rounded-3" style="background: rgba(15, 118, 110, 0.08); color: #0f766e;">
+          <i class="bi bi-info-circle-fill fs-6 flex-shrink-0"></i>
+          <span>Nếu gói hiện tại của Quý Bác sĩ vẫn còn ngày sử dụng, hệ thống sẽ tự động <strong>cộng nối tiếp số ngày mới</strong> vào sau ngày hết hạn cũ, không làm mất bất kỳ ngày nào.</span>
+        </div>
+
+        <!-- Payment Method Selection -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-dark small mb-2">Chọn phương thức thanh toán an toàn:</label>
+          <div class="row g-2">
+            <!-- 1. Thanh toán giả lập Sandbox Demo -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'MOCK_CHECKOUT'"
+                (click)="selectPaymentMethod('MOCK_CHECKOUT')"
+              >
+                <i class="bi bi-cpu fs-3 text-primary mb-1"></i>
+                <div class="fw-bold text-dark small">Thanh Toán Giả Lập</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Sandbox Mock Demo</div>
+                @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+                  <span class="badge bg-primary-subtle text-primary mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
+              </div>
+            </div>
+
+            <!-- 2. VNPay Sandbox Gateway -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'VNPAY'"
+                (click)="selectPaymentMethod('VNPAY')"
+              >
+                <i class="bi bi-qr-code-scan fs-3 text-teal mb-1"></i>
+                <div class="fw-bold text-dark small">VNPay Sandbox</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Thẻ test NCB / QR</div>
+                @if (selectedPaymentMethod() === 'VNPAY') {
+                  <span class="badge bg-teal-subtle text-teal mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
+              </div>
+            </div>
+
+            <!-- 3. Chuyển khoản ngân hàng thủ công -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'BANK_TRANSFER'"
+                (click)="selectPaymentMethod('BANK_TRANSFER')"
+              >
+                <i class="bi bi-bank fs-3 text-secondary mb-1"></i>
+                <div class="fw-bold text-dark small">Chuyển Khoản</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Đối soát thủ công</div>
+                @if (selectedPaymentMethod() === 'BANK_TRANSFER') {
+                  <span class="badge bg-secondary-subtle text-secondary mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Box theo phương thức -->
+        @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+          <div class="alert alert-primary-subtle border border-primary-subtle rounded-3 p-3 mb-3">
+            <div class="d-flex align-items-center gap-2 fw-bold text-primary small mb-1">
+              <i class="bi bi-info-circle-fill"></i>
+              <span>Mô Phỏng Thanh Toán Sandbox (Backend Mock)</span>
+            </div>
+            <div class="small text-dark">
+              Thao tác này chỉ <strong>mô phỏng thanh toán thành công</strong> trong môi trường sandbox để kiểm thử và kích hoạt tức thì gói gia hạn. Không phát sinh giao dịch tiền thật.
+            </div>
+          </div>
+        } @else if (selectedPaymentMethod() === 'VNPAY') {
+          <div class="sandbox-test-box mb-3 p-3 rounded-3 border">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-1.5 fw-bold text-teal small">
+                <i class="bi bi-credit-card-2-front"></i>
+                <span>Thẻ Test VNPay Sandbox (NCB):</span>
+              </div>
+              <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Sẵn sàng kiểm thử</span>
+            </div>
+            <div class="row g-2 text-muted" style="font-size: 0.8rem;">
+              <div class="col-6">Ngân hàng: <strong class="text-dark">NCB</strong></div>
+              <div class="col-6">Mã OTP: <strong class="text-dark">123456</strong></div>
+              <div class="col-12">
+                Số thẻ: <code class="user-select-all text-dark fw-bold px-2 py-0.5 rounded bg-white border">9704198526191432198</code>
+              </div>
+              <div class="col-6">Chủ thẻ: <strong class="text-dark">NGUYEN VAN A</strong></div>
+              <div class="col-6">Ngày phát hành: <strong class="text-dark">07/15</strong></div>
+            </div>
+          </div>
+        } @else if (selectedPaymentMethod() === 'BANK_TRANSFER') {
+          <div class="alert alert-warning-subtle border border-warning-subtle rounded-3 p-3 mb-3">
+            <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis small mb-1">
+              <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+              <span>Chuyển Khoản Ngân Hàng - Chờ Đối Soát Thủ Công</span>
+            </div>
+            <div class="small text-dark mb-2">
+              Hệ thống hiện tại <strong>chưa tích hợp đối soát tự động qua VietQR</strong>. Quý Bác sĩ vui lòng chuyển khoản với mã nội dung sau và liên hệ Ban quản trị để được kiểm tra và kích hoạt thủ công:
+            </div>
+            <div class="bg-white p-2.5 rounded border small">
+              <div>Ngân hàng: <strong>Vietcombank (VCB)</strong></div>
+              <div>Số tài khoản: <strong>9988776655</strong> (MINDBRIDGE CLINIC)</div>
+              <div>Số tiền: <strong class="text-danger">{{ (activeTxn()?.amount || 0) | number }} ₫</strong></div>
+              <div>Nội dung CK: <strong class="text-primary font-monospace">{{ activeTxn()?.transactionCode }}</strong></div>
+            </div>
+          </div>
+        }
+
+        <!-- Action Button -->
+        <div class="d-flex flex-column gap-2 pt-2">
+          @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+            <button
+              type="button"
+              class="btn btn-primary py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              [disabled]="isSubscribing()"
+              (click)="processMockCheckout(modal)"
+            >
+              @if (isSubscribing()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Đang xử lý mô phỏng thanh toán...</span>
+              } @else {
+                <i class="bi bi-check2-circle fs-5"></i>
+                <span>Xác Nhận Thanh Toán Giả Lập (Sandbox Demo)</span>
+              }
+            </button>
+          } @else if (selectedPaymentMethod() === 'VNPAY') {
+            <button
+              type="button"
+              class="btn btn-pro py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              [disabled]="isRedirectingVnPay()"
+              (click)="processVnPayRedirect()"
+            >
+              @if (isRedirectingVnPay()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Đang kết nối cổng VNPay Sandbox...</span>
+              } @else {
+                <i class="bi bi-box-arrow-up-right fs-5"></i>
+                <span>Thanh Toán Gia Hạn Qua VNPay Sandbox</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-outline-secondary py-2.5 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+              (click)="acknowledgeBankTransfer(modal)"
+            >
+              <i class="bi bi-check-lg fs-5"></i>
+              <span>Tôi Đã Lưu Thông Tin Chuyển Khoản</span>
+            </button>
+          }
+        </div>
+      }
+    }
+  </div>
+</ng-template>
+
+<!-- ========================================================================= -->
+<!-- MODAL: ĐĂNG KÝ GÓI MỚI / NÂNG CẤP (CHECKOUT MODAL)                        -->
+<!-- ========================================================================= -->
+<ng-template #checkoutModal let-modal>
+  <div class="modal-header border-bottom bg-light">
+    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="bi bi-credit-card-2-front-fill text-teal"></i>
+      <span>Đăng Ký Gói Dịch Vụ Hội Viên Bác Sĩ</span>
+    </h5>
+    <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
+  </div>
+
+  <div class="modal-body p-4">
+    @if (paymentSuccess()) {
+      <div class="text-center py-4">
+        <div class="success-icon-wrap mx-auto mb-3">
+          <i class="bi bi-check-lg text-emerald display-4"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-2">Thanh Toán &amp; Kích Hoạt Thành Công!</h4>
         <p class="text-secondary small mb-4">Gói dịch vụ bác sĩ đã được kích hoạt thành công trên tài khoản của bạn.</p>
-        <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" (click)="modal.close()">
-          <span>Hoàn tất &amp; Xem Gói của tôi</span>
+        <button type="button" class="btn btn-pro rounded-pill px-4 fw-semibold" (click)="modal.close(); setActiveTab('STATUS')">
+          <span>Xem Gói Dịch Vụ Của Tôi</span>
         </button>
       </div>
     } @else {
       @if (selectedPackage(); as pkg) {
-        <div class="card bg-light-subtle border-0 rounded-3 p-3 mb-4">
+        <!-- Package Summary Box -->
+        <div class="card bg-light border rounded-3 p-3.5 mb-4 summary-box">
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-muted small">Tên gói:</span>
+            <span class="text-muted small">Tên gói hội viên:</span>
             <strong class="text-dark">{{ pkg.name }}</strong>
           </div>
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-muted small">Thời hạn:</span>
+            <span class="text-muted small">Thời hạn hiệu lực:</span>
             <span class="fw-semibold text-dark">{{ pkg.durationDays }} ngày</span>
           </div>
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-muted small">Số lượt khám tối đa:</span>
-            <span class="fw-semibold text-dark">{{ pkg.maxAppointmentsPerMonth }} lượt / tháng</span>
+            <span class="text-muted small">Số ca khám tối đa:</span>
+            <span class="fw-semibold text-dark">{{ pkg.maxAppointmentsPerMonth }} ca / tháng</span>
           </div>
-          <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+          <div class="d-flex justify-content-between align-items-center pt-2.5 border-top">
             <span class="fw-bold text-dark">Tổng tiền thanh toán:</span>
-            <span class="fs-4 fw-bold text-primary">{{ pkg.price | number }} đ</span>
+            <span class="fs-4 fw-bold text-teal">{{ pkg.price | number }} ₫</span>
           </div>
         </div>
 
+        <!-- Payment Method Selection -->
         <div class="mb-3">
-          <label class="form-label fw-semibold text-dark small mb-2">Chọn phương thức thanh toán:</label>
-          <div class="row g-3">
-            <div class="col-12 col-md-6">
-              <div class="card border p-3 rounded-3 text-center cursor-pointer payment-method-card active">
-                <i class="bi bi-qr-code-scan fs-3 text-primary mb-2"></i>
-                <div class="fw-bold text-dark small">VNPay QR / Thẻ ATM</div>
-                <div class="text-muted" style="font-size: 0.72rem;">Cổng thanh toán điện tử</div>
+          <label class="form-label fw-semibold text-dark small mb-2">Chọn phương thức thanh toán an toàn:</label>
+          <div class="row g-2">
+            <!-- 1. Thanh toán giả lập Sandbox Demo -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'MOCK_CHECKOUT'"
+                (click)="selectPaymentMethod('MOCK_CHECKOUT')"
+              >
+                <i class="bi bi-cpu fs-3 text-primary mb-1"></i>
+                <div class="fw-bold text-dark small">Thanh Toán Giả Lập</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Sandbox Mock Demo</div>
+                @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+                  <span class="badge bg-primary-subtle text-primary mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
               </div>
             </div>
-            <div class="col-12 col-md-6">
-              <div class="card border p-3 rounded-3 text-center cursor-pointer payment-method-card">
-                <i class="bi bi-bank fs-3 text-secondary mb-2"></i>
-                <div class="fw-bold text-dark small">Chuyển Khoản Ngân Hàng</div>
-                <div class="text-muted" style="font-size: 0.72rem;">Xác nhận tự động 24/7</div>
+
+            <!-- 2. VNPay Sandbox Gateway -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'VNPAY'"
+                (click)="selectPaymentMethod('VNPAY')"
+              >
+                <i class="bi bi-qr-code-scan fs-3 text-teal mb-1"></i>
+                <div class="fw-bold text-dark small">VNPay Sandbox</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Thẻ test NCB / QR</div>
+                @if (selectedPaymentMethod() === 'VNPAY') {
+                  <span class="badge bg-teal-subtle text-teal mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
+              </div>
+            </div>
+
+            <!-- 3. Chuyển khoản ngân hàng thủ công -->
+            <div class="col-12 col-md-4">
+              <div 
+                class="card border p-2.5 rounded-3 text-center payment-method-card h-100"
+                [class.active]="selectedPaymentMethod() === 'BANK_TRANSFER'"
+                (click)="selectPaymentMethod('BANK_TRANSFER')"
+              >
+                <i class="bi bi-bank fs-3 text-secondary mb-1"></i>
+                <div class="fw-bold text-dark small">Chuyển Khoản</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Đối soát thủ công</div>
+                @if (selectedPaymentMethod() === 'BANK_TRANSFER') {
+                  <span class="badge bg-secondary-subtle text-secondary mt-1" style="font-size: 0.65rem; font-weight: 700;">Đang chọn</span>
+                }
               </div>
             </div>
           </div>
         </div>
 
-        <div class="d-flex flex-column gap-2 pt-3">
-          <button
-            type="button"
-            class="btn btn-success py-2 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2"
-            [disabled]="isSubscribing()"
-            (click)="processMockCheckout(modal)"
-          >
-            @if (isSubscribing()) {
-              <span class="spinner-border spinner-border-sm"></span>
-              <span>Đang xử lý giao dịch...</span>
-            } @else {
-              <i class="bi bi-check2-circle fs-5"></i>
-              <span>Xác Nhận Thanh Toán (Thử Nghiệm Nhanh - Mock)</span>
-            }
-          </button>
+        <!-- Detail Box theo phương thức -->
+        @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+          <div class="alert alert-primary-subtle border border-primary-subtle rounded-3 p-3 mb-3">
+            <div class="d-flex align-items-center gap-2 fw-bold text-primary small mb-1">
+              <i class="bi bi-info-circle-fill"></i>
+              <span>Mô Phỏng Thanh Toán Sandbox (Backend Mock)</span>
+            </div>
+            <div class="small text-dark">
+              Thao tác này chỉ <strong>mô phỏng thanh toán thành công</strong> trong môi trường sandbox để kiểm thử và kích hoạt tức thì gói hội viên của bạn. Không phát sinh giao dịch tiền thật.
+            </div>
+          </div>
+        } @else if (selectedPaymentMethod() === 'VNPAY') {
+          <div class="sandbox-test-box mb-3 p-3 rounded-3 border">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-1.5 fw-bold text-teal small">
+                <i class="bi bi-credit-card-2-front"></i>
+                <span>Thẻ Test VNPay Sandbox (NCB):</span>
+              </div>
+              <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.68rem;">Sẵn sàng kiểm thử</span>
+            </div>
+            <div class="row g-2 text-muted" style="font-size: 0.8rem;">
+              <div class="col-6">Ngân hàng: <strong class="text-dark">NCB</strong></div>
+              <div class="col-6">Mã OTP: <strong class="text-dark">123456</strong></div>
+              <div class="col-12">
+                Số thẻ: <code class="user-select-all text-dark fw-bold px-2 py-0.5 rounded bg-white border">9704198526191432198</code>
+              </div>
+              <div class="col-6">Chủ thẻ: <strong class="text-dark">NGUYEN VAN A</strong></div>
+              <div class="col-6">Ngày phát hành: <strong class="text-dark">07/15</strong></div>
+            </div>
+          </div>
+        } @else if (selectedPaymentMethod() === 'BANK_TRANSFER') {
+          <div class="alert alert-warning-subtle border border-warning-subtle rounded-3 p-3 mb-3">
+            <div class="d-flex align-items-center gap-2 fw-bold text-warning-emphasis small mb-1">
+              <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+              <span>Chuyển Khoản Ngân Hàng - Chờ Đối Soát Thủ Công</span>
+            </div>
+            <div class="small text-dark mb-2">
+              Hệ thống hiện tại <strong>chưa tích hợp đối soát tự động qua VietQR</strong>. Quý Bác sĩ vui lòng chuyển khoản với mã nội dung sau và liên hệ Ban quản trị để được kiểm tra và kích hoạt thủ công:
+            </div>
+            <div class="bg-white p-2.5 rounded border small">
+              <div>Ngân hàng: <strong>Vietcombank (VCB)</strong></div>
+              <div>Số tài khoản: <strong>9988776655</strong> (MINDBRIDGE CLINIC)</div>
+              <div>Số tiền: <strong class="text-danger">{{ (activeTxn()?.amount || 0) | number }} ₫</strong></div>
+              <div>Nội dung CK: <strong class="text-primary font-monospace">{{ activeTxn()?.transactionCode }}</strong></div>
+            </div>
+          </div>
+        }
 
-          <button
-            type="button"
-            class="btn btn-outline-primary py-2 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
-            (click)="processVnPayRedirect()"
-          >
-            <i class="bi bi-box-arrow-up-right"></i>
-            <span>Mở Cổng VNPay Sandbox</span>
-          </button>
+        <!-- Action Button -->
+        <div class="d-flex flex-column gap-2 pt-2">
+          @if (selectedPaymentMethod() === 'MOCK_CHECKOUT') {
+            <button
+              type="button"
+              class="btn btn-primary py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              [disabled]="isSubscribing()"
+              (click)="processMockCheckout(modal)"
+            >
+              @if (isSubscribing()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Đang xử lý mô phỏng thanh toán...</span>
+              } @else {
+                <i class="bi bi-check2-circle fs-5"></i>
+                <span>Xác Nhận Thanh Toán Giả Lập (Sandbox Demo)</span>
+              }
+            </button>
+          } @else if (selectedPaymentMethod() === 'VNPAY') {
+            <button
+              type="button"
+              class="btn btn-pro py-2.5 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+              [disabled]="isRedirectingVnPay()"
+              (click)="processVnPayRedirect()"
+            >
+              @if (isRedirectingVnPay()) {
+                <span class="spinner-border spinner-border-sm"></span>
+                <span>Đang kết nối cổng VNPay Sandbox...</span>
+              } @else {
+                <i class="bi bi-box-arrow-up-right fs-5"></i>
+                <span>Chuyển Hướng Sang Cổng Thanh Toán VNPay Sandbox</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-outline-secondary py-2.5 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+              (click)="acknowledgeBankTransfer(modal)"
+            >
+              <i class="bi bi-check-lg fs-5"></i>
+              <span>Tôi Đã Lưu Thông Tin Chuyển Khoản</span>
+            </button>
+          }
         </div>
       }
     }
+  </div>
+</ng-template>
+
+<!-- ========================================================================= -->
+<!-- MODAL: XEM CHI TIẾT GIAO DỊCH LỊCH SỬ (#historyDetailModal)                -->
+<!-- ========================================================================= -->
+<ng-template #historyDetailModal let-modal>
+  <div class="modal-header border-bottom bg-light">
+    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+      <i class="bi bi-receipt text-teal"></i>
+      <span>Chi Tiết Giao Dịch &amp; Hợp Đồng Đăng Ký</span>
+    </h5>
+    <button type="button" class="btn-close shadow-none" (click)="modal.dismiss()"></button>
+  </div>
+
+  @if (selectedHistorySub(); as item) {
+    <div class="modal-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+        <div>
+          <h5 class="fw-bold text-dark mb-1">{{ item.servicePackageName || 'Gói Dịch Vụ Hội Viên' }}</h5>
+          <div class="text-muted small font-monospace">Mã Hợp Đồng: #SUB-{{ item.id }}</div>
+        </div>
+        <span [class]="getStatusBadgeClass(item.status)">
+          {{ getStatusLabel(item.status) }}
+        </span>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-6">
+          <div class="text-muted small">Mã Giao Dịch:</div>
+          <div class="fw-bold text-dark font-monospace">{{ item.transactionCode || 'N/A' }}</div>
+        </div>
+        <div class="col-6">
+          <div class="text-muted small">Số Tiền Đã Thanh Toán:</div>
+          <div class="fw-bold text-teal fs-5">{{ (item.price || 0) | number }} ₫</div>
+        </div>
+        <div class="col-6">
+          <div class="text-muted small">Ngày Kích Hoạt (Start Date):</div>
+          <div class="fw-semibold text-dark">{{ item.startDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+        <div class="col-6">
+          <div class="text-muted small">Hạn Đăng Ký (Expiration Date):</div>
+          <div class="fw-semibold text-danger">{{ item.expirationDate | date:'dd/MM/yyyy' }}</div>
+        </div>
+        <div class="col-6">
+          <div class="text-muted small">Thời Gian Tạo Đơn:</div>
+          <div class="text-dark">{{ item.createdDate | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+        </div>
+        <div class="col-6">
+          <div class="text-muted small">Cổng Thanh Toán:</div>
+          <div class="text-dark fw-semibold">
+            <i class="bi bi-shield-check text-success me-1"></i>VNPay Sandbox Gateway
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-3 bg-light border small text-muted">
+        <div class="fw-semibold text-dark mb-1"><i class="bi bi-info-circle me-1 text-teal"></i>Ghi chú bảo mật giao dịch:</div>
+        <div>Giao dịch được đối soát thời gian thực và lưu trữ bất biến trên hệ thống cơ sở dữ liệu y tế MindBridge.</div>
+      </div>
+    </div>
+  }
+
+  <div class="modal-footer border-top bg-light">
+    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-3" (click)="modal.dismiss()">
+      Đóng
+    </button>
   </div>
 </ng-template>

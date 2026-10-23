@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="20261020153000-1" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="chat_message"/>
+            <not>
+                <columnExists tableName="chat_message" columnName="client_message_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="chat_message">
+            <column name="client_message_id" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20261020153000-2" author="mindbridge">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="chat_message"/>
+            <not>
+                <indexExists tableName="chat_message" indexName="ux_chat_msg_idempotency"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="chat_message" indexName="ux_chat_msg_idempotency" unique="true">
+            <column name="conversation_id"/>
+            <column name="sender_id"/>
+            <column name="client_message_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

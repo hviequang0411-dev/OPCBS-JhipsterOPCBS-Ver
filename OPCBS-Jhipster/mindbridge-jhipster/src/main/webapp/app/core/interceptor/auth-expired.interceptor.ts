@@ -15,10 +15,20 @@ export const authExpiredInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     tap({
       error(err: HttpErrorResponse) {
-        if (err.status === 401 && err.url && !err.url.includes('api/account')) {
-          stateStorageService.storeUrl(router.routerState.snapshot.url);
-          loginService.logout();
-          router.navigate(['/login']);
+        if (
+          err.status === 401 &&
+          err.url &&
+          !err.url.includes('api/account') &&
+          !err.url.includes('api/logout') &&
+          !err.url.includes('api/authenticate')
+        ) {
+          stateStorageService.clearAuthenticationToken();
+          const currentUrl = router.routerState.snapshot.url;
+          if (currentUrl && !currentUrl.includes('/login')) {
+            stateStorageService.storeUrl(currentUrl);
+            loginService.logout();
+            router.navigate(['/login']);
+          }
         }
       },
     }),

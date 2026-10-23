@@ -1,0 +1,24 @@
+<header class="doctor-top-navbar mb-3">
+  <!-- Clean Clinical Header: Module Breadcrumbs & Status -->
+  <div class="top-util-bar d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="portal-badge d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill">
+        <i class="bi bi-hospital-fill text-teal"></i>
+        <span class="portal-badge-text">CỔNG Y TẾ LÂM SÀNG BÁC SĨ</span>
+      </div>
+      <span class="breadcrumb-separator text-muted">/</span>
+      <div class="current-module-title fw-bold text-dark d-flex align-items-center gap-2">
+        <i [class]="getModuleIcon()"></i>
+        <span>{{ getModuleTitle() }}</span>
+      </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <!-- Live Status Indicator -->
+      <span class="live-status-pill badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill">
+        <span class="pulse-indicator"></span>
+        <span class="status-text fw-bold">Phòng Khám Đang Mở (Online)</span>
+      </span>
+    </div>
+  </div>
+</header>
